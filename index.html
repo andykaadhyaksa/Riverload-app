@@ -140,6 +140,8 @@
   );
 }
 </style>
+<!-- Leaflet.js -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
 <body>
 
@@ -187,6 +189,10 @@
   <div class="sb-sec">Output</div>
   <div class="nav-link" onclick="nav('report')" id="nav-report">
     <span class="nav-icon">📋</span><span>Laporan</span>
+  </div>
+
+  <div class="nav-link" onclick="nav('peta')" id="nav-peta">
+    <span class="nav-icon">📍</span><span>Peta Sungai</span>
   </div>
 
   <div class="sb-sec">Proyek</div>
@@ -1061,6 +1067,596 @@
 
 <!-- App Script -->
 <script src="js/app.js"></script>
+
+
+<!-- ══════════════════════════════════════════════════════ PAGE: PETA INTERAKTIF -->
+<div class="page" id="page-peta">
+  <div class="page-title">
+    <span class="page-icon">📍</span>
+    <div>
+      <div class="page-ttl">Peta Sungai Interaktif</div>
+      <div class="page-sub">Visualisasi titik sampling, sumber limbah, dan sebaran konsentrasi</div>
+    </div>
+    <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <button class="btn btn-outline btn-sm" onclick="mapSyncData()">🔄 Sinkronisasi Data</button>
+      <button class="btn btn-outline btn-sm" onclick="mapResetView()">🎯 Reset Tampilan</button>
+      <button class="btn btn-outline btn-sm" onclick="mapToggleLayer('sampling')" id="btn-layer-sampling">👁 Titik Sampling</button>
+      <button class="btn btn-outline btn-sm" onclick="mapToggleLayer('limbah')" id="btn-layer-limbah">👁 Sumber Limbah</button>
+      <button class="btn btn-outline btn-sm" onclick="mapToggleLayer('modeling')" id="btn-layer-modeling">👁 Hasil Modeling</button>
+    </div>
+  </div>
+
+  <!-- Map Toolbar -->
+  <div class="card mb18" style="padding:12px 16px">
+    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+      <div style="flex:1;min-width:180px">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--mute);margin-bottom:4px;text-transform:uppercase;letter-spacing:.8px">Nama Sungai</div>
+        <input class="finput" id="map-river-name" placeholder="cth: Sungai Citarum" style="width:100%;box-sizing:border-box">
+      </div>
+      <div style="flex:1;min-width:120px">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--mute);margin-bottom:4px;text-transform:uppercase;letter-spacing:.8px">Pencarian Lokasi</div>
+        <div style="display:flex;gap:6px">
+          <input class="finput" id="map-search-input" placeholder="Cari kota / koordinat…" style="flex:1;min-width:0">
+          <button class="btn btn-sm" onclick="mapSearchLocation()" style="white-space:nowrap">🔍 Cari</button>
+        </div>
+      </div>
+      <div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--mute);margin-bottom:4px;text-transform:uppercase;letter-spacing:.8px">Tambah Titik</div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-sm" onclick="mapStartAdd('sampling')" style="background:rgba(0,229,200,0.15);border-color:rgba(0,229,200,.4)">＋ Sampling</button>
+          <button class="btn btn-sm" onclick="mapStartAdd('limbah')" style="background:rgba(255,68,68,0.12);border-color:rgba(255,68,68,.4)">＋ Limbah</button>
+        </div>
+      </div>
+    </div>
+    <div id="map-add-hint" style="display:none;margin-top:8px;padding:7px 10px;background:rgba(0,229,200,0.08);border:1px solid rgba(0,229,200,0.3);border-radius:var(--rs);font-family:var(--mono);font-size:10.5px;color:var(--cyan)">
+      🖱️ <strong>Klik pada peta</strong> untuk menambah titik. Tekan <kbd style="background:var(--bg2);padding:1px 4px;border-radius:3px;border:1px solid var(--brd)">Esc</kbd> untuk batal.
+    </div>
+  </div>
+
+  <!-- Leaflet Map -->
+  <div class="card mb18" style="padding:0;overflow:hidden;border-radius:var(--rs)">
+    <div id="riverload-map" style="height:500px;width:100%;background:var(--bg2)"></div>
+  </div>
+
+  <!-- Legend & Data Table -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px">
+    <!-- Legend -->
+    <div class="card" style="padding:14px">
+      <div style="font-family:var(--mono);font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px">🗺 Legenda</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:16px;height:16px;border-radius:50%;background:#00e5c8;border:2px solid #fff;box-shadow:0 0 4px #00e5c844;flex-shrink:0"></div>
+          <span style="font-family:var(--mono);font-size:11px;color:var(--txt2)">Titik Sampling / Pantauan</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:16px;height:16px;border-radius:50%;background:#ff4444;border:2px solid #fff;box-shadow:0 0 4px #ff444444;flex-shrink:0"></div>
+          <span style="font-family:var(--mono);font-size:11px;color:var(--txt2)">Sumber Air Limbah</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:16px;height:6px;border-radius:3px;background:linear-gradient(90deg,#00e800,#ffff00,#ff4400);flex-shrink:0"></div>
+          <span style="font-family:var(--mono);font-size:11px;color:var(--txt2)">Sebaran Konsentrasi (Modeling)</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:16px;height:4px;background:#3b82f6;border-radius:2px;flex-shrink:0"></div>
+          <span style="font-family:var(--mono);font-size:11px;color:var(--txt2)">Alur Sungai</span>
+        </div>
+      </div>
+      <div style="margin-top:14px;padding-top:10px;border-top:1px solid var(--brd2)">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--mute);margin-bottom:6px;text-transform:uppercase;letter-spacing:.8px">Status Kualitas Air</div>
+        <div style="display:flex;gap:8px">
+          <span style="padding:2px 8px;border-radius:10px;background:rgba(0,232,122,0.15);border:1px solid rgba(0,232,122,0.4);font-family:var(--mono);font-size:10px;color:#00e87a">OK</span>
+          <span style="padding:2px 8px;border-radius:10px;background:rgba(255,200,0,0.15);border:1px solid rgba(255,200,0,0.4);font-family:var(--mono);font-size:10px;color:#ffc800">WASPADA</span>
+          <span style="padding:2px 8px;border-radius:10px;background:rgba(255,68,68,0.15);border:1px solid rgba(255,68,68,0.4);font-family:var(--mono);font-size:10px;color:#ff4444">LEWAT BM</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="card" style="padding:14px">
+      <div style="font-family:var(--mono);font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px">📊 Ringkasan Titik</div>
+      <div id="map-stats" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="kpi" style="--kc:var(--cyan)">
+          <div class="kpi-lbl">Titik Sampling</div>
+          <div class="kpi-val" id="map-count-sampling">0</div>
+          <div class="kpi-unit">lokasi</div>
+        </div>
+        <div class="kpi" style="--kc:var(--red)">
+          <div class="kpi-lbl">Sumber Limbah</div>
+          <div class="kpi-val" id="map-count-limbah">0</div>
+          <div class="kpi-unit">sumber</div>
+        </div>
+        <div class="kpi" style="--kc:var(--green)">
+          <div class="kpi-lbl">Titik OK</div>
+          <div class="kpi-val" id="map-count-ok">—</div>
+          <div class="kpi-unit">lokasi</div>
+        </div>
+        <div class="kpi" style="--kc:var(--red)">
+          <div class="kpi-lbl">Lewat BM</div>
+          <div class="kpi-val" id="map-count-ng">—</div>
+          <div class="kpi-unit">lokasi</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Titik Data Table -->
+  <div class="card mb18">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div style="font-family:var(--mono);font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase;letter-spacing:.8px">📋 Data Titik Koordinat</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-outline btn-sm" onclick="mapExportCSV()">⬇ Ekspor CSV</button>
+        <button class="btn btn-outline btn-sm" onclick="mapClearAll()" style="color:var(--red);border-color:rgba(255,68,68,.3)">🗑 Hapus Semua</button>
+      </div>
+    </div>
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:11.5px">
+        <thead>
+          <tr style="border-bottom:1px solid var(--brd)">
+            <th style="text-align:left;padding:6px 8px;font-family:var(--mono);font-size:9px;color:var(--mute);text-transform:uppercase;letter-spacing:.7px;white-space:nowrap">Tipe</th>
+            <th style="text-align:left;padding:6px 8px;font-family:var(--mono);font-size:9px;color:var(--mute);text-transform:uppercase;letter-spacing:.7px">Nama</th>
+            <th style="text-align:right;padding:6px 8px;font-family:var(--mono);font-size:9px;color:var(--mute);text-transform:uppercase;letter-spacing:.7px">Lintang</th>
+            <th style="text-align:right;padding:6px 8px;font-family:var(--mono);font-size:9px;color:var(--mute);text-transform:uppercase;letter-spacing:.7px">Bujur</th>
+            <th style="text-align:left;padding:6px 8px;font-family:var(--mono);font-size:9px;color:var(--mute);text-transform:uppercase;letter-spacing:.7px">Keterangan</th>
+            <th style="padding:6px 8px;font-family:var(--mono);font-size:9px;color:var(--mute)"></th>
+          </tr>
+        </thead>
+        <tbody id="map-point-tbody">
+          <tr><td colspan="6" style="padding:20px;text-align:center;font-family:var(--mono);font-size:10px;color:var(--mute)">Belum ada titik koordinat. Tambah titik via tombol di atas atau klik peta.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════
+// RIVERLOAD MAP MODULE — Leaflet.js Integration
+// ══════════════════════════════════════════════════════
+
+(function(){
+
+// ─── State ───────────────────────────────────────────
+let _map = null;
+let _mapInitialized = false;
+let _addMode = null; // 'sampling' | 'limbah' | null
+let _mapPoints = []; // [{id, type, name, lat, lng, note, marker}]
+let _mapLayers = { sampling: true, limbah: true, modeling: true };
+let _modelingLayer = null;
+let _riverPolyline = null;
+let _layerGroups = {};
+
+// ─── Leaflet CDN load ────────────────────────────────
+function _loadLeaflet(cb) {
+  if (window.L) { cb(); return; }
+  const s = document.createElement('script');
+  s.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+  s.onload = cb;
+  document.head.appendChild(s);
+}
+
+// ─── Init Map ────────────────────────────────────────
+function _initMap() {
+  if (_mapInitialized && _map) return;
+  _loadLeaflet(() => {
+    if (_mapInitialized && _map) return;
+    _map = L.map('riverload-map', {
+      center: [-6.9, 107.6], // Indonesia default
+      zoom: 10,
+      zoomControl: true
+    });
+
+    // Base layer: OpenStreetMap
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      maxZoom: 19
+    }).addTo(_map);
+
+    // Layer groups
+    _layerGroups.sampling = L.layerGroup().addTo(_map);
+    _layerGroups.limbah   = L.layerGroup().addTo(_map);
+    _layerGroups.modeling = L.layerGroup().addTo(_map);
+    _layerGroups.river    = L.layerGroup().addTo(_map);
+
+    // Click handler for add mode
+    _map.on('click', e => {
+      if (!_addMode) return;
+      _openAddPointDialog(_addMode, e.latlng.lat, e.latlng.lng);
+    });
+
+    // ESC to cancel add mode
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && _addMode) _cancelAddMode();
+    });
+
+    _mapInitialized = true;
+    _renderAllMarkers();
+    _mapSyncModeling();
+    _map.invalidateSize();
+  });
+}
+
+// ─── Add Point Dialog ────────────────────────────────
+function _openAddPointDialog(type, lat, lng) {
+  const label = type === 'sampling' ? 'Titik Sampling' : 'Sumber Limbah';
+  const color = type === 'sampling' ? '#00e5c8' : '#ff4444';
+
+  // Create dialog
+  const dialog = document.createElement('div');
+  dialog.id = 'map-add-dialog';
+  dialog.style.cssText = `
+    position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+    background:var(--bg1,#12151c);border:1px solid var(--brd,#2a2f3a);
+    border-radius:10px;padding:20px;z-index:9999;min-width:300px;
+    box-shadow:0 8px 32px rgba(0,0,0,0.5);
+  `;
+
+  dialog.innerHTML = `
+    <div style="font-family:var(--mono);font-size:12px;font-weight:700;color:${color};margin-bottom:14px;text-transform:uppercase;letter-spacing:1px">＋ ${label}</div>
+    <div style="font-family:var(--mono);font-size:10px;color:var(--mute,#888);margin-bottom:10px">
+      📍 ${lat.toFixed(6)}, ${lng.toFixed(6)}
+    </div>
+    <div style="margin-bottom:10px">
+      <div style="font-family:var(--mono);font-size:9px;color:var(--mute,#888);margin-bottom:3px;text-transform:uppercase;letter-spacing:.7px">Nama Titik *</div>
+      <input id="mdlg-name" class="finput" style="width:100%;box-sizing:border-box" placeholder="${type==='sampling'?'cth: Hulu Sungai A':'cth: IPAL Industri X'}">
+    </div>
+    <div style="margin-bottom:14px">
+      <div style="font-family:var(--mono);font-size:9px;color:var(--mute,#888);margin-bottom:3px;text-transform:uppercase;letter-spacing:.7px">Keterangan</div>
+      <input id="mdlg-note" class="finput" style="width:100%;box-sizing:border-box" placeholder="Opsional…">
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-sm" onclick="_mapConfirmAdd('${type}',${lat},${lng})" style="background:${color}22;border-color:${color}66;color:${color}">✔ Simpan</button>
+      <button class="btn btn-outline btn-sm" onclick="document.getElementById('map-add-dialog').remove();_cancelAddMode()">✕ Batal</button>
+    </div>
+  `;
+
+  document.body.appendChild(dialog);
+  document.getElementById('mdlg-name').focus();
+}
+
+window._mapConfirmAdd = function(type, lat, lng) {
+  const name = (document.getElementById('mdlg-name').value || '').trim();
+  if (!name) { toast('⚠ Nama titik wajib diisi','err'); return; }
+  const note = (document.getElementById('mdlg-note').value || '').trim();
+  document.getElementById('map-add-dialog').remove();
+  _cancelAddMode();
+
+  const pt = {
+    id: Date.now(),
+    type, name, lat, lng, note,
+    marker: null
+  };
+  _mapPoints.push(pt);
+  _addMarker(pt);
+  _renderPointTable();
+  _updateMapStats();
+  toast(`✅ ${name} ditambahkan ke peta`);
+};
+
+// ─── Markers ─────────────────────────────────────────
+function _addMarker(pt) {
+  if (!_map || !window.L) return;
+  const isSampling = pt.type === 'sampling';
+  const color = isSampling ? '#00e5c8' : '#ff4444';
+  const icon = L.divIcon({
+    className: '',
+    html: `<div style="
+      width:14px;height:14px;border-radius:50%;
+      background:${color};border:2.5px solid #fff;
+      box-shadow:0 0 6px ${color}88;
+      cursor:pointer;
+    "></div>`,
+    iconSize: [14, 14],
+    iconAnchor: [7, 7]
+  });
+
+  const marker = L.marker([pt.lat, pt.lng], { icon, draggable: true });
+  
+  marker.bindPopup(_buildPopup(pt));
+  marker.on('dragend', e => {
+    const ll = e.target.getLatLng();
+    pt.lat = ll.lat;
+    pt.lng = ll.lng;
+    marker.setPopupContent(_buildPopup(pt));
+    _renderPointTable();
+  });
+  marker.on('contextmenu', () => _removePoint(pt.id));
+
+  const lg = _layerGroups[pt.type] || _layerGroups.sampling;
+  marker.addTo(lg);
+  pt.marker = marker;
+
+  if (!_mapLayers[pt.type]) lg.removeLayer(marker);
+}
+
+function _buildPopup(pt) {
+  const color = pt.type === 'sampling' ? '#00e5c8' : '#ff4444';
+  const label = pt.type === 'sampling' ? 'Titik Sampling' : 'Sumber Limbah';
+  return `
+    <div style="font-family:monospace;min-width:180px">
+      <div style="font-weight:700;color:${color};font-size:12px;margin-bottom:4px">${pt.name}</div>
+      <div style="color:#aaa;font-size:10px;margin-bottom:3px">${label}</div>
+      <div style="color:#888;font-size:10px">📍 ${pt.lat.toFixed(5)}, ${pt.lng.toFixed(5)}</div>
+      ${pt.note ? `<div style="color:#aaa;font-size:10px;margin-top:4px">📝 ${pt.note}</div>` : ''}
+      <div style="margin-top:8px;font-size:10px;color:#666">Klik kanan untuk hapus · Geser untuk pindah</div>
+    </div>
+  `;
+}
+
+function _renderAllMarkers() {
+  if (!_map) return;
+  Object.values(_layerGroups).forEach(lg => lg.clearLayers());
+  _mapPoints.forEach(pt => { pt.marker = null; _addMarker(pt); });
+}
+
+// ─── Remove Point ────────────────────────────────────
+function _removePoint(id) {
+  const idx = _mapPoints.findIndex(p => p.id === id);
+  if (idx < 0) return;
+  const pt = _mapPoints[idx];
+  if (pt.marker) {
+    const lg = _layerGroups[pt.type] || _layerGroups.sampling;
+    lg.removeLayer(pt.marker);
+  }
+  _mapPoints.splice(idx, 1);
+  _renderPointTable();
+  _updateMapStats();
+}
+
+// ─── Table Render ─────────────────────────────────────
+function _renderPointTable() {
+  const tbody = document.getElementById('map-point-tbody');
+  if (!tbody) return;
+  if (!_mapPoints.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="padding:20px;text-align:center;font-family:var(--mono);font-size:10px;color:var(--mute)">Belum ada titik koordinat.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = _mapPoints.map(pt => {
+    const color = pt.type === 'sampling' ? '#00e5c8' : '#ff4444';
+    const label = pt.type === 'sampling' ? 'Sampling' : 'Limbah';
+    return `<tr style="border-bottom:1px solid var(--brd2)">
+      <td style="padding:6px 8px">
+        <span style="padding:2px 7px;border-radius:8px;background:${color}22;border:1px solid ${color}55;font-family:var(--mono);font-size:9px;color:${color};white-space:nowrap">${label}</span>
+      </td>
+      <td style="padding:6px 8px;font-family:var(--mono);font-size:11px;color:var(--txt)">${pt.name}</td>
+      <td style="padding:6px 8px;font-family:var(--mono);font-size:10.5px;color:var(--mute);text-align:right">${pt.lat.toFixed(5)}</td>
+      <td style="padding:6px 8px;font-family:var(--mono);font-size:10.5px;color:var(--mute);text-align:right">${pt.lng.toFixed(5)}</td>
+      <td style="padding:6px 8px;font-family:var(--mono);font-size:10.5px;color:var(--mute)">${pt.note || '—'}</td>
+      <td style="padding:6px 8px;text-align:center">
+        <button onclick="_mapFlyTo(${pt.lat},${pt.lng})" style="background:none;border:none;cursor:pointer;font-size:13px" title="Tuju lokasi">🎯</button>
+        <button onclick="_mapRemoveById(${pt.id})" style="background:none;border:none;cursor:pointer;font-size:13px;color:var(--red)" title="Hapus">🗑</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+window._mapFlyTo = function(lat, lng) {
+  if (_map) _map.flyTo([lat, lng], 15);
+};
+window._mapRemoveById = function(id) {
+  _removePoint(id);
+};
+
+// ─── Stats ───────────────────────────────────────────
+function _updateMapStats() {
+  const nS = _mapPoints.filter(p => p.type === 'sampling').length;
+  const nL = _mapPoints.filter(p => p.type === 'limbah').length;
+  const el = id => document.getElementById(id);
+  if (el('map-count-sampling')) el('map-count-sampling').textContent = nS;
+  if (el('map-count-limbah'))   el('map-count-limbah').textContent   = nL;
+}
+
+// ─── Modeling Sync ───────────────────────────────────
+function _mapSyncModeling() {
+  if (!_map || !window.L) return;
+  _layerGroups.modeling && _layerGroups.modeling.clearLayers();
+
+  // Try to read modeling data from the app state
+  if (typeof mdlPoints !== 'undefined' && mdlPoints && mdlPoints.length > 1) {
+    // Pair sampling points with model output — need at least 2 sampling points
+    const samplingWithCoords = _mapPoints.filter(p => p.type === 'sampling');
+    if (samplingWithCoords.length >= 2) {
+      // Draw gradient polyline along sampling points
+      _drawModelingGradient(samplingWithCoords, mdlPoints);
+    }
+  }
+
+  // Draw river line through all sampling points sorted by some order
+  const sp = _mapPoints.filter(p => p.type === 'sampling');
+  if (sp.length >= 2 && _layerGroups.river) {
+    _layerGroups.river.clearLayers();
+    const coords = sp.map(p => [p.lat, p.lng]);
+    L.polyline(coords, {
+      color: '#3b82f6',
+      weight: 3,
+      opacity: 0.6,
+      dashArray: '6 4'
+    }).addTo(_layerGroups.river);
+  }
+}
+
+function _drawModelingGradient(samplingPoints, modelData) {
+  if (!_map || !window.L || samplingPoints.length < 2) return;
+  const lg = _layerGroups.modeling;
+  if (!lg) return;
+
+  // Find max concentration for normalizing
+  const vals = modelData.map(d => d.c || 0).filter(v => v >= 0);
+  const maxVal = Math.max(...vals, 0.001);
+  const bm = (typeof params !== 'undefined' && params.length) ? (params[0].cMax || 10) : 10;
+
+  // Draw circles at each model point (interpolated between sampling points)
+  modelData.forEach((d, i) => {
+    const t = i / (modelData.length - 1);
+    const idx = Math.min(Math.floor(t * (samplingPoints.length - 1)), samplingPoints.length - 2);
+    const frac = (t * (samplingPoints.length - 1)) - idx;
+    const p1 = samplingPoints[idx];
+    const p2 = samplingPoints[idx + 1] || p1;
+    const lat = p1.lat + (p2.lat - p1.lat) * frac;
+    const lng = p1.lng + (p2.lng - p1.lng) * frac;
+
+    const ratio = Math.min((d.c || 0) / bm, 1.5);
+    const r = Math.round(Math.min(ratio * 255, 255));
+    const g = Math.round(Math.max(255 - ratio * 255, 0));
+    const color = `rgb(${r},${g},0)`;
+
+    L.circleMarker([lat, lng], {
+      radius: 5,
+      fillColor: color,
+      color: '#fff',
+      weight: 1,
+      fillOpacity: 0.8,
+      opacity: 0.9
+    }).bindPopup(`
+      <div style="font-family:monospace;font-size:11px">
+        <b>Jarak: ${d.x !== undefined ? d.x.toFixed(2) : i} km</b><br>
+        Konsentrasi: <b style="color:${color}">${(d.c||0).toFixed(3)} mg/L</b><br>
+        Baku Mutu: ${bm} mg/L
+      </div>
+    `).addTo(lg);
+  });
+}
+
+// ─── Add Mode ────────────────────────────────────────
+window.mapStartAdd = function(type) {
+  _addMode = type;
+  const hint = document.getElementById('map-add-hint');
+  if (hint) hint.style.display = 'block';
+  if (_map) _map.getContainer().style.cursor = 'crosshair';
+};
+
+function _cancelAddMode() {
+  _addMode = null;
+  const hint = document.getElementById('map-add-hint');
+  if (hint) hint.style.display = 'none';
+  if (_map) _map.getContainer().style.cursor = '';
+}
+
+// ─── Layer Toggle ────────────────────────────────────
+window.mapToggleLayer = function(layerKey) {
+  _mapLayers[layerKey] = !_mapLayers[layerKey];
+  const btn = document.getElementById(`btn-layer-${layerKey}`);
+  const lg = _layerGroups[layerKey];
+  if (!lg || !_map) return;
+
+  if (_mapLayers[layerKey]) {
+    _map.addLayer(lg);
+    if (btn) btn.style.opacity = '1';
+  } else {
+    _map.removeLayer(lg);
+    if (btn) btn.style.opacity = '0.4';
+  }
+};
+
+// ─── Sync from BPM / UBM ─────────────────────────────
+window.mapSyncData = function() {
+  // Sync waste sources from UBM if they have names matching map points
+  if (typeof wasteSources !== 'undefined' && wasteSources.length) {
+    wasteSources.forEach(ws => {
+      const existing = _mapPoints.find(p => p.type === 'limbah' && p.name === (ws.name || ws.typeLabel));
+      if (!existing) {
+        // No auto-add without coordinates, just show toast
+      }
+    });
+  }
+  _mapSyncModeling();
+  _renderAllMarkers();
+  _updateMapStats();
+  toast('🔄 Data peta disinkronisasi');
+};
+
+// ─── Reset View ──────────────────────────────────────
+window.mapResetView = function() {
+  if (!_map) return;
+  if (_mapPoints.length) {
+    const coords = _mapPoints.map(p => [p.lat, p.lng]);
+    try { _map.fitBounds(coords, { padding: [40, 40] }); } catch(e) {}
+  } else {
+    _map.setView([-6.9, 107.6], 10);
+  }
+};
+
+// ─── Location Search ─────────────────────────────────
+window.mapSearchLocation = function() {
+  const q = (document.getElementById('map-search-input').value || '').trim();
+  if (!q) return;
+
+  // Try lat,lng format first
+  const m = q.match(/^(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)$/);
+  if (m) {
+    const lat = parseFloat(m[1]), lng = parseFloat(m[2]);
+    if (_map) _map.flyTo([lat, lng], 13);
+    return;
+  }
+
+  // Nominatim geocoding
+  fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1&countrycodes=id`)
+    .then(r => r.json())
+    .then(data => {
+      if (data && data[0]) {
+        const { lat, lon, display_name } = data[0];
+        if (_map) {
+          _map.flyTo([parseFloat(lat), parseFloat(lon)], 13);
+          L.popup().setLatLng([parseFloat(lat), parseFloat(lon)])
+            .setContent(`<div style="font-family:monospace;font-size:11px">📍 ${display_name.split(',').slice(0,3).join(', ')}</div>`)
+            .openOn(_map);
+        }
+      } else {
+        toast('⚠ Lokasi tidak ditemukan','err');
+      }
+    })
+    .catch(() => toast('⚠ Gagal mencari lokasi','err'));
+};
+
+// ─── Export CSV ──────────────────────────────────────
+window.mapExportCSV = function() {
+  if (!_mapPoints.length) { toast('⚠ Tidak ada data titik','err'); return; }
+  const header = 'Tipe,Nama,Lintang,Bujur,Keterangan
+';
+  const rows = _mapPoints.map(p =>
+    `"${p.type}","${p.name}","${p.lat}","${p.lng}","${p.note || ''}"`
+  ).join('
+');
+  const blob = new Blob([header + rows], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'riverload-titik-koordinat.csv';
+  a.click();
+  toast('✅ Data diekspor ke CSV');
+};
+
+// ─── Clear All ───────────────────────────────────────
+window.mapClearAll = function() {
+  if (!_mapPoints.length) return;
+  if (!confirm('Hapus semua titik di peta?')) return;
+  _mapPoints = [];
+  Object.values(_layerGroups).forEach(lg => lg && lg.clearLayers());
+  _renderPointTable();
+  _updateMapStats();
+  toast('🗑 Semua titik dihapus');
+};
+
+// ─── Nav Hook ────────────────────────────────────────
+// Patch the original nav function to init map
+const _origNav = window.nav;
+window.nav = function(p) {
+  _origNav(p);
+  if (p === 'peta') {
+    setTimeout(() => {
+      _initMap();
+      if (_map) _map.invalidateSize();
+    }, 50);
+  }
+};
+
+// ─── Public refresh ──────────────────────────────────
+window.mapRefreshModeling = function() {
+  if (_mapInitialized) _mapSyncModeling();
+};
+
+})(); // end IIFE
+</script>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 </body>
 </html>

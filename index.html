@@ -142,6 +142,26 @@
 </style>
 <!-- Leaflet.js -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+/* Fix Leaflet inside RiverLoad dark theme */
+#riverload-map { background: #e8f4f8 !important; }
+#riverload-map .leaflet-container { background: #e8f4f8; }
+.leaflet-popup-content-wrapper {
+  background: #1a1f2b;
+  color: #c8cdd8;
+  border: 1px solid #2a3040;
+  border-radius: 8px;
+}
+.leaflet-popup-tip { background: #1a1f2b; }
+.leaflet-control-zoom a {
+  background: #1a1f2b !important;
+  color: #00e5c8 !important;
+  border-color: #2a3040 !important;
+}
+.leaflet-control-zoom a:hover { background: #252d3d !important; }
+.leaflet-control-attribution { background: rgba(26,31,43,0.8) !important; color: #666 !important; font-size: 9px; }
+</style>
 </head>
 <body>
 
@@ -1115,7 +1135,7 @@
 
   <!-- Leaflet Map -->
   <div class="card mb18" style="padding:0;overflow:hidden;border-radius:var(--rs)">
-    <div id="riverload-map" style="height:500px;width:100%;background:var(--bg2)"></div>
+    <div id="riverload-map" style="height:520px;width:100%;min-height:520px;position:relative;z-index:1"></div>
   </div>
 
   <!-- Legend & Data Table -->
@@ -1225,19 +1245,15 @@ let _modelingLayer = null;
 let _riverPolyline = null;
 let _layerGroups = {};
 
-// ─── Leaflet CDN load ────────────────────────────────
-function _loadLeaflet(cb) {
-  if (window.L) { cb(); return; }
-  const s = document.createElement('script');
-  s.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-  s.onload = cb;
-  document.head.appendChild(s);
-}
-
 // ─── Init Map ────────────────────────────────────────
 function _initMap() {
   if (_mapInitialized && _map) return;
-  _loadLeaflet(() => {
+  if (!window.L) { 
+    console.error("Leaflet not loaded"); 
+    toast("⚠ Leaflet belum termuat, coba refresh halaman", "err");
+    return; 
+  }
+  (function() {
     if (_mapInitialized && _map) return;
     _map = L.map('riverload-map', {
       center: [-6.9, 107.6], // Indonesia default
@@ -1272,7 +1288,7 @@ function _initMap() {
     _renderAllMarkers();
     _mapSyncModeling();
     _map.invalidateSize();
-  });
+  })();
 }
 
 // ─── Add Point Dialog ────────────────────────────────
@@ -1641,10 +1657,15 @@ const _origNav = window.nav;
 window.nav = function(p) {
   _origNav(p);
   if (p === 'peta') {
-    setTimeout(() => {
-      _initMap();
-      if (_map) _map.invalidateSize();
-    }, 50);
+    // Wait for DOM paint before init so container has dimensions
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        _initMap();
+        if (_map) {
+          setTimeout(() => _map.invalidateSize(), 100);
+        }
+      });
+    });
   }
 };
 
@@ -1655,8 +1676,6 @@ window.mapRefreshModeling = function() {
 
 })(); // end IIFE
 </script>
-
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 </body>
 </html>

@@ -3861,3 +3861,243 @@ function mdlRender() {
 })();
 
 
+
+// ═══════════════════════════════════════════════════════════════
+// FITUR 1 — RIWAYAT PROYEK (localStorage multi-project)
+// FITUR 2 — LINK BERBAGI (URL share dengan data terkompresi)
+// ═══════════════════════════════════════════════════════════════
+
+const HISTORY_KEY  = 'riverload_history';   // array of {id, name, ts, data}
+const HISTORY_MAX  = 20;                    // max proyek tersimpan
+
+// ─── Helper: baca/tulis history ──────────────────────────────
+function historyLoad() {
+  try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); }
+  catch(e) { return []; }
+}
+function historySave(list) {
+  try { localStorage.setItem(HISTORY_KEY, JSON.stringify(list)); }
+  catch(e) { toast('⚠ localStorage penuh — hapus beberapa proyek lama','err'); }
+}
+
+// ─── Simpan proyek ke riwayat ─────────────────────────────────
+function historySaveProject(nameOverride) {
+  const state = getState();
+  const name  = nameOverride
+    || (document.getElementById('r-name')?.value.trim())
+    || 'Proyek Tanpa Nama';
+
+  const list = historyLoad();
+  const id   = 'rl_' + Date.now();
+  const ts   = Date.now();
+
+  list.unshift({ id, name, ts, data: state });
+  // Trim ke max
+  while (list.length > HISTORY_MAX) list.pop();
+  historySave(list);
+  return id;
+}
+
+// ─── Hapus satu entri ────────────────────────────────────────
+function historyDelete(id) {
+  const list = historyLoad().filter(p => p.id !== id);
+  historySave(list);
+}
+
+// ─── Render panel riwayat ────────────────────────────────────
+function historyRender() {
+  const panel = document.getElementById('history-list');
+  if (!panel) return;
+
+  const list = historyLoad();
+  if (!list.length) {
+    panel.innerHTML = '<div style="padding:20px;text-align:center;font-family:var(--mono);font-size:10px;color:var(--mute)">Belum ada proyek tersimpan</div>';
+    return;
+  }
+
+  panel.innerHTML = list.map(p => {
+    const d  = new Date(p.ts);
+    const ts = d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'})
+             + ' ' + d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
+    const riverName = p.data?.bpm?.name || p.name;
+    const cls       = p.data?.bpm?.cls  || '—';
+    const nParam    = (p.data?.bpm?.params || []).length;
+    return `
+      <div class="history-item" id="hi-${p.id}">
+        <div class="hi-meta">
+          <div class="hi-name">${_esc(riverName)}</div>
+          <div class="hi-detail">Kelas ${cls} · ${nParam} parameter · ${ts}</div>
+        </div>
+        <div class="hi-actions">
+          <button class="btn btn-sm" onclick="historyOpen('${p.id}')" title="Buka proyek">📂 Buka</button>
+          <button class="btn btn-outline btn-sm" onclick="historyShareFromHistory('${p.id}')" title="Buat link berbagi">🔗 Bagikan</button>
+          <button class="btn btn-outline btn-sm" onclick="historyDeleteAndRefresh('${p.id}')" style="color:var(--red);border-color:rgba(255,68,68,.3)" title="Hapus">🗑</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function historyOpen(id) {
+  const list = historyLoad();
+  const entry = list.find(p => p.id === id);
+  if (!entry) { toast('⚠ Proyek tidak ditemukan','err'); return; }
+  restoreState(entry.data);
+  historyClosePanel();
+  nav('bpm');
+  toast(`✅ Proyek "${entry.name}" dibuka`);
+}
+
+function historyDeleteAndRefresh(id) {
+  if (!confirm('Hapus proyek ini dari riwayat?')) return;
+  historyDelete(id);
+  historyRender();
+  toast('🗑 Proyek dihapus dari riwayat');
+}
+
+function historyShareFromHistory(id) {
+  const list = historyLoad();
+  const entry = list.find(p => p.id === id);
+  if (!entry) return;
+  shareGenerateLink(entry.data, entry.name);
+}
+
+// ─── Open / close panel ──────────────────────────────────────
+function historyOpenPanel() {
+  historyRender();
+  const panel = document.getElementById('history-panel');
+  const overlay = document.getElementById('history-overlay');
+  if (panel) panel.classList.add('open');
+  if (overlay) overlay.style.display = 'block';
+}
+function historyClosePanel() {
+  const panel = document.getElementById('history-panel');
+  const overlay = document.getElementById('history-overlay');
+  if (panel) panel.classList.remove('open');
+  if (overlay) overlay.style.display = 'none';
+}
+
+// ─── Save ke riwayat + file (override saveProject) ──────────
+const _origSaveProject = window.saveProject;
+window.saveProject = function() {
+  const name = document.getElementById('r-name')?.value.trim() || 'Proyek Tanpa Nama';
+  historySaveProject(name);
+  _origSaveProject();
+  toast('✅ Disimpan ke file dan riwayat browser');
+};
+
+// Tombol "Simpan ke Riwayat" (tanpa download file)
+window.historySaveOnly = function() {
+  const name = document.getElementById('r-name')?.value.trim() || 'Proyek Tanpa Nama';
+  historySaveProject(name);
+  toast(`✅ "${name}" disimpan ke riwayat browser`);
+  historyRender();
+};
+
+// ─── Helper escape ───────────────────────────────────────────
+function _esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// FITUR 2 — SHARE LINK (URL dengan data Base64+LZ compressed)
+// ═══════════════════════════════════════════════════════════════
+
+// Mini LZ-string-like encoder menggunakan built-in btoa / URI encoding
+// Untuk data besar: compress dengan JSON → btoa (base64) lalu embed ke URL hash
+
+function shareEncode(stateObj) {
+  const json = JSON.stringify(stateObj);
+  // Use TextEncoder + btoa via Uint8Array
+  const bytes = new TextEncoder().encode(json);
+  let binary  = '';
+  bytes.forEach(b => { binary += String.fromCharCode(b); });
+  return btoa(binary);
+}
+
+function shareDecode(b64) {
+  const binary = atob(b64);
+  const bytes  = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return JSON.parse(new TextDecoder().decode(bytes));
+}
+
+function shareGenerateLink(stateData, projectName) {
+  // Encode state ke base64
+  const encoded = shareEncode(stateData || getState());
+  const url     = location.href.split('#')[0].split('?')[0] + '#share=' + encoded;
+
+  // Check URL length (browsers support ~2000 chars safely in most cases,
+  // but with complex projects it can be larger — we warn if >50KB)
+  const kb = Math.round(url.length / 1024 * 10) / 10;
+
+  const modal = document.getElementById('share-modal');
+  const urlEl = document.getElementById('share-url-input');
+  const infoEl = document.getElementById('share-size-info');
+  const nameEl = document.getElementById('share-project-name');
+
+  if (nameEl) nameEl.textContent = projectName || document.getElementById('r-name')?.value || 'Proyek';
+  if (urlEl)  urlEl.value = url;
+  if (infoEl) {
+    infoEl.textContent = `Ukuran link: ${kb} KB`;
+    infoEl.style.color = kb > 100 ? 'var(--red)' : kb > 30 ? '#ffc800' : 'var(--green)';
+    if (kb > 100) {
+      infoEl.textContent += ' ⚠ Link sangat panjang — simpan ke file lebih disarankan untuk proyek besar';
+    }
+  }
+  if (modal) modal.style.display = 'flex';
+}
+
+window.shareCurrentProject = function() {
+  shareGenerateLink(getState());
+};
+
+window.shareModalClose = function() {
+  const modal = document.getElementById('share-modal');
+  if (modal) modal.style.display = 'none';
+};
+
+window.shareCopyLink = function() {
+  const urlEl = document.getElementById('share-url-input');
+  if (!urlEl) return;
+  navigator.clipboard.writeText(urlEl.value).then(() => {
+    toast('✅ Link berhasil disalin ke clipboard');
+    const btn = document.getElementById('share-copy-btn');
+    if (btn) { btn.textContent = '✔ Tersalin!'; setTimeout(()=>{ btn.textContent='📋 Salin Link'; },2500); }
+  }).catch(() => {
+    urlEl.select(); document.execCommand('copy');
+    toast('✅ Link disalin');
+  });
+};
+
+// ─── Auto-load dari URL hash saat halaman dibuka ─────────────
+function shareCheckURL() {
+  const hash = location.hash;
+  if (!hash.startsWith('#share=')) return;
+  const encoded = hash.slice(7);
+  if (!encoded) return;
+  try {
+    const state = shareDecode(encoded);
+    // Clear hash dari URL tanpa reload
+    history.replaceState(null, '', location.pathname + location.search);
+    // Delay agar app sudah selesai init
+    setTimeout(() => {
+      restoreState(state);
+      const name = state?.bpm?.name || 'Proyek Bersama';
+      toast(`🔗 Proyek "${name}" dimuat dari link berbagi`);
+      // Otomatis simpan ke riwayat
+      historySaveProject(name + ' (dari link)');
+    }, 500);
+  } catch(e) {
+    console.error('Share URL parse error:', e);
+    toast('⚠ Link berbagi tidak valid atau rusak','err');
+    history.replaceState(null, '', location.pathname + location.search);
+  }
+}
+
+// Jalankan saat DOM ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', shareCheckURL);
+} else {
+  setTimeout(shareCheckURL, 200);
+}

@@ -14,15 +14,158 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,600;1,300&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,600;0,700;1,300&display=swap" rel="stylesheet">
 
+<!-- Favicon -->
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+
 <!-- App Stylesheet -->
 <link rel="stylesheet" href="css/style.css">
+
+<style>
+/* ── LOADING SCREEN ──────────────────────────────────── */
+#app-loader {
+  position: fixed; inset: 0; z-index: 99999;
+  background: #040d12;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 0;
+  transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+#app-loader.hide {
+  opacity: 0; visibility: hidden; pointer-events: none;
+}
+
+.loader-logo-wrap {
+  position: relative;
+  width: 110px; height: 110px;
+  margin-bottom: 28px;
+  animation: logoFloat 3s ease-in-out infinite;
+}
+@keyframes logoFloat {
+  0%,100% { transform: translateY(0px); }
+  50%      { transform: translateY(-8px); }
+}
+
+/* Rotating ring */
+.loader-ring {
+  position: absolute; inset: -14px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  border-top-color: #00e5c8;
+  border-right-color: rgba(0,229,200,0.3);
+  animation: spin 1.4s linear infinite;
+}
+.loader-ring-2 {
+  position: absolute; inset: -22px;
+  border-radius: 50%;
+  border: 1px solid transparent;
+  border-bottom-color: rgba(0,229,200,0.2);
+  border-left-color: rgba(0,229,200,0.1);
+  animation: spin 2.2s linear infinite reverse;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.loader-logo-img {
+  width: 110px; height: 110px;
+  animation: logoPulse 2s ease-in-out infinite;
+}
+@keyframes logoPulse {
+  0%,100% { filter: drop-shadow(0 0 8px rgba(0,229,200,0.4)); }
+  50%      { filter: drop-shadow(0 0 22px rgba(0,229,200,0.8)); }
+}
+
+.loader-wordmark {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 42px; letter-spacing: 6px;
+  color: #00e5c8;
+  line-height: 1;
+  text-shadow: 0 0 30px rgba(0,229,200,0.5);
+  animation: wordmarkIn 0.6s ease both;
+  animation-delay: 0.2s;
+}
+@keyframes wordmarkIn {
+  from { opacity:0; letter-spacing: 20px; }
+  to   { opacity:1; letter-spacing: 6px; }
+}
+
+.loader-sub {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 3px;
+  color: rgba(0,229,200,0.45);
+  text-transform: uppercase;
+  margin-top: 6px;
+  animation: fadeUp 0.6s ease both;
+  animation-delay: 0.5s;
+}
+@keyframes fadeUp {
+  from { opacity:0; transform: translateY(8px); }
+  to   { opacity:1; transform: translateY(0); }
+}
+
+/* Wave bar loader */
+.loader-waves {
+  display: flex; align-items: flex-end; gap: 5px;
+  height: 28px; margin-top: 32px;
+}
+.loader-waves span {
+  width: 4px; border-radius: 2px;
+  background: #00e5c8;
+  animation: waveBar 1.1s ease-in-out infinite;
+}
+.loader-waves span:nth-child(1) { animation-delay: 0s;    height: 10px; }
+.loader-waves span:nth-child(2) { animation-delay: 0.12s; height: 18px; }
+.loader-waves span:nth-child(3) { animation-delay: 0.24s; height: 26px; }
+.loader-waves span:nth-child(4) { animation-delay: 0.36s; height: 18px; }
+.loader-waves span:nth-child(5) { animation-delay: 0.48s; height: 12px; }
+.loader-waves span:nth-child(6) { animation-delay: 0.36s; height: 20px; }
+.loader-waves span:nth-child(7) { animation-delay: 0.24s; height: 14px; }
+@keyframes waveBar {
+  0%,100% { transform: scaleY(0.4); opacity: 0.4; }
+  50%      { transform: scaleY(1);   opacity: 1; }
+}
+
+.loader-status {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: rgba(0,229,200,0.35);
+  letter-spacing: 1.5px; margin-top: 16px;
+  min-height: 16px;
+}
+
+/* scan line overlay on loader */
+#app-loader::before {
+  content: '';
+  position: absolute; inset: 0; pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg, rgba(0,229,200,0.015) 0px, rgba(0,229,200,0.015) 1px,
+    transparent 1px, transparent 4px
+  );
+}
+</style>
 </head>
 <body>
+
+<!-- ═══ LOADING SCREEN ══════════════════════════════════ -->
+<div id="app-loader">
+  <div class="loader-logo-wrap">
+    <div class="loader-ring"></div>
+    <div class="loader-ring-2"></div>
+    <img class="loader-logo-img" src="assets/logo.svg" alt="RiverLoad Logo">
+  </div>
+  <div class="loader-wordmark">RIVERLOAD</div>
+  <div class="loader-sub">Beban Pencemaran Sungai &nbsp;·&nbsp; PP 22/2021</div>
+  <div class="loader-waves">
+    <span></span><span></span><span></span><span></span>
+    <span></span><span></span><span></span>
+  </div>
+  <div class="loader-status" id="loader-status">Memuat database...</div>
+</div>
 
 <!-- ═══ SIDEBAR ════════════════════════════════════════ -->
 <aside class="sidebar">
   <div class="sb-brand">
-    <div class="sb-logo">RIVER<br>LOAD</div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+      <img src="assets/logo.svg" alt="RiverLoad" style="width:38px;height:38px;flex-shrink:0;filter:drop-shadow(0 0 6px rgba(0,229,200,0.4))">
+      <div class="sb-logo" style="font-size:26px;line-height:1">RIVER<br>LOAD</div>
+    </div>
     <div class="sb-tagline">Beban Pencemaran Sungai</div>
     <div class="sb-ref">PP 22/2021 · LAMP. VI</div>
   </div>
@@ -921,3 +1064,42 @@
 
 </body>
 </html>
+
+<script>
+/* ── Loading Screen Controller ───────────────────────── */
+(function() {
+  var loader = document.getElementById('app-loader');
+  var status = document.getElementById('loader-status');
+  var msgs = [
+    'Memuat database baku mutu...',
+    'Inisialisasi parameter PP 22/2021...',
+    'Menyiapkan modul kalkulasi...',
+    'Siap!'
+  ];
+  var i = 0;
+  var cycle = setInterval(function() {
+    if (i < msgs.length - 1) {
+      i++;
+      if (status) status.textContent = msgs[i];
+    } else {
+      clearInterval(cycle);
+    }
+  }, 520);
+
+  function dismissLoader() {
+    clearInterval(cycle);
+    if (loader) {
+      loader.classList.add('hide');
+      setTimeout(function() { loader.style.display = 'none'; }, 550);
+    }
+  }
+
+  if (document.readyState === 'complete') {
+    setTimeout(dismissLoader, 2200);
+  } else {
+    window.addEventListener('load', function() {
+      setTimeout(dismissLoader, 1800);
+    });
+  }
+})();
+</script>

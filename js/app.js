@@ -4101,3 +4101,422 @@ if (document.readyState === 'loading') {
 } else {
   setTimeout(shareCheckURL, 200);
 }
+
+// ═══════════════════════════════════════════════════════════════
+// FITUR: IMPORT EXCEL HASIL UJI + AI PARSER
+// ═══════════════════════════════════════════════════════════════
+
+(function() {
+
+// ─── State ───────────────────────────────────────────────────
+let _xlsxParsed   = null;   // raw sheet data dari SheetJS
+let _aiResult     = null;   // hasil parsing AI
+let _importSeason = 'dry';  // musim yang sedang di-import
+
+// ─── Buka panel ──────────────────────────────────────────────
+window.xlsImportOpen = function() {
+  const panel = document.getElementById('xls-import-panel');
+  const overlay = document.getElementById('xls-import-overlay');
+  if (panel) panel.classList.add('open');
+  if (overlay) overlay.style.display = 'block';
+  _xlsxParsed = null;
+  _aiResult   = null;
+  _resetImportUI();
+};
+
+window.xlsImportClose = function() {
+  const panel = document.getElementById('xls-import-panel');
+  const overlay = document.getElementById('xls-import-overlay');
+  if (panel) panel.classList.remove('open');
+  if (overlay) overlay.style.display = 'none';
+};
+
+function _resetImportUI() {
+  const ids = ['xls-step2','xls-step3','xls-ai-log','xls-preview-section'];
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+  const step1 = document.getElementById('xls-step1');
+  if (step1) step1.style.display = 'block';
+  const fileInput = document.getElementById('xls-file-input');
+  if (fileInput) fileInput.value = '';
+  _setProgress(0, '');
+}
+
+// ─── Step 1: Baca file Excel ─────────────────────────────────
+window.xlsHandleFile = function(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (!['xlsx','xls','csv'].includes(ext)) {
+    toast('⚠ Format tidak didukung. Gunakan .xlsx, .xls, atau .csv', 'err');
+    return;
+  }
+
+  _showLog(`📂 Membaca file: ${file.name}…`);
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      let sheetText = '';
+
+      if (ext === 'csv') {
+        sheetText = e.target.result;
+        _xlsxParsed = sheetText;
+      } else {
+        // Use SheetJS (already bundled)
+        const data = new Uint8Array(e.target.result);
+        const wb   = XLSX.read(data, { type: 'array' });
+        const ws   = wb.Sheets[wb.SheetNames[0]];
+        // Convert to CSV-like text for AI
+        sheetText = XLSX.utils.sheet_to_csv(ws, { defval: '' });
+        _xlsxParsed = sheetText;
+      }
+
+      _showLog(`✅ File berhasil dibaca (${Math.round(file.size/1024)} KB, ${sheetText.split('\n').length} baris)`);
+
+      // Show preview
+      _showRawPreview(sheetText);
+
+      // Show step 2
+      document.getElementById('xls-step1').style.display = 'none';
+      document.getElementById('xls-step2').style.display = 'block';
+
+    } catch(err) {
+      _showLog('❌ Gagal membaca file: ' + err.message, 'err');
+      console.error(err);
+    }
+  };
+
+  if (ext === 'csv') {
+    reader.readAsText(file);
+  } else {
+    reader.readAsArrayBuffer(file);
+  }
+};
+
+// ─── Preview raw data ─────────────────────────────────────────
+function _showRawPreview(csv) {
+  const el = document.getElementById('xls-raw-preview');
+  if (!el) return;
+  const lines = csv.split('\n').slice(0, 12);
+  el.textContent = lines.join('\n') + (csv.split('\n').length > 12 ? '\n…' : '');
+}
+
+// ─── Step 2: Kirim ke AI ──────────────────────────────────────
+window.xlsRunAI = function() {
+  if (!_xlsxParsed) { toast('⚠ Belum ada file', 'err'); return; }
+
+  _importSeason = document.getElementById('xls-season-select').value || 'both';
+
+  document.getElementById('xls-step2').style.display = 'none';
+  document.getElementById('xls-ai-log').style.display = 'block';
+
+  _setProgress(10, 'Mengirim data ke AI…');
+  _showLog('🤖 Menghubungi Claude AI untuk menganalisis data…');
+
+  // Build the parameter list for AI context
+  const paramNames = WQDB.map(r => r.name).join(', ');
+
+  const prompt = `Kamu adalah asisten analisis kualitas air sungai yang ahli dalam peraturan PP 22/2021 Indonesia.
+
+Berikut adalah data hasil uji laboratorium kualitas air sungai dalam format CSV/Excel:
+
+\`\`\`
+${_xlsxParsed.slice(0, 8000)}
+\`\`\`
+
+Tugas kamu: parse data ini dan ekstrak informasi berikut dalam format JSON.
+
+Parameter yang dikenal di sistem (gunakan nama PERSIS dari daftar ini jika cocok):
+${paramNames}
+
+Format JSON yang WAJIB dikembalikan (hanya JSON, tidak ada teks lain):
+{
+  "sungai": "nama sungai/badan air jika ada di data, atau null",
+  "kelas": "kelas sungai romawi I/II/III/IV jika disebutkan, atau null",
+  "debit_kemarau": angka_debit_m3_per_detik_atau_null,
+  "debit_hujan": angka_debit_m3_per_detik_atau_null,
+  "musim_data": "dry" atau "wet" atau "both" (deteksi dari konteks data),
+  "parameter": [
+    {
+      "nama_asli": "nama parameter persis di file Excel",
+      "nama_sistem": "nama parameter dari daftar sistem yang paling cocok, atau null jika tidak ada",
+      "no_wqdb": nomor_parameter_di_WQDB_1_sampai_49_atau_null,
+      "satuan": "satuan di file",
+      "nilai_kemarau": angka_atau_null,
+      "nilai_hujan": angka_atau_null,
+      "nilai_tunggal": angka_atau_null (jika hanya satu nilai tanpa info musim)
+    }
+  ],
+  "catatan": "informasi penting lain dari file ini, atau null"
+}
+
+Aturan penting:
+- Jika data hanya satu musim dan tidak jelas musimnya, isi nilai_tunggal dan set musim_data sesuai pilihan user (${_importSeason})
+- Konversi satuan jika perlu (mg/L adalah standar, kecuali parameter khusus)
+- Jika ada beberapa titik sampling, ambil nilai rata-rata atau nilai yang paling representatif
+- Abaikan parameter yang tidak relevan dengan kualitas air (tanggal, nomor sampel, dll)
+- no_wqdb: 1=Temperatur, 2=TDS, 3=TSS, 4=pH, 5=BOD, 6=COD, 7=DO, 8=Total Fosfat, 9=NO3-N, 10=NH3-N, 11=Arsen, 12=Kobalt, 13=Barium, 14=Boron, 15=Selenium, 16=Kadmium, 17=Khrom(VI), 18=Tembaga, 19=Besi, 20=Timbal, 21=Mangan, 22=Air Raksa, 23=Seng, 24=Klorida, 25=Sianida, 26=Fluorida, 27=Nitrit, 28=Sulfat, 29=Klorin Bebas, 30=Belerang sebagai H2S, 31=Minyak dan Lemak, 32=Deterjen MBAS, 33=Senyawa Fenol, 34=BHC, 35=Aldrin/Dieldrin, 36=Chlordane, 37=DDT, 38=Heptachlor, 39=Lindane, 40=Methoxychlor, 41=Endrin, 42=Toxaphen, 43=Endosulfan, 44=Total Coliform, 45=Fecal Coliform, 46=Radioaktivitas Alpha, 47=Radioaktivitas Beta, 48=Kekeruhan, 49=Warna`;
+
+  _callClaudeAPI(prompt)
+    .then(aiText => {
+      _setProgress(80, 'Memproses hasil AI…');
+      _showLog('✅ Respons AI diterima. Memproses…');
+      _parseAIResponse(aiText);
+    })
+    .catch(err => {
+      _setProgress(0, '');
+      _showLog('❌ Error: ' + err.message, 'err');
+      _showLog('💡 Pastikan koneksi internet aktif dan coba lagi.', 'info');
+      document.getElementById('xls-step2').style.display = 'block';
+      document.getElementById('xls-ai-log').style.display = 'none';
+    });
+};
+
+// ─── Call Claude API ──────────────────────────────────────────
+async function _callClaudeAPI(prompt) {
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 2000,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error?.message || `HTTP ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.content.map(c => c.text || '').join('');
+}
+
+// ─── Parse AI response ────────────────────────────────────────
+function _parseAIResponse(text) {
+  // Extract JSON from response
+  let json = null;
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (jsonMatch) {
+    try {
+      json = JSON.parse(jsonMatch[0]);
+    } catch(e) {
+      _showLog('⚠ Format JSON tidak valid dari AI. Mencoba perbaikan…', 'warn');
+      // Try to fix common issues
+      try {
+        const fixed = jsonMatch[0]
+          .replace(/,\s*}/g, '}')
+          .replace(/,\s*]/g, ']')
+          .replace(/:\s*undefined/g, ': null');
+        json = JSON.parse(fixed);
+      } catch(e2) {
+        _showLog('❌ Gagal parse JSON: ' + e2.message, 'err');
+        document.getElementById('xls-step2').style.display = 'block';
+        document.getElementById('xls-ai-log').style.display = 'none';
+        return;
+      }
+    }
+  } else {
+    _showLog('❌ AI tidak mengembalikan data JSON yang valid.', 'err');
+    _showLog('Respons AI: ' + text.slice(0, 300), 'info');
+    document.getElementById('xls-step2').style.display = 'block';
+    document.getElementById('xls-ai-log').style.display = 'none';
+    return;
+  }
+
+  _aiResult = json;
+  _setProgress(100, 'Selesai');
+  _showLog(`✅ AI berhasil mengidentifikasi ${(json.parameter||[]).length} parameter`);
+  if (json.sungai)  _showLog(`🏞 Nama sungai: ${json.sungai}`);
+  if (json.kelas)   _showLog(`📊 Kelas: ${json.kelas}`);
+  if (json.catatan) _showLog(`📝 Catatan: ${json.catatan}`);
+
+  _buildPreview(json);
+  document.getElementById('xls-ai-log').style.display = 'none';
+  document.getElementById('xls-preview-section').style.display = 'block';
+}
+
+// ─── Build preview table ──────────────────────────────────────
+function _buildPreview(data) {
+  const tbody = document.getElementById('xls-preview-tbody');
+  if (!tbody) return;
+
+  const musim = _importSeason;
+
+  const rows = (data.parameter || []).map(p => {
+    // Determine value to use
+    let valDry = p.nilai_kemarau;
+    let valWet  = p.nilai_hujan;
+    if (p.nilai_tunggal !== null && p.nilai_tunggal !== undefined) {
+      if (musim === 'dry' || musim === 'both') valDry = p.nilai_tunggal;
+      if (musim === 'wet' || musim === 'both') valWet  = p.nilai_tunggal;
+    }
+
+    const inSystem = p.no_wqdb !== null && p.no_wqdb !== undefined;
+    const alreadyAdded = inSystem && params.find(x => x.no === p.no_wqdb);
+
+    const rowColor = inSystem
+      ? (alreadyAdded ? 'rgba(255,200,0,0.06)' : 'rgba(0,229,200,0.04)')
+      : 'rgba(255,68,68,0.04)';
+
+    const statusBadge = !inSystem
+      ? '<span style="font-size:9px;color:var(--red)">Tidak dikenal</span>'
+      : alreadyAdded
+      ? '<span style="font-size:9px;color:#ffc800">Sudah ada</span>'
+      : '<span style="font-size:9px;color:var(--green)">Siap import</span>';
+
+    return `<tr style="border-bottom:1px solid var(--brd2);background:${rowColor}">
+      <td style="padding:7px 8px">
+        <input type="checkbox" class="xls-param-check"
+          data-no="${p.no_wqdb || ''}"
+          data-dry="${valDry !== null && valDry !== undefined ? valDry : ''}"
+          data-wet="${valWet !== null && valWet !== undefined ? valWet : ''}"
+          ${!inSystem ? 'disabled' : ''}
+          ${inSystem && !alreadyAdded ? 'checked' : ''}
+          style="width:14px;height:14px;cursor:pointer">
+      </td>
+      <td style="padding:7px 8px;font-family:var(--mono);font-size:11px;color:var(--txt)">${p.nama_asli}</td>
+      <td style="padding:7px 8px;font-family:var(--mono);font-size:10px;color:var(--cyan)">${p.nama_sistem || '—'}</td>
+      <td style="padding:7px 8px;font-family:var(--mono);font-size:11px;color:var(--txt);text-align:right">
+        ${valDry !== null && valDry !== undefined ? `<strong>${valDry}</strong>` : '<span style="color:var(--mute)">—</span>'}
+      </td>
+      <td style="padding:7px 8px;font-family:var(--mono);font-size:11px;color:var(--txt);text-align:right">
+        ${valWet !== null && valWet !== undefined ? `<strong>${valWet}</strong>` : '<span style="color:var(--mute)">—</span>'}
+      </td>
+      <td style="padding:7px 8px;font-family:var(--mono);font-size:10px;color:var(--mute)">${p.satuan || '—'}</td>
+      <td style="padding:7px 8px">${statusBadge}</td>
+    </tr>`;
+  }).join('');
+
+  tbody.innerHTML = rows || '<tr><td colspan="7" style="padding:16px;text-align:center;color:var(--mute);font-family:var(--mono);font-size:10px">Tidak ada parameter terdeteksi</td></tr>';
+
+  // Fill meta preview
+  const metaEl = document.getElementById('xls-meta-preview');
+  if (metaEl) {
+    const items = [];
+    if (data.sungai) items.push(`<span>🏞 <strong>Sungai:</strong> ${data.sungai}</span>`);
+    if (data.kelas)  items.push(`<span>📊 <strong>Kelas:</strong> ${data.kelas}</span>`);
+    if (data.debit_kemarau) items.push(`<span>💧 <strong>Debit Kemarau:</strong> ${data.debit_kemarau} m³/s</span>`);
+    if (data.debit_hujan)   items.push(`<span>💧 <strong>Debit Hujan:</strong> ${data.debit_hujan} m³/s</span>`);
+    if (data.catatan) items.push(`<span style="color:var(--mute)">📝 ${data.catatan}</span>`);
+    metaEl.innerHTML = items.length
+      ? items.join(' &nbsp;·&nbsp; ')
+      : '<span style="color:var(--mute)">Tidak ada info tambahan</span>';
+  }
+
+  // Update counter
+  _updateCheckCount();
+}
+
+function _updateCheckCount() {
+  const total   = document.querySelectorAll('.xls-param-check:not(:disabled)').length;
+  const checked = document.querySelectorAll('.xls-param-check:checked').length;
+  const el = document.getElementById('xls-check-count');
+  if (el) el.textContent = `${checked} dari ${total} parameter dipilih`;
+}
+
+window.xlsToggleAll = function(checked) {
+  document.querySelectorAll('.xls-param-check:not(:disabled)').forEach(cb => { cb.checked = checked; });
+  _updateCheckCount();
+};
+
+// ─── Step 3: Apply ke app ─────────────────────────────────────
+window.xlsApplyImport = function() {
+  if (!_aiResult) return;
+
+  const data = _aiResult;
+  let applied = 0;
+  let skipped = 0;
+
+  // 1. Isi info sungai
+  if (data.sungai) {
+    const el = document.getElementById('r-name');
+    if (el && !el.value.trim()) el.value = data.sungai;
+  }
+
+  // 2. Isi kelas sungai
+  if (data.kelas) {
+    const el = document.getElementById('r-class');
+    if (el && !el.value) {
+      // Normalize: I/II/III/IV
+      const cls = String(data.kelas).replace(/kelas\s*/i,'').trim().toUpperCase();
+      if (['I','II','III','IV'].includes(cls)) {
+        el.value = cls;
+        onClassChange(); // trigger BM reload
+      }
+    }
+  }
+
+  // 3. Isi debit
+  if (data.debit_kemarau) {
+    const el = document.getElementById('q-dry');
+    if (el && !el.value.trim()) el.value = data.debit_kemarau;
+  }
+  if (data.debit_hujan) {
+    const el = document.getElementById('q-wet');
+    if (el && !el.value.trim()) el.value = data.debit_hujan;
+  }
+
+  // 4. Isi parameter
+  const checks = document.querySelectorAll('.xls-param-check:checked');
+  checks.forEach(cb => {
+    const no  = parseInt(cb.dataset.no);
+    const dry = cb.dataset.dry;
+    const wet = cb.dataset.wet;
+    if (!no) return;
+
+    // Add parameter jika belum ada
+    let existingParam = params.find(p => p.no === no);
+    if (!existingParam) {
+      addFromDB(no);
+      existingParam = params.find(p => p.no === no);
+    }
+
+    if (!existingParam) { skipped++; return; }
+
+    // Set nilai
+    if (dry !== '' && dry !== undefined) {
+      existingParam.cDry = dry;
+    }
+    if (wet !== '' && wet !== undefined) {
+      existingParam.cWet = wet;
+    }
+    applied++;
+  });
+
+  // 5. Recalc
+  if (data.debit_kemarau || data.debit_hujan) {
+    recalcAll();
+  } else {
+    recalcAll();
+  }
+  renderParams();
+  saveAuto();
+
+  xlsImportClose();
+  nav('bpm');
+  toast(`✅ Import selesai: ${applied} parameter berhasil diisi${skipped > 0 ? `, ${skipped} dilewati` : ''}`);
+};
+
+// ─── UI Helpers ───────────────────────────────────────────────
+function _showLog(msg, type) {
+  const el = document.getElementById('xls-log-text');
+  if (!el) return;
+  const color = type === 'err' ? 'var(--red)' : type === 'warn' ? '#ffc800' : type === 'info' ? 'var(--mute)' : 'var(--txt2)';
+  el.innerHTML += `<div style="color:${color};margin-bottom:3px">${msg}</div>`;
+  el.scrollTop = el.scrollHeight;
+}
+
+function _setProgress(pct, label) {
+  const bar = document.getElementById('xls-progress-bar');
+  const lbl = document.getElementById('xls-progress-label');
+  if (bar) bar.style.width = pct + '%';
+  if (lbl) lbl.textContent = label;
+}
+
+})(); // end IIFE

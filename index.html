@@ -145,8 +145,14 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 /* Fix Leaflet inside RiverLoad dark theme */
-#riverload-map { background: #e8f4f8 !important; }
-#riverload-map .leaflet-container { background: #e8f4f8; }
+#riverload-map,
+#riverload-map .leaflet-container,
+.leaflet-container {
+  background: #a8d5e8 !important;
+  height: 520px !important;
+}
+.leaflet-tile-pane { opacity: 1 !important; }
+.leaflet-tile { opacity: 1 !important; }
 .leaflet-popup-content-wrapper {
   background: #1a1f2b;
   color: #c8cdd8;
@@ -1134,8 +1140,8 @@
   </div>
 
   <!-- Leaflet Map -->
-  <div class="card mb18" style="padding:0;overflow:hidden;border-radius:var(--rs)">
-    <div id="riverload-map" style="height:520px;width:100%;min-height:520px;position:relative;z-index:1"></div>
+  <div class="card mb18" style="padding:0;overflow:hidden;border-radius:var(--rs);height:520px">
+    <div id="riverload-map" style="height:520px;width:100%;min-height:520px;display:block"></div>
   </div>
 
   <!-- Legend & Data Table -->
@@ -1245,50 +1251,80 @@ let _modelingLayer = null;
 let _riverPolyline = null;
 let _layerGroups = {};
 
+// ─── Nav Activated Handler ───────────────────────────
+function _mapNavActivated() {
+  // The nav() function just set display:block on #page-peta.
+  // We need at least one reflow before Leaflet can measure the container.
+  // Use multiple fallback timings to be safe.
+  var delays = [50, 150, 400, 800];
+  delays.forEach(function(d) {
+    setTimeout(function() {
+      if (!_mapInitialized) _initMap();
+      else if (_map) _map.invalidateSize(true);
+    }, d);
+  });
+}
+
 // ─── Init Map ────────────────────────────────────────
 function _initMap() {
   if (_mapInitialized && _map) return;
-  if (!window.L) { 
-    console.error("Leaflet not loaded"); 
-    toast("⚠ Leaflet belum termuat, coba refresh halaman", "err");
-    return; 
+
+  const container = document.getElementById('riverload-map');
+  if (!container) return;
+
+  // Check container actually has size (page must be visible)
+  const rect = container.getBoundingClientRect();
+  if (rect.width === 0 || rect.height === 0) {
+    // Container not visible yet — retry shortly
+    setTimeout(_initMap, 150);
+    return;
   }
-  (function() {
-    if (_mapInitialized && _map) return;
-    _map = L.map('riverload-map', {
-      center: [-6.9, 107.6], // Indonesia default
-      zoom: 10,
-      zoomControl: true
-    });
 
-    // Base layer: OpenStreetMap
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-      maxZoom: 19
-    }).addTo(_map);
+  if (!window.L) {
+    console.error('Leaflet not loaded');
+    container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-family:monospace;font-size:12px;color:#666">⚠ Leaflet tidak termuat. Pastikan koneksi internet aktif lalu refresh halaman.</div>';
+    return;
+  }
 
-    // Layer groups
-    _layerGroups.sampling = L.layerGroup().addTo(_map);
-    _layerGroups.limbah   = L.layerGroup().addTo(_map);
-    _layerGroups.modeling = L.layerGroup().addTo(_map);
-    _layerGroups.river    = L.layerGroup().addTo(_map);
+  _map = L.map('riverload-map', {
+    center: [-6.9, 107.6],
+    zoom: 10,
+    zoomControl: true,
+    preferCanvas: false
+  });
 
-    // Click handler for add mode
-    _map.on('click', e => {
-      if (!_addMode) return;
-      _openAddPointDialog(_addMode, e.latlng.lat, e.latlng.lng);
-    });
+  // OpenStreetMap tile layer
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    maxZoom: 19,
+    crossOrigin: true
+  }).addTo(_map);
 
-    // ESC to cancel add mode
-    document.addEventListener('keydown', e => {
-      if (e.key === 'Escape' && _addMode) _cancelAddMode();
-    });
+  // Layer groups
+  _layerGroups.sampling = L.layerGroup().addTo(_map);
+  _layerGroups.limbah   = L.layerGroup().addTo(_map);
+  _layerGroups.modeling = L.layerGroup().addTo(_map);
+  _layerGroups.river    = L.layerGroup().addTo(_map);
 
-    _mapInitialized = true;
-    _renderAllMarkers();
-    _mapSyncModeling();
-    _map.invalidateSize();
-  })();
+  // Click handler for add mode
+  _map.on('click', function(e) {
+    if (!_addMode) return;
+    _openAddPointDialog(_addMode, e.latlng.lat, e.latlng.lng);
+  });
+
+  // ESC to cancel add mode
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && _addMode) _cancelAddMode();
+  });
+
+  _mapInitialized = true;
+  _renderAllMarkers();
+  _mapSyncModeling();
+
+  // Force tile refresh after layout is stable
+  setTimeout(function() {
+    _map.invalidateSize(true);
+  }, 200);
 }
 
 // ─── Add Point Dialog ────────────────────────────────
@@ -1657,15 +1693,7 @@ const _origNav = window.nav;
 window.nav = function(p) {
   _origNav(p);
   if (p === 'peta') {
-    // Wait for DOM paint before init so container has dimensions
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        _initMap();
-        if (_map) {
-          setTimeout(() => _map.invalidateSize(), 100);
-        }
-      });
-    });
+    _mapNavActivated();
   }
 };
 

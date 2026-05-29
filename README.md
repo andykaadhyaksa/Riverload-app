@@ -1,68 +1,90 @@
-# 🌊 RiverLoad v2.0
+# 🌊 RiverLoad
 
-**Aplikasi Perhitungan Beban Pencemaran Sungai** · PP 22/2021 Lampiran VI
+**Aplikasi Perhitungan Beban Pencemaran Sungai**  
+Berdasarkan **PP 22/2021 — Lampiran VI** (Baku Mutu Air Sungai)
 
----
-
-## 🚀 Cara Deploy ke GitHub Pages
-
-### ⚠️ PENTING — Ikuti persis langkah ini:
-
-**Langkah 1 — Buat repository baru** (jika belum ada)
-- Nama repo bebas, misal: `Riverload-app`
-
-**Langkah 2 — Upload file**
-
-Extract ZIP ini, lalu **upload SEMUA file berikut ke ROOT repository** (bukan dalam subfolder):
-
-```
-.nojekyll          ← WAJIB ada! Mencegah GitHub salah baca file
-index.html         ← File utama
-css/style.css
-js/app.js
-assets/logo.svg
-assets/favicon.svg
-README.md
-```
-
-Cara upload via GitHub web:
-1. Buka repo → klik **"Add file"** → **"Upload files"**
-2. Drag semua file & folder sekaligus
-3. Commit
-
-**Langkah 3 — Aktifkan GitHub Pages**
-1. Buka **Settings** → kiri: **Pages**
-2. Source: **"Deploy from a branch"**
-3. Branch: **`main`** (atau `master`), Folder: **`/ (root)`**
-4. Klik **Save**
-
-**Langkah 4 — Tunggu & akses**
-- Tunggu 1-3 menit
-- Akses: `https://<username>.github.io/<repo-name>/`
+> Dibuat oleh **Andyka Adhyaksa Sumarno**
 
 ---
 
-## ❓ Jika Halaman Masih Tampil Raw JS / Kosong
-
-Itu artinya `.nojekyll` tidak ter-upload. Solusi:
-1. Di GitHub, klik **"Add file"** → **"Create new file"**
-2. Nama file: `.nojekyll` (dengan titik di depan)
-3. Isi kosongkan
-4. Commit → tunggu 1 menit → refresh
-
----
-
-## ✨ Fitur Aplikasi
+## ✨ Fitur Utama
 
 | Modul | Deskripsi |
 |---|---|
-| 🌊 Beban Pencemar | Hitung BPM & BPA per parameter, 2 musim |
-| ⚗️ Usulan Baku Mutu | Hitung C_maks dari sumber limbah |
-| 🗺 Modeling | Visualisasi sebaran konsentrasi sungai |
-| 🗄 Database BM | 49 parameter · 4 kelas (PP 22/2021) |
-| 📋 Laporan | Ekspor ke Excel (.xlsx) |
-| 📊 Import Excel Lab | AI baca hasil uji → auto-fill form |
-| 📍 Peta Sungai | Titik sampling & sumber limbah (Beta) |
-| 📚 Riwayat Proyek | Simpan banyak proyek di browser |
+| 🌊 **Beban Pencemar** | Hitung BPM & BPA per parameter, dua musim (kemarau & hujan) |
+| ⚗️ **Usulan Baku Mutu** | Hitung C_maks yang diizinkan dari sumber air limbah |
+| 🗺 **Modeling** | Visualisasi sebaran konsentrasi sepanjang alur sungai |
+| 🗄 **Database BM** | 49 parameter · 4 kelas sungai (PP 22/2021 Lampiran VI) |
+| 📋 **Laporan** | Ekspor hasil analisis ke Excel (.xlsx) |
 
-© Andyka Adhyaksa Sumarno
+---
+
+## 🚀 Cara Penggunaan
+
+### Tanpa instalasi (langsung buka)
+```
+Buka file index.html di browser modern (Chrome / Edge / Firefox)
+```
+
+### Via GitHub Pages
+1. Fork repositori ini
+2. Buka **Settings → Pages**
+3. Set source ke branch `main`, folder `/` (root)
+4. Akses via `https://<username>.github.io/<repo-name>/`
+
+---
+
+## 📁 Struktur Proyek
+
+```
+riverload/
+├── index.html          ← Entry point utama
+├── css/
+│   └── style.css       ← Semua styling (Industrial Scientific / Data Terminal theme)
+├── js/
+│   └── app.js          ← Logika aplikasi, database BM, kalkulasi
+├── assets/             ← Ikon & aset statis (opsional)
+├── .gitignore
+└── README.md
+```
+
+---
+
+## 🧮 Rumus Perhitungan
+
+```
+BPM  = Q × C_Maks × 3,6          (kg/jam)
+BPA  = Q × C_Aktual × 3,6        (kg/jam)
+C_maks = (Qs × BM - Qs × Cs) / Qd   (Usulan Baku Mutu)
+```
+
+Keterangan:
+- `Q` = Debit sungai (m³/detik)
+- `C_Maks` = Baku mutu air sungai sesuai kelas (mg/L)
+- `C_Aktual` = Konsentrasi terukur di lapangan (mg/L)
+- `BPM` = Beban Pencemaran Maksimum
+- `BPA` = Beban Pencemaran Aktual
+
+---
+
+## 🛠️ Teknologi
+
+- **Vanilla HTML/CSS/JS** — tanpa framework, ringan dan portabel
+- [Chart.js 4.4.1](https://www.chartjs.org/) — grafik modeling sungai
+- [chartjs-plugin-annotation](https://www.chartjs.org/chartjs-plugin-annotation/) — anotasi grafik
+- [SheetJS (xlsx)](https://sheetjs.com/) — ekspor Excel
+- [IBM Plex Mono/Sans](https://fonts.google.com/specimen/IBM+Plex+Mono) + [Bebas Neue](https://fonts.google.com/specimen/Bebas+Neue) — tipografi
+
+---
+
+## 📜 Referensi Regulasi
+
+- **PP No. 22 Tahun 2021** — Penyelenggaraan Perlindungan dan Pengelolaan Lingkungan Hidup
+- **Lampiran VI PP 22/2021** — Baku Mutu Air Sungai (Kelas I–IV)
+- **PermenLHK** — Baku Mutu Air Limbah berbagai jenis kegiatan
+
+---
+
+## 📄 Lisensi
+
+© Andyka Adhyaksa Sumarno — Untuk keperluan analisis lingkungan hidup.

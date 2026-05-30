@@ -765,7 +765,23 @@ body > * { position: relative; z-index: 1; }
   position: relative;
 }
 
-.home-hero-content { padding-right: 20px; }
+.home-hero-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.home-hero-content {
+  padding-right: 20px;
+  position: relative;
+  z-index: 1;
+}
+
+.home-hero-visual {
+  position: relative;
+  z-index: 1;
+}
 
 .home-hero-badge {
   display: inline-flex; align-items: center; gap: 8px;
@@ -843,9 +859,6 @@ body > * { position: relative; z-index: 1; }
 }
 
 /* Hero visual — river diagram */
-.home-hero-visual {
-  position: relative;
-}
 .home-river-diagram {
   background: rgba(255,255,255,0.03);
   border: 1px solid rgba(62,207,178,0.12);

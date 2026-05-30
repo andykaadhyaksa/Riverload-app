@@ -141,7 +141,7 @@ let _tt;
 function toast(msg,type) {
   const el=document.getElementById('toast');
   el.textContent=msg;
-  el.style.borderLeftColor=type==='ok'?'var(--green)':type==='err'?'var(--red)':'var(--cyan)';
+  el.style.borderLeftColor=type==='ok'?'var(--green)':type==='err'?'var(--red)':'var(--accent)';
   el.style.borderLeftWidth='3px';
   el.classList.add('show');
   clearTimeout(_tt);
@@ -420,7 +420,7 @@ function renderParams() {
         <div style="font-family:var(--mono);font-size:9px;color:var(--mute);margin-top:1px">${p.unit}</div>
       </div>
       <div style="text-align:center;font-family:var(--mono);font-size:10.5px;color:var(--mute)">${p.unit}</div>
-      <div style="text-align:right;font-family:var(--mono);font-size:11.5px;color:var(--cyan)">${bmDisp}</div>
+      <div style="text-align:right;font-family:var(--mono);font-size:11.5px;color:var(--accent)">${bmDisp}</div>
       <div data-cell="bpm" style="text-align:right;font-family:var(--mono);font-size:11.5px;color:var(--txt2)">${bpmDisp}</div>
       <div>
         <input class="inp-sm" value="${cVal}" placeholder="0.000" inputmode="decimal"
@@ -483,7 +483,7 @@ function updateResultKPI() {
   const ngCur = s === 'dry' ? ngD : ngW;
   const anaCur = okCur + ngCur;
   document.getElementById('kpi-grid').innerHTML = [
-    {lbl:'Parameter', val:params.length, unit:'total', kc:'var(--cyan)'},
+    {lbl:'Parameter', val:params.length, unit:'total', kc:'var(--accent)'},
     {lbl:'Memenuhi',  val:okCur, unit:'parameter', kc:'var(--green)'},
     {lbl:'Melebihi BPM', val:ngCur, unit:'parameter', kc:'var(--red)'},
     {lbl:'Kepatuhan', val:anaCur ? Math.round(okCur/anaCur*100)+'%' : '—', unit:'', kc:'var(--blue)'},
@@ -519,7 +519,7 @@ function updateResultKPI() {
       const bpaColor = status === 'ng' ? 'var(--red)' : status === 'ok' ? 'var(--green)' : 'var(--txt2)';
 
       // Debit sungai: tampilkan hanya di baris pertama (rowspan visual — kita tampilkan di setiap baris tapi hanya tulis sekali)
-      const qCell = `<td style="padding:7px 10px;text-align:right;font-family:var(--mono);font-size:11px;color:var(--cyan)">${i===0?fN(qVal,3):''}</td>`;
+      const qCell = `<td style="padding:7px 10px;text-align:right;font-family:var(--mono);font-size:11px;color:var(--accent)">${i===0?fN(qVal,3):''}</td>`;
 
       // BPM & BPA display untuk rekap
       const rBpmDisp = isPH ? '— (pH)' : isDash ? '— (Tdk Dipersyaratkan)' : (bpm!=null ? fN(bpm,4) : '—');
@@ -528,9 +528,9 @@ function updateResultKPI() {
       return `<tr style="background:${rowBg};border-bottom:1px solid var(--brd2)">
         <td style="padding:7px 10px;text-align:center;font-family:var(--mono);font-size:10px;color:var(--mute)">${i+1}</td>
         <td style="padding:7px 10px;font-size:12px;font-weight:600;color:var(--txt)">${esc(p.name)}</td>
-        <td style="padding:7px 10px;text-align:right;font-family:var(--mono);font-size:11px;color:var(--cyan)">${fN(qVal,4)}</td>
+        <td style="padding:7px 10px;text-align:right;font-family:var(--mono);font-size:11px;color:var(--accent)">${fN(qVal,4)}</td>
         <td style="padding:7px 10px;text-align:center;font-family:var(--mono);font-size:10.5px;color:var(--mute)">${esc(p.unit)}</td>
-        <td style="padding:7px 10px;text-align:right;font-family:var(--mono);font-size:11px;color:var(--cyan);font-weight:600">${bmDisp}</td>
+        <td style="padding:7px 10px;text-align:right;font-family:var(--mono);font-size:11px;color:var(--accent);font-weight:600">${bmDisp}</td>
         <td style="padding:7px 10px;text-align:right;font-family:var(--mono);font-size:11px;color:var(--amber)">${rBpmDisp}</td>
         <td style="padding:7px 10px;text-align:right;font-family:var(--mono);font-size:11px;color:var(--txt2)">${cDisp}</td>
         <td style="padding:7px 10px;text-align:right;font-family:var(--mono);font-size:11px;color:${bpaColor};font-weight:${status?'600':'400'}">${rBpaDisp}</td>
@@ -610,7 +610,7 @@ function renderDB() {
     const cv=(v,highlight)=>{
       const isBm=_dbFilter&&row['k'+_dbFilter]===v;
       const col=String(v)==='-'?'var(--mute)':String(v).startsWith('Dev')?'var(--amber)':String(v)==='nihil'?'var(--mute)':'var(--txt)';
-      const bg=highlight&&isBm?'background:rgba(0,229,200,0.08);font-weight:600;':'';
+      const bg=highlight&&isBm?'background:rgba(62,207,178,0.08);font-weight:600;':'';
       return `<td class="td-c" style="font-family:var(--mono);font-size:11px;color:${col};${bg}">${valStr(v)}</td>`;
     };
     return `<tr>
@@ -645,7 +645,7 @@ function buildReport() {
   if(!hasData) return;
 
   const isDark=document.documentElement.getAttribute('data-theme')!=='light';
-  const GC=isDark?'rgba(0,229,200,0.08)':'rgba(0,120,100,0.08)';
+  const GC=isDark?'rgba(62,207,178,0.08)':'rgba(0,120,100,0.08)';
   const TC=isDark?'#3a6660':'#2a6055';
   const TBG=isDark?'#0a1e2e':'#fff';
 
@@ -686,7 +686,7 @@ function buildReport() {
         <td class="td-c td-mu">${i+1}</td>
         <td style="font-weight:600">${p.name}</td>
         <td class="td-c" style="font-family:var(--mono);font-size:10.5px;color:var(--mute)">${p.unit}</td>
-        <td class="td-r" style="color:var(--cyan)">${valStr(p.bm)}</td>
+        <td class="td-r" style="color:var(--accent)">${valStr(p.bm)}</td>
         <td class="td-r">${bpm!=null?fN(bpm):'—'}</td>
         <td class="td-r">${c||'—'}</td>
         <td class="td-r" style="color:${st==='ng'?'var(--red)':st==='ok'?'var(--green)':'var(--txt2)'}">${bpa!=null?fN(bpa):'—'}</td>
@@ -712,16 +712,16 @@ function buildReport() {
       data:{
         labels:cp.map(p=>p.name.length>12?p.name.substring(0,12)+'…':p.name),
         datasets:[
-          {label:'BPM',data:cp.map(p=>p[bpmK]),backgroundColor:'rgba(0,229,200,0.25)',borderColor:'var(--cyan)',borderWidth:1.5,borderRadius:2},
+          {label:'BPM',data:cp.map(p=>p[bpmK]),backgroundColor:'rgba(62,207,178,0.25)',borderColor:'var(--accent)',borderWidth:1.5,borderRadius:2},
           {label:'BPA',data:cp.map(p=>p[bpaK]||0),backgroundColor:cp.map(p=>p[stK]==='ng'?'rgba(255,68,68,0.5)':'rgba(0,232,122,0.4)'),borderColor:cp.map(p=>p[stK]==='ng'?'var(--red)':'var(--green)'),borderWidth:1.5,borderRadius:2},
         ]
       },
       options:{responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{labels:{color:TC,font:{family:'IBM Plex Mono',size:10}}},
-          tooltip:{backgroundColor:TBG,titleColor:'var(--cyan)',bodyColor:TC,borderColor:'var(--brd)',borderWidth:1,
+        plugins:{legend:{labels:{color:TC,font:{family:'Inter',size:10}}},
+          tooltip:{backgroundColor:TBG,titleColor:'var(--accent)',bodyColor:TC,borderColor:'var(--brd)',borderWidth:1,
             callbacks:{label:c=>` ${c.dataset.label}: ${fN(c.parsed.y)} kg/jam`}}},
-        scales:{x:{grid:{color:GC},ticks:{color:TC,font:{family:'IBM Plex Mono',size:8},maxRotation:35}},
-                y:{grid:{color:GC},ticks:{color:TC,font:{family:'IBM Plex Mono',size:8}}}}}
+        scales:{x:{grid:{color:GC},ticks:{color:TC,font:{family:'Inter',size:8},maxRotation:35}},
+                y:{grid:{color:GC},ticks:{color:TC,font:{family:'Inter',size:8}}}}}
     });
   }
   if(qDry) mkChart('ch-dry','dry');
@@ -1519,13 +1519,13 @@ function wsFilterTypes() {
   });
   const catColors = {Pertambangan:'#e67e22', Domestik:'#1a7fd4', Pemanfaatan:'#27ae60'};
   list.innerHTML = Object.entries(grouped).map(([kat, items]) => `
-    <div style="padding:6px 20px 3px;font-family:var(--mono);font-size:9px;color:${catColors[kat]||'var(--cyan)'};text-transform:uppercase;letter-spacing:1px;font-weight:700">${kat}</div>
+    <div style="padding:6px 20px 3px;font-family:var(--mono);font-size:9px;color:${catColors[kat]||'var(--accent)'};text-transform:uppercase;letter-spacing:1px;font-weight:700">${kat}</div>
     ${items.map(t => {
       const checked = wsTypePicked.has(t.id);
       return `<div onclick="wsToggleType('${t.id}')" style="display:flex;align-items:center;gap:12px;padding:9px 20px;cursor:pointer;transition:background 0.12s;border-bottom:1px solid var(--brd2)"
-        onmouseover="this.style.background='rgba(0,229,200,0.06)'" onmouseout="this.style.background=''"
+        onmouseover="this.style.background='rgba(62,207,178,0.06)'" onmouseout="this.style.background=''"
       >
-        <div style="width:16px;height:16px;border:2px solid ${checked?'var(--cyan)':'var(--brd)'};border-radius:3px;background:${checked?'var(--cyan)':'transparent'};display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.12s">
+        <div style="width:16px;height:16px;border:2px solid ${checked?'var(--accent)':'var(--brd)'};border-radius:3px;background:${checked?'var(--accent)':'transparent'};display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.12s">
           ${checked?'<svg width="10" height="10" viewBox="0 0 10 10"><polyline points="1.5,5 4,7.5 8.5,2.5" stroke="#000" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>':''}
         </div>
         <div>
@@ -1587,7 +1587,7 @@ function renderWasteSources(){
   list.innerHTML = wasteSources.map(w => {
     const typeLabel = w.typeLabel || '(Manual)';
     const typeBadge = w.typeId
-      ? `<span style="font-size:10px;font-family:var(--mono);color:var(--cyan);background:rgba(0,229,200,0.1);border:1px solid rgba(0,229,200,0.25);border-radius:4px;padding:3px 10px;font-weight:600">${esc(typeLabel)}</span>`
+      ? `<span style="font-size:10px;font-family:var(--mono);color:var(--accent);background:rgba(62,207,178,0.1);border:1px solid rgba(62,207,178,0.25);border-radius:4px;padding:3px 10px;font-weight:600">${esc(typeLabel)}</span>`
       : `<span style="font-size:10px;font-family:var(--mono);color:var(--mute);border:1px solid var(--brd2);border-radius:4px;padding:3px 10px">Manual</span>`;
     return `<div id="ws-row-${w.id}" style="display:grid;grid-template-columns:1fr 32px;gap:8px;padding:9px 12px;align-items:center;background:var(--bg2);border:1px solid var(--brd2);border-radius:var(--rs);margin-bottom:5px">
       <div style="display:flex;align-items:center;gap:10px;min-width:0;overflow:hidden">
@@ -1638,12 +1638,12 @@ function renderBMGabungan() {
   const TD = (v,extra='') => `<td style="padding:7px 10px;font-size:11px;font-family:var(--mono);text-align:center;border-bottom:1px solid var(--brd2);${extra}">${v}</td>`;
 
   // Thead
-  thead.innerHTML = `<tr style="background:rgba(0,229,200,0.08)">
+  thead.innerHTML = `<tr style="background:rgba(62,207,178,0.08)">
     ${TH('Parameter','text-align:left')}
     ${TH('Satuan')}
     ${types.map(t=>{
       const kat = t.kategori;
-      const col = catColors[kat]||'var(--cyan)';
+      const col = catColors[kat]||'var(--accent)';
       return TH(`<div style="color:${col};max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${t.label}">${t.label}</div>`);
     }).join('')}
     ${TH('⭐ Nilai Paling Ketat','color:#f39c12;background:rgba(243,156,18,0.08)')}
@@ -1679,9 +1679,9 @@ function renderBMGabungan() {
   tbody.innerHTML = rows.join('') || `<tr><td colspan="${types.length+3}" style="text-align:center;padding:20px;color:var(--mute)">Belum ada parameter</td></tr>`;
 
   // Tfoot — ringkasan jumlah parameter per jenis
-  tfoot.innerHTML = `<tr style="background:rgba(0,229,200,0.06);border-top:2px solid var(--brd)">
+  tfoot.innerHTML = `<tr style="background:rgba(62,207,178,0.06);border-top:2px solid var(--brd)">
     <td colspan="2" style="padding:8px 10px;font-family:var(--mono);font-size:10px;color:var(--mute);font-weight:700">JUMLAH PARAMETER</td>
-    ${types.map(t => `<td style="padding:8px 10px;font-family:var(--mono);font-size:11px;color:var(--cyan);text-align:center;font-weight:700">${t.params.length}</td>`).join('')}
+    ${types.map(t => `<td style="padding:8px 10px;font-family:var(--mono);font-size:11px;color:var(--accent);text-align:center;font-weight:700">${t.params.length}</td>`).join('')}
     <td style="padding:8px 10px;font-family:var(--mono);font-size:10px;color:var(--mute);text-align:center">${allParams.size} total</td>
   </tr>`;
 }
@@ -2063,7 +2063,7 @@ function ubmRenderSources(){
     row+='<input class="finput" style="font-size:12px;padding:5px 8px" value="'+esc(s.name)+'" placeholder="Nama sumber" data-sid="'+s.id+'" data-field="name" oninput="ubmSrcChange(+this.dataset.sid,this.dataset.field,this.value)">';
     row+='<input class="finput" style="font-size:12px;padding:5px 8px;text-align:right;font-family:var(--mono)" inputmode="decimal" value="'+s.qDay+'" placeholder="0.00" data-sid="'+s.id+'" data-field="qDay" oninput="ubmSrcChange(+this.dataset.sid,this.dataset.field,this.value)">';
     row+='<div data-cell="hr" style="font-family:var(--mono);font-size:11px;color:var(--txt2);text-align:right;padding-right:4px">'+(qDay>0?fmtN(qHr,2):'—')+'</div>';
-    row+='<div data-cell="sec" style="font-family:var(--mono);font-size:11px;color:var(--cyan);text-align:right;padding-right:4px">'+(qDay>0?fmtN(qSec,6):'—')+'</div>';
+    row+='<div data-cell="sec" style="font-family:var(--mono);font-size:11px;color:var(--accent);text-align:right;padding-right:4px">'+(qDay>0?fmtN(qSec,6):'—')+'</div>';
     row+='<button onclick="ubmDelSource('+s.id+')" style="width:28px;height:28px;background:rgba(255,80,80,0.1);border:1px solid rgba(255,80,80,0.25);border-radius:var(--rs);color:#ff6060;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center">🗑</button>';
     row+='</div>';
     return row;
@@ -2102,7 +2102,7 @@ function _ubmShowImportPreview(){
   }
   const lines=params.map(p=>`${p.name} (C Kemarau: ${p.cDry||'—'} | C Hujan: ${p.cWet||'—'} ${p.unit})`);
   prev.style.display='block';
-  prev.innerHTML='<span style="color:var(--cyan)">'+params.length+' parameter tersedia:</span><br>'+
+  prev.innerHTML='<span style="color:var(--accent)">'+params.length+' parameter tersedia:</span><br>'+
     lines.map(l=>'· '+l).join('<br>');
 }
 
@@ -2278,7 +2278,7 @@ function ubmRenderParams(){
       ? `<div style="font-family:var(--mono);font-size:10.5px;color:var(--mute);text-align:center">${esc(p.unit)}</div>`
       : `<input class="finput" style="font-size:11px;padding:4px 6px;text-align:center" value="${esc(p.unit)}" placeholder="mg/L" oninput="ubmPChange(${p.id},'unit',this.value)">`;
     const bmField=p.dbId
-      ? `<div id="ubm-bm-${p.id}" style="font-family:var(--mono);font-size:11px;color:var(--cyan);text-align:right">${p.bmStr||'—'}</div>`
+      ? `<div id="ubm-bm-${p.id}" style="font-family:var(--mono);font-size:11px;color:var(--accent);text-align:right">${p.bmStr||'—'}</div>`
       : `<input class="finput" style="font-size:11px;padding:4px 6px;text-align:right;font-family:var(--mono)" inputmode="decimal" value="${p.bmStr}" placeholder="BM" oninput="ubmPChange(${p.id},'bmStr',this.value);ubmPChange(${p.id},'bmVal',parseFloat(this.value.replace(',','.'))||null)">`;
     const cHD = p.cHuluDry ?? p.cHulu ?? '';
     const cHW = p.cHuluWet ?? p.cHulu ?? '';
@@ -2460,7 +2460,7 @@ function _ubmCalcAndShowResults(){
       ${TH('C Hulu<br>(mg/L)','text-align:right')}
       ${srcHeaders}
       ${TH(`CR Hilir<br>(mg/L)`,`text-align:right;color:${colorHex}`)}
-      ${TH('BM Air Sungai<br>(Sesuai Kelas)','text-align:right;color:var(--cyan)')}
+      ${TH('BM Air Sungai<br>(Sesuai Kelas)','text-align:right;color:var(--accent)')}
       ${jenisHeaders}
       ${TH('Keterangan','text-align:center')}
     </tr>`;
@@ -2555,7 +2555,7 @@ function _ubmCalcAndShowResults(){
         ${TD(cHulu!=null&&cHulu>0?fmtN(cHulu,4):'—', 'text-align:right;color:var(--txt2)')}
         ${srcCols}
         ${TD(cr!=null?fmtN(cr,4):'—', `text-align:right;color:${crColor};font-weight:700;font-size:12px`)}
-        ${TD(p.isPH ? '<span style="color:var(--cyan);font-weight:600">6–9</span>' : (bm!=null?fmtN(bm,4):'—'), 'text-align:right;color:var(--cyan);font-weight:600')}
+        ${TD(p.isPH ? '<span style="color:var(--accent);font-weight:600">6–9</span>' : (bm!=null?fmtN(bm,4):'—'), 'text-align:right;color:var(--accent);font-weight:600')}
         ${jenisCols}
         ${TD(ketBadge, 'text-align:center')}
       </tr>`;
@@ -2637,7 +2637,7 @@ function _ubmCalcAndShowResults(){
       // Keterangan
       let ket='', ketColor='var(--mute)';
       if(p.isPH){
-        ket='pH: BM adalah rentang 6–9 (bukan nilai tunggal)'; ketColor='var(--cyan)';
+        ket='pH: BM adalah rentang 6–9 (bukan nilai tunggal)'; ketColor='var(--accent)';
       } else if(bm==null){
         ket='BM tidak tersedia'; ketColor='var(--mute)';
       } else if(totalQi<=0){
@@ -2655,19 +2655,19 @@ function _ubmCalcAndShowResults(){
       const fmtCmax=(v)=>{
         if(v==null) return '—';
         if(v<0) return `<span style="color:var(--red);font-weight:700">${fmtN(v,2)} ⚠</span>`;
-        return `<span style="color:var(--cyan);font-weight:700">${fmtN(v,4)}</span>`;
+        return `<span style="color:var(--accent);font-weight:700">${fmtN(v,4)}</span>`;
       };
       const rowBg=cMaxFinal!=null&&cMaxFinal<0?'background:rgba(239,68,68,0.04)':'';
       return `<tr style="${rowBg}">
         <td style="font-weight:700;font-size:12.5px">${esc(p.name||'—')}</td>
         <td class="td-c" style="color:var(--mute);font-size:11px">${esc(p.unit)}</td>
         <td class="td-r" style="color:var(--mute2)">${cHuluDryVal>0||cHuluWetVal>0?fmtN(cHuluDryVal,4)+(cHuluWetVal!==cHuluDryVal?' / '+fmtN(cHuluWetVal,4):''):'—'}</td>
-        <td class="td-c" style="font-family:var(--mono);font-size:12px">${p.isPH ? '<span style=\"color:var(--cyan)\">6–9</span>' : (bm!=null?fmtN(bm,4):'—')}</td>
+        <td class="td-c" style="font-family:var(--mono);font-size:12px">${p.isPH ? '<span style=\"color:var(--accent)\">6–9</span>' : (bm!=null?fmtN(bm,4):'—')}</td>
         <td class="td-r" style="color:#f5a623">${crD!=null?fmtN(crD,4):'—'}</td>
         <td class="td-r" style="color:#4488ff">${crW!=null?fmtN(crW,4):'—'}</td>
         <td class="td-r">${fmtCmax(cmDraw)}</td>
         <td class="td-r">${fmtCmax(cmWraw)}</td>
-        <td class="td-c">${cMaxFinal!=null&&cMaxFinal>=0?`<span style="font-family:var(--mono);font-size:13px;font-weight:700;color:var(--cyan)">${fmtN(cMaxFinal,4)}</span>`:`<span style="color:var(--red);font-weight:700">Tidak tersedia</span>`}</td>
+        <td class="td-c">${cMaxFinal!=null&&cMaxFinal>=0?`<span style="font-family:var(--mono);font-size:13px;font-weight:700;color:var(--accent)">${fmtN(cMaxFinal,4)}</span>`:`<span style="color:var(--red);font-weight:700">Tidak tersedia</span>`}</td>
         <td style="font-size:11px;color:${ketColor};padding:6px 10px">${ket}</td>
       </tr>`;
     }).join('');
@@ -2691,7 +2691,7 @@ function _ubmCalcAndShowResults(){
       const rowBg     = overLimit ? 'background:rgba(239,68,68,0.05)' : '';
       // Tampilan nilai Usulan BM
       const usulanBMDisp = p.isPH
-        ? `<span style="color:var(--cyan);font-weight:700">6–9</span>`
+        ? `<span style="color:var(--accent);font-weight:700">6–9</span>`
         : noInput
           ? `<span style="color:var(--mute);font-size:10px;font-family:var(--mono)">— isi di tabel atas —</span>`
           : `<div style="font-family:var(--mono);font-size:13px;font-weight:700;color:${overLimit?'var(--red)':ok?'var(--amber)':'var(--mute2)'}">${fmtN(usulanBMVal,4)}</div>
@@ -2744,7 +2744,7 @@ function _buildRekapTable(resDry, resWet, totalQi){
       TH(`CR Sungai ${riverName}`, `background:${seasonColor}22`) +
       TH('Baku Mutu Air Sungai<br>(PP No. 22 Tahun 2021)', `background:${seasonColor}22`) +
       TH('Status Mutu', `background:${seasonColor}22`) +
-      TH('Usulan Max Baku Mutu Air Limbah', `background:${seasonColor}22;color:#00e5c8`) +
+      TH('Usulan Max Baku Mutu Air Limbah', `background:${seasonColor}22;color:#3ecfb2`) +
       TH('Usulan BM', `background:${seasonColor}22;color:#f5a623`) +
       TH('Alokasi Beban Pencemaran (Kg/hari)', `background:${seasonColor}22;color:#f5a623`);
   }
@@ -2757,11 +2757,11 @@ function _buildRekapTable(resDry, resWet, totalQi){
       const usulanBMVal = usulanBMRaw !== '' ? pNum(usulanBMRaw) : null;
       const alokasi  = usulanBMVal!=null&&totalQi>0 ? usulanBMVal*totalQi*86400/1000 : null;
       // Tampilan BM Sungai: "6–9" untuk pH, angka untuk lainnya
-      const bmSungaiDisp = p.isPH ? '<span style="color:var(--cyan);font-weight:700">6–9</span>'
+      const bmSungaiDisp = p.isPH ? '<span style="color:var(--accent);font-weight:700">6–9</span>'
                                   : (bm!=null ? fmtN(bm,4) : '—');
       const cMaxDisp = p.isPH ? '<span style="color:var(--mute);font-size:9.5px">Rentang 6–9</span>'
                                : (cMax!=null ? fmtN(cMax,4) : '—');
-      const usulanBMDisp = p.isPH ? '<span style="color:var(--cyan)">6–9</span>'
+      const usulanBMDisp = p.isPH ? '<span style="color:var(--accent)">6–9</span>'
                                  : (usulanBMVal!=null ? fmtN(usulanBMVal,4) : '—');
       // Status badge
       const statusBadge = status==='ok'
@@ -2778,10 +2778,10 @@ function _buildRekapTable(resDry, resWet, totalQi){
               ? fmtN(pNum(p.cHuluDry),4)+' / '+fmtN(pNum(p.cHuluWet??p.cHuluDry),4)
               : p.cHulu ? fmtN(pNum(p.cHulu),4) : '—') +
         ubmSources.map(s => TDr(p.cSrc[s.id] ? fmtN(pNum(p.cSrc[s.id]),4) : '—')).join('') +
-        TDr(cr!=null ? fmtN(cr,4) : '—', 'color:var(--cyan);font-weight:700') +
+        TDr(cr!=null ? fmtN(cr,4) : '—', 'color:var(--accent);font-weight:700') +
         TDc(bmSungaiDisp) +
         TDc(statusBadge) +
-        TDr(cMaxDisp, 'color:var(--cyan)') +
+        TDr(cMaxDisp, 'color:var(--accent)') +
         TDr(usulanBMDisp, 'color:#f5a623;font-weight:700') +
         TDr(alokasi!=null ? fmtN(alokasi,2) : '—', 'color:#f5a623;font-weight:700') +
         `</tr>`;
@@ -2845,7 +2845,7 @@ function _buildCRUsulanTable(resDryUsulan, resWetUsulan, totalQi) {
       ${TH('C Hulu<br>(mg/L)', 'text-align:right')}
       ${srcHeaders}
       ${TH('CR Hilir<br>(mg/L)', `text-align:right;color:${colorHex}`)}
-      ${TH('BM Air Sungai<br>(Sesuai Kelas)', 'text-align:right;color:var(--cyan)')}
+      ${TH('BM Air Sungai<br>(Sesuai Kelas)', 'text-align:right;color:var(--accent)')}
       ${TH('Alokasi Beban Pencemar<br>Berdasarkan Usulan BM<br>(kg/hari)', 'text-align:right;color:var(--amber)')}
       ${TH('Keterangan', 'text-align:center')}
     </tr>`;
@@ -2885,7 +2885,7 @@ function _buildCRUsulanTable(resDryUsulan, resWetUsulan, totalQi) {
         ${TD(cHulu!=null&&cHulu>0 ? fmtN(cHulu,4) : '—', 'text-align:right;color:var(--txt2)')}
         ${srcCols}
         ${TD(cr!=null ? fmtN(cr,4) : '—', `text-align:right;color:${crColor};font-weight:700;font-size:12px`)}
-        ${TD(p.isPH ? '<span style="color:var(--cyan);font-weight:600">6–9</span>' : (bm!=null?fmtN(bm,4):'—'), 'text-align:right;color:var(--cyan);font-weight:600')}
+        ${TD(p.isPH ? '<span style="color:var(--accent);font-weight:600">6–9</span>' : (bm!=null?fmtN(bm,4):'—'), 'text-align:right;color:var(--accent);font-weight:600')}
         ${TD(alokasiDisp, 'text-align:right')}
         ${TD(ketBadge, 'text-align:center')}
       </tr>`;
@@ -3531,7 +3531,7 @@ function mdlRenderSrcList() {
     const btnDown = `<button onclick="mdlMoveDown(${m.srcId})" ${i===N-1 ?'disabled':''} title="Turun" style="width:100%;height:19px;background:none;border:1px solid var(--brd);border-radius:2px;color:${i===N-1?'var(--mute)':'var(--txt2)'};cursor:${i===N-1?'default':'pointer'};font-size:11px;padding:0;line-height:1">▼</button>`;
     return `<div style="display:grid;grid-template-columns:52px 32px 1fr 150px 30px;gap:8px;padding:8px 10px;align-items:center;background:var(--bg2);border:1px solid var(--brd2);border-radius:var(--rs);margin-bottom:5px">
       <div style="display:flex;flex-direction:column;gap:3px">${btnUp}${btnDown}</div>
-      <div style="text-align:center;font-family:var(--mono);font-size:15px;font-weight:700;color:var(--cyan)">${m.order}</div>
+      <div style="text-align:center;font-family:var(--mono);font-size:15px;font-weight:700;color:var(--accent)">${m.order}</div>
       <div>
         <div style="font-size:12.5px;font-weight:600;color:var(--txt)">${esc(src.name||'Sumber '+m.order)}</div>
         <div style="font-family:var(--mono);font-size:9.5px;color:var(--mute);margin-top:1px">Q = ${qd>0?fmtN(qd,2)+' m³/hari':'—'}</div>
@@ -3672,7 +3672,7 @@ function mdlRender() {
   if (elTitle) elTitle.textContent = `DIAGRAM CR — ${riverName.toUpperCase()} (${seasonLabel.toUpperCase()})`;
 
   const isDark   = document.documentElement.getAttribute('data-theme') !== 'light';
-  const gridClr  = isDark ? 'rgba(0,229,200,0.07)' : 'rgba(0,100,80,0.09)';
+  const gridClr  = isDark ? 'rgba(62,207,178,0.07)' : 'rgba(0,100,80,0.09)';
   const lblClr   = isDark ? '#8bb8b0' : '#2a6055';
   const titleClr = isDark ? '#d4f0e8' : '#0d2e28';
   const bgClr    = isDark ? '#0a1e2e' : '#ffffff';
@@ -3723,7 +3723,7 @@ function mdlRender() {
         rotation: -90,
         backgroundColor: 'transparent',
         color: isDark ? '#ff9999' : '#cc2222',
-        font: { size: 10, family: 'IBM Plex Mono, monospace', weight:'600' },
+        font: { size: 10, family: 'Inter, sans-serif', weight:'600' },
         padding: 4
       }
     };
@@ -3736,7 +3736,7 @@ function mdlRender() {
   empty.style.display = 'none';
 
   const ctx = document.getElementById('mdl-canvas').getContext('2d');
-  const monoFont = 'IBM Plex Mono, monospace';
+  const monoFont = 'Inter, sans-serif';
 
   _mdlChart = new Chart(ctx, {
     type: 'line',
@@ -3758,7 +3758,7 @@ function mdlRender() {
         },
         title: {
           display: true, text: chartTitle, color: titleClr,
-          font: { size: 14, weight: 'bold', family: 'Bebas Neue, sans-serif' },
+          font: { size: 14, weight: 'bold', family: 'Sora, Inter, sans-serif' },
           padding: { top: 6, bottom: 10 }
         },
         tooltip: {
@@ -3801,9 +3801,9 @@ function mdlRender() {
   const tbody = document.getElementById('mdl-tbl-body');
   if (!thead || !tbody) return;
 
-  thead.innerHTML = `<tr style="background:rgba(0,229,200,0.05)">
+  thead.innerHTML = `<tr style="background:rgba(62,207,178,0.05)">
     ${['No','Titik / Sumber','Jarak (km)','Q_i (m³/det)','C_i Aktual','CR Hilir (mg/L)','C_maks (mg/L)','Status']
-      .map((h,i)=>`<th style="padding:8px 10px;font-family:var(--mono);font-size:9px;font-weight:700;border-bottom:1px solid var(--brd);color:${i===5?'var(--cyan)':i===6?'var(--amber)':'var(--mute)'};text-align:${i<2?'left':'right'}">${h}</th>`).join('')}
+      .map((h,i)=>`<th style="padding:8px 10px;font-family:var(--mono);font-size:9px;font-weight:700;border-bottom:1px solid var(--brd);color:${i===5?'var(--accent)':i===6?'var(--amber)':'var(--mute)'};text-align:${i<2?'left':'right'}">${h}</th>`).join('')}
     </tr>`;
 
   let qCum = Qs, cCum = pNum(param.cHulu);
@@ -3825,8 +3825,8 @@ function mdlRender() {
     const badge  = status==='ok'?'<span class="badge b-ok">✓ Memenuhi</span>'
                  : status==='ng'?'<span class="badge b-ng">✗ Melebihi</span>'
                  : '<span class="badge b-na">—</span>';
-    const crClr  = status==='ng'?'var(--red)':status==='ok'?'var(--green)':'var(--cyan)';
-    const alt    = i%2?'background:rgba(0,229,200,0.02)':'';
+    const crClr  = status==='ng'?'var(--red)':status==='ok'?'var(--green)':'var(--accent)';
+    const alt    = i%2?'background:rgba(62,207,178,0.02)':'';
     const TD = (v, right=true, clr='var(--txt2)') =>
       `<td style="padding:8px 10px;font-family:var(--mono);font-size:11px;text-align:${right?'right':'left'};color:${clr};border-bottom:1px solid var(--brd2)">${v}</td>`;
     return `<tr style="${alt}">
@@ -4361,7 +4361,7 @@ function _buildPreview(data) {
     const alreadyAdded = inSystem && params.find(x => x.no === p.no_wqdb);
 
     const rowColor = inSystem
-      ? (alreadyAdded ? 'rgba(255,200,0,0.06)' : 'rgba(0,229,200,0.04)')
+      ? (alreadyAdded ? 'rgba(255,200,0,0.06)' : 'rgba(62,207,178,0.04)')
       : 'rgba(255,68,68,0.04)';
 
     const statusBadge = !inSystem
@@ -4381,7 +4381,7 @@ function _buildPreview(data) {
           style="width:14px;height:14px;cursor:pointer">
       </td>
       <td style="padding:7px 8px;font-family:var(--mono);font-size:11px;color:var(--txt)">${p.nama_asli}</td>
-      <td style="padding:7px 8px;font-family:var(--mono);font-size:10px;color:var(--cyan)">${p.nama_sistem || '—'}</td>
+      <td style="padding:7px 8px;font-family:var(--mono);font-size:10px;color:var(--accent)">${p.nama_sistem || '—'}</td>
       <td style="padding:7px 8px;font-family:var(--mono);font-size:11px;color:var(--txt);text-align:right">
         ${valDry !== null && valDry !== undefined ? `<strong>${valDry}</strong>` : '<span style="color:var(--mute)">—</span>'}
       </td>

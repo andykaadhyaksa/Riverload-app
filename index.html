@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>RiverLoad — Beban Pencemaran Sungai PP 22/2021</title>
+<title>RiverLoad — Analisis Beban Pencemaran Sungai</title>
 
 <!-- External Libraries (CDN) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -12,67 +12,71 @@
 
 <!-- Google Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,600;1,300&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,600;0,700;1,300&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+
 
 <!-- Favicon -->
 <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
 
 <!-- App Stylesheet (inlined for portability) -->
+<link rel="stylesheet" href="css/theme.css">
 <link rel="stylesheet" href="css/style.css">
 <style id="app-css-inline">
 /* ═══════════ DESIGN: Industrial Scientific / Data Terminal ═══════════ */
 /* Inspired by environmental monitoring dashboards & scientific instruments */
 
 :root {
-  --cyan:   #00e5c8;
-  --cyan2:  #00b89e;
-  --cyan3:  #007a6a;
-  --amber:  #f5a623;
-  --red:    #ff4444;
-  --green:  #00e87a;
-  --blue:   #4488ff;
-  --muted-line: rgba(0,229,200,0.12);
-  --head:   'Bebas Neue', sans-serif;
-  --mono:   'IBM Plex Mono', monospace;
-  --body:   'IBM Plex Sans', sans-serif;
-  --r: 3px;
-  --rs: 2px;
+  --cyan:   #4aeacc;
+  --cyan2:  #38c8b0;
+  --cyan3:  #1a9080;
+  --amber:  #f5c030;
+  --red:    #f05060;
+  --green:  #3de8a0;
+  --blue:   #60aef0;
+  --muted-line: rgba(78,234,204,0.1);
+  --head:   'Inter', sans-serif;
+  --mono:   'Inter', sans-serif;
+  --data:   'Inter', sans-serif;
+  --body:   'Inter', sans-serif;
+  --r: 14px;
+  --rs: 10px;
 }
 
 /* DARK */
 :root, [data-theme="dark"] {
-  --bg:     #040d12;
-  --bg2:    #071520;
-  --panel:  #071520;
-  --card:   #0a1e2e;
-  --card2:  #0d2437;
-  --brd:    rgba(0,229,200,0.15);
-  --brd2:   rgba(0,229,200,0.07);
-  --txt:    #d4f0e8;
-  --txt2:   #8bb8b0;
-  --mute:   #3a6660;
-  --inp:    #040d12;
-  --shd:    0 0 0 1px rgba(0,229,200,0.08), 0 8px 32px rgba(0,0,0,0.6);
-  --scan-line: rgba(0,229,200,0.025);
+  --bg:     #0a1628;
+  --bg2:    #0d1e35;
+  --panel:  rgba(13,28,52,0.75);
+  --card:   rgba(255,255,255,0.05);
+  --card2:  rgba(255,255,255,0.03);
+  --brd:    rgba(78,234,204,0.18);
+  --brd2:   rgba(78,234,204,0.08);
+  --txt:    #e8f4f0;
+  --txt2:   #9abcb4;
+  --mute:   #4a7870;
+  --inp:    rgba(0,0,0,0.25);
+  --shd:    0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(78,234,204,0.1);
+  --scan-line: transparent;
 }
 
 /* LIGHT */
 [data-theme="light"] {
-  --bg:     #f0f7f5;
-  --bg2:    #e4f0ec;
-  --panel:  #ffffff;
-  --card:   #ffffff;
-  --card2:  #f5fbf9;
-  --brd:    rgba(0,120,100,0.2);
-  --brd2:   rgba(0,120,100,0.1);
+  --bg:     #f0faf8;
+  --bg2:    #e4f5f0;
+  --panel:  rgba(255,255,255,0.85);
+  --card:   rgba(255,255,255,0.75);
+  --card2:  rgba(240,255,252,0.6);
+  --brd:    rgba(0,150,120,0.2);
+  --brd2:   rgba(0,150,120,0.1);
   --txt:    #0d2e28;
-  --txt2:   #2a6055;
-  --mute:   #7aada5;
-  --inp:    #f0f7f5;
-  --shd:    0 2px 16px rgba(0,0,0,0.08);
+  --txt2:   #2a6058;
+  --mute:   #78aaa5;
+  --inp:    rgba(255,255,255,0.7);
+  --shd:    0 4px 24px rgba(0,100,80,0.12), 0 0 0 1px rgba(0,150,120,0.12);
   --scan-line: transparent;
-  --cyan:   #007a6a;
-  --cyan2:  #005a4e;
+  --cyan:   #0a9980;
+  --cyan2:  #0a8070;
 }
 
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -86,15 +90,12 @@ body {
   height: 100vh;
   overflow: hidden;
   font-size: 13px;
-  /* subtle scan-line texture */
-  background-image: repeating-linear-gradient(
-    0deg, var(--scan-line) 0px, var(--scan-line) 1px, transparent 1px, transparent 4px
-  );
+  /* gradient mesh applied via theme.css */;
 }
 
 ::-webkit-scrollbar{width:4px;height:4px}
 ::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:rgba(0,229,200,0.2);border-radius:2px}
+::-webkit-scrollbar-thumb{background:rgba(62,207,178,0.2);border-radius:2px}
 
 /* ─── SIDEBAR ────────────────────────────────────────── */
 .sidebar {
@@ -106,44 +107,13 @@ body {
   position: relative;
 }
 /* corner accent */
-.sidebar::before {
-  content:'';
-  position:absolute;top:0;right:0;
-  width:2px;height:100%;
-  background:linear-gradient(to bottom,var(--cyan),transparent 40%,transparent 80%,var(--cyan));
-  opacity:0.4;
-}
 
-.sb-brand {
-  padding: 22px 18px 16px;
-  border-bottom: 1px solid var(--brd2);
-}
-.sb-logo {
-  font-family: var(--head);
-  font-size: 32px; letter-spacing: 2px;
-  color: var(--cyan);
-  line-height: 1;
-  text-shadow: 0 0 20px rgba(0,229,200,0.4);
-}
-.sb-tagline {
-  font-family: var(--mono);
-  font-size: 8px; color: var(--mute);
-  letter-spacing: 2px; text-transform: uppercase;
-  margin-top: 4px;
-}
-.sb-ref {
-  display: inline-block; margin-top: 8px;
-  padding: 2px 8px; border: 1px solid var(--brd);
-  font-family: var(--mono); font-size: 8px;
-  color: var(--cyan); letter-spacing: 1px;
-  background: rgba(0,229,200,0.05);
-}
-.sb-sec {
-  font-family: var(--mono); font-size: 8px;
-  font-weight: 600; color: var(--mute);
-  letter-spacing: 2.5px; text-transform: uppercase;
-  padding: 16px 18px 5px;
-}
+
+
+
+
+
+
 .nav-link {
   display: flex; align-items: center; gap: 10px;
   padding: 9px 18px; cursor: pointer;
@@ -153,14 +123,14 @@ body {
   transition: all 0.12s; font-family: var(--mono);
   letter-spacing: 0.3px;
 }
-.nav-link:hover { color: var(--cyan); background: rgba(0,229,200,0.04); }
+.nav-link:hover { color: var(--accent); background: rgba(62,207,178,0.04); }
 .nav-link.active {
-  background: rgba(0,229,200,0.07);
-  color: var(--cyan); border-left-color: var(--cyan);
+  background: rgba(62,207,178,0.07);
+  color: var(--accent); border-left-color: var(--accent);
 }
-.nav-icon { font-size: 13px; width: 18px; text-align: center; flex-shrink:0; }
 
-.sb-foot { margin-top: auto; padding: 14px 18px; border-top: 1px solid var(--brd2); }
+
+
 .theme-btn {
   width: 100%; display: flex; align-items: center; justify-content: space-between;
   padding: 7px 12px; background: transparent;
@@ -169,7 +139,7 @@ body {
   font-weight: 600; color: var(--txt2); letter-spacing: 0.5px;
   transition: all 0.15s;
 }
-.theme-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+.theme-btn:hover { border-color: var(--accent); color: var(--accent); }
 .sb-copy {
   margin-top: 10px; font-family: var(--mono);
   font-size: 8px; color: var(--mute); text-align: center;
@@ -189,7 +159,7 @@ body {
 /* ─── PAGE HEADER ────────────────────────────────────── */
 .ph { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:22px; gap:14px; flex-wrap:wrap; }
 .ph-title {
-  font-family: var(--head); font-size: 28px; letter-spacing: 2px;
+  font-family: var(--head); font-size: 28px; letter-spacing: 0.2px;
   color: var(--txt); line-height: 1;
 }
 .ph-sub { font-family: var(--mono); font-size: 10px; color: var(--mute); margin-top: 5px; letter-spacing: 0.8px; }
@@ -204,14 +174,14 @@ body {
   border: 1px solid transparent;
 }
 .btn-primary {
-  background: var(--cyan); color: #040d12; border-color: var(--cyan);
+  background: var(--accent); color: #040d12; border-color: var(--accent);
   text-shadow: none;
 }
-.btn-primary:hover { background: var(--cyan2); box-shadow: 0 0 20px rgba(0,229,200,0.35); transform:translateY(-1px); }
+.btn-primary:hover { background: var(--accent2); box-shadow: 0 0 20px rgba(62,207,178,0.35); transform:translateY(-1px); }
 .btn-outline {
   background: transparent; color: var(--txt2); border-color: var(--brd);
 }
-.btn-outline:hover { border-color: var(--cyan); color: var(--cyan); }
+.btn-outline:hover { border-color: var(--accent); color: var(--accent); }
 .btn-danger { background: rgba(255,68,68,0.12); color: var(--red); border-color: rgba(255,68,68,0.25); }
 .btn-danger:hover { background: rgba(255,68,68,0.2); }
 .btn-sm { padding: 5px 12px; font-size: 10px; }
@@ -228,13 +198,13 @@ body {
 /* top glow line */
 .card::before {
   content:''; position:absolute; top:0; left:0; right:0; height:1px;
-  background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
   opacity: 0.3;
 }
 .card-hd { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; gap:10px; }
 .card-title {
   font-family: var(--mono); font-size: 11px; font-weight: 600;
-  color: var(--cyan); letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--accent); letter-spacing: 0.1px; text-transform: uppercase;
   display: flex; align-items: center; gap: 8px;
 }
 .card-title::before {
@@ -251,14 +221,14 @@ body {
 }
 .kpi::after {
   content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px;
-  background: var(--kc, var(--cyan));
+  background: var(--kc, var(--accent));
 }
 .kpi-lbl {
   font-family: var(--mono); font-size: 8px; font-weight: 600;
-  color: var(--mute); text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--mute); text-transform: uppercase; letter-spacing: 0.1px;
   margin-bottom: 8px;
 }
-.kpi-val { font-family: var(--mono); font-size: 22px; color: var(--kc, var(--cyan)); line-height: 1; font-weight: 400; }
+.kpi-val { font-family: var(--mono); font-size: 22px; color: var(--kc, var(--accent)); line-height: 1; font-weight: 400; }
 .kpi-unit { font-family: var(--mono); font-size: 9px; color: var(--mute); margin-top: 3px; }
 
 /* ─── FORMS ──────────────────────────────────────────── */
@@ -280,8 +250,8 @@ body {
   width: 100%;
 }
 .finput:focus, .fselect:focus {
-  border-color: var(--cyan);
-  box-shadow: 0 0 0 2px rgba(0,229,200,0.12);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(62,207,178,0.12);
 }
 .fselect option { background: var(--panel); }
 .frow { display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; }
@@ -297,7 +267,7 @@ body {
 /* ─── TABLES ─────────────────────────────────────────── */
 .tbl-wrap { overflow-x: auto; }
 table { width:100%; border-collapse:collapse; font-size:12px; }
-thead tr { background: rgba(0,229,200,0.04); }
+thead tr { background: rgba(62,207,178,0.04); }
 th {
   padding: 8px 12px; text-align: left;
   font-family: var(--mono); font-size: 9px; font-weight: 600;
@@ -305,7 +275,7 @@ th {
   border-bottom: 1px solid var(--brd);
 }
 td { padding: 9px 12px; border-bottom: 1px solid var(--brd2); vertical-align: middle; }
-tr:hover td { background: rgba(0,229,200,0.02); }
+tr:hover td { background: rgba(62,207,178,0.02); }
 .td-r { text-align:right; font-family:var(--mono); font-size:11.5px; }
 .td-c { text-align:center; }
 .td-mu { color:var(--txt2); font-size:11px; }
@@ -321,7 +291,7 @@ tr:hover td { background: rgba(0,229,200,0.02); }
 .b-ng  { background:rgba(255,68,68,0.12);   color:var(--red);   border-color:rgba(255,68,68,0.25); }
 .b-na  { background:rgba(58,102,96,0.15);   color:var(--mute);  border-color:var(--brd); }
 .b-k1  { background:rgba(68,136,255,0.1);   color:#88bbff;      border-color:rgba(68,136,255,0.25); }
-.b-k2  { background:rgba(0,229,200,0.1);    color:var(--cyan);  border-color:rgba(0,229,200,0.25); }
+.b-k2  { background:rgba(62,207,178,0.1);    color:var(--accent);  border-color:rgba(62,207,178,0.25); }
 .b-k3  { background:rgba(245,166,35,0.1);   color:var(--amber); border-color:rgba(245,166,35,0.25); }
 .b-k4  { background:rgba(255,68,68,0.1);    color:var(--red);   border-color:rgba(255,68,68,0.25); }
 
@@ -335,7 +305,7 @@ tr:hover td { background: rgba(0,229,200,0.02); }
 }
 .season-tab.active-dry  { background:rgba(245,166,35,0.15); color:var(--amber); }
 .season-tab.active-wet  { background:rgba(68,136,255,0.15); color:var(--blue); }
-.season-tab:hover:not(.active-dry):not(.active-wet) { background:rgba(0,229,200,0.05); color:var(--cyan); }
+.season-tab:hover:not(.active-dry):not(.active-wet) { background:rgba(62,207,178,0.05); color:var(--accent); }
 
 /* ─── PARAM ROW ──────────────────────────────────────── */
 .param-row {
@@ -351,7 +321,7 @@ tr:hover td { background: rgba(0,229,200,0.02); }
 }
 .param-row.ok  { border-left-color: var(--green); }
 .param-row.ng  { border-left-color: var(--red); }
-.param-row:nth-child(odd) { background: rgba(0,229,200,0.02); }
+.param-row:nth-child(odd) { background: rgba(62,207,178,0.02); }
 
 /* col header */
 .param-hdr {
@@ -393,12 +363,12 @@ tr:hover td { background: rgba(0,229,200,0.02); }
 .result-ng { background:rgba(255,68,68,0.04) !important; }
 
 /* ─── DB FILTER ACTIVE ───────────────────────────────── */
-.db-filter-active { background:var(--cyan) !important; color:#040d12 !important; border-color:var(--cyan) !important; }
+.db-filter-active { background:var(--accent) !important; color:#040d12 !important; border-color:var(--accent) !important; }
 
 /* ─── SEASON HEADER ──────────────────────────────────── */
 .season-hd {
   font-family: var(--mono); font-size: 9px; font-weight:700;
-  letter-spacing: 2px; text-transform: uppercase;
+  letter-spacing: 0.2px; text-transform: uppercase;
   padding: 6px 10px; border-radius: var(--rs); margin-bottom: 8px;
 }
 .season-hd-dry  { background:rgba(245,166,35,0.1); color:var(--amber); border:1px solid rgba(245,166,35,0.25); }
@@ -410,7 +380,7 @@ tr:hover td { background: rgba(0,229,200,0.02); }
   color:var(--txt); font-family:var(--mono); font-size:12px; padding:5px 8px;
   outline:none; transition:border-color 0.12s; width:100%;
 }
-.inp-sm:focus { border-color:var(--cyan); box-shadow:0 0 0 2px rgba(0,229,200,0.1); }
+.inp-sm:focus { border-color:var(--accent); box-shadow:0 0 0 2px rgba(62,207,178,0.1); }
 
 </style>
 
@@ -418,7 +388,7 @@ tr:hover td { background: rgba(0,229,200,0.02); }
 /* ── LOADING SCREEN ──────────────────────────────────── */
 #app-loader {
   position: fixed; inset: 0; z-index: 99999;
-  background: #040d12;
+  background: var(--bg);
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
   gap: 0;
@@ -444,16 +414,16 @@ tr:hover td { background: rgba(0,229,200,0.02); }
   position: absolute; inset: -14px;
   border-radius: 50%;
   border: 2px solid transparent;
-  border-top-color: #00e5c8;
-  border-right-color: rgba(0,229,200,0.3);
+  border-top-color: #3ecfb2;
+  border-right-color: rgba(62,207,178,0.3);
   animation: spin 1.4s linear infinite;
 }
 .loader-ring-2 {
   position: absolute; inset: -22px;
   border-radius: 50%;
   border: 1px solid transparent;
-  border-bottom-color: rgba(0,229,200,0.2);
-  border-left-color: rgba(0,229,200,0.1);
+  border-bottom-color: rgba(62,207,178,0.2);
+  border-left-color: rgba(62,207,178,0.1);
   animation: spin 2.2s linear infinite reverse;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -463,17 +433,19 @@ tr:hover td { background: rgba(0,229,200,0.02); }
   animation: logoPulse 2s ease-in-out infinite;
 }
 @keyframes logoPulse {
-  0%,100% { filter: drop-shadow(0 0 8px rgba(0,229,200,0.4)); }
-  50%      { filter: drop-shadow(0 0 22px rgba(0,229,200,0.8)); }
+  0%,100% { filter: drop-shadow(0 0 8px rgba(62,207,178,0.4)); }
+  50%      { filter: drop-shadow(0 0 22px rgba(62,207,178,0.8)); }
 }
 
 .loader-wordmark {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 42px; letter-spacing: 6px;
-  color: #00e5c8;
+  font-family: 'Inter', sans-serif;
+  font-size: 38px; font-weight: 800; letter-spacing: 8px;
+  background: linear-gradient(135deg, #4aeacc, #60aef0, #f5c030);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   line-height: 1;
-  text-shadow: 0 0 30px rgba(0,229,200,0.5);
-  animation: wordmarkIn 0.6s ease both;
+  animation: wordmarkIn 0.7s ease both;
   animation-delay: 0.2s;
 }
 @keyframes wordmarkIn {
@@ -482,9 +454,9 @@ tr:hover td { background: rgba(0,229,200,0.02); }
 }
 
 .loader-sub {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 10px; letter-spacing: 3px;
-  color: rgba(0,229,200,0.45);
+  font-family: 'Inter', sans-serif;
+  font-size: 10px; letter-spacing: 0.2px;
+  color: rgba(62,207,178,0.45);
   text-transform: uppercase;
   margin-top: 6px;
   animation: fadeUp 0.6s ease both;
@@ -502,7 +474,7 @@ tr:hover td { background: rgba(0,229,200,0.02); }
 }
 .loader-waves span {
   width: 4px; border-radius: 2px;
-  background: #00e5c8;
+  background: #3ecfb2;
   animation: waveBar 1.1s ease-in-out infinite;
 }
 .loader-waves span:nth-child(1) { animation-delay: 0s;    height: 10px; }
@@ -518,20 +490,19 @@ tr:hover td { background: rgba(0,229,200,0.02); }
 }
 
 .loader-status {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 10px; color: rgba(0,229,200,0.35);
-  letter-spacing: 1.5px; margin-top: 16px;
+  font-family: 'Inter', sans-serif;
+  font-size: 10px; color: rgba(62,207,178,0.35);
+  letter-spacing: 0.1px; margin-top: 16px;
   min-height: 16px;
 }
 
-/* scan line overlay on loader */
+/* gradient mesh overlay on loader */
 #app-loader::before {
   content: '';
   position: absolute; inset: 0; pointer-events: none;
-  background: repeating-linear-gradient(
-    0deg, rgba(0,229,200,0.015) 0px, rgba(0,229,200,0.015) 1px,
-    transparent 1px, transparent 4px
-  );
+  background:
+    radial-gradient(ellipse at 20% 30%, rgba(78,234,204,0.15) 0%, transparent 55%),
+    radial-gradient(ellipse at 80% 70%, rgba(107,200,232,0.12) 0%, transparent 50%);
 }
 </style>
 <!-- Leaflet.js -->
@@ -557,18 +528,19 @@ tr:hover td { background: rgba(0,229,200,0.02); }
 .leaflet-tile-pane { opacity: 1 !important; }
 .leaflet-tile { opacity: 1 !important; }
 .leaflet-popup-content-wrapper {
-  background: #1a1f2b;
-  color: #c8cdd8;
-  border: 1px solid #2a3040;
+  background: rgba(13,28,52,0.92);
+  color: #e8f4f0;
+  border: 1px solid rgba(78,234,204,0.2);
   border-radius: 8px;
 }
-.leaflet-popup-tip { background: #1a1f2b; }
+.leaflet-popup-tip { background: rgba(13,28,52,0.92); }
 .leaflet-control-zoom a {
-  background: #1a1f2b !important;
-  color: #00e5c8 !important;
-  border-color: #2a3040 !important;
+  background: rgba(13,28,52,0.85) !important;
+  color: #4aeacc !important;
+  border-color: rgba(78,234,204,0.25) !important;
+  backdrop-filter: blur(12px) !important;
 }
-.leaflet-control-zoom a:hover { background: #252d3d !important; }
+.leaflet-control-zoom a:hover { background: rgba(78,234,204,0.1) !important; }
 .leaflet-control-attribution { background: rgba(26,31,43,0.8) !important; color: #666 !important; font-size: 9px; }
 </style>
 
@@ -601,7 +573,7 @@ tr:hover td { background: rgba(0,229,200,0.02); }
 }
 .history-panel-title {
   font-family: var(--mono); font-size: 11px; font-weight: 700;
-  color: var(--cyan); text-transform: uppercase; letter-spacing: 1px;
+  color: var(--accent); text-transform: uppercase; letter-spacing: 1px;
 }
 .history-panel-body {
   flex: 1; overflow-y: auto; padding: 12px 14px;
@@ -653,7 +625,7 @@ tr:hover td { background: rgba(0,229,200,0.02); }
 }
 .share-title {
   font-family: var(--mono); font-size: 14px; font-weight: 700;
-  color: var(--cyan); margin-bottom: 4px;
+  color: var(--accent); margin-bottom: 4px;
 }
 .share-subtitle {
   font-family: var(--mono); font-size: 10px; color: var(--mute);
@@ -713,7 +685,7 @@ tr:hover td { background: rgba(0,229,200,0.02); }
 }
 .xls-panel-title-text {
   font-family: var(--mono); font-size: 12px; font-weight: 700;
-  color: var(--cyan); text-transform: uppercase; letter-spacing: 1px;
+  color: var(--accent); text-transform: uppercase; letter-spacing: 1px;
 }
 .xls-panel-subtitle {
   font-family: var(--mono); font-size: 9.5px; color: var(--mute);
@@ -725,14 +697,14 @@ tr:hover td { background: rgba(0,229,200,0.02); }
 .xls-step-label {
   display: flex; align-items: center; gap: 8px;
   font-family: var(--mono); font-size: 9px; font-weight: 700;
-  color: var(--cyan); text-transform: uppercase; letter-spacing: 1px;
+  color: var(--accent); text-transform: uppercase; letter-spacing: 1px;
   margin-bottom: 14px;
 }
 .xls-step-num {
   width: 20px; height: 20px; border-radius: 50%;
-  background: rgba(0,229,200,0.15); border: 1px solid rgba(0,229,200,0.4);
+  background: rgba(62,207,178,0.15); border: 1px solid rgba(62,207,178,0.4);
   display: flex; align-items: center; justify-content: center;
-  font-size: 10px; color: var(--cyan); flex-shrink: 0;
+  font-size: 10px; color: var(--accent); flex-shrink: 0;
 }
 .xls-drop-zone {
   border: 2px dashed var(--brd);
@@ -744,8 +716,8 @@ tr:hover td { background: rgba(0,229,200,0.02); }
   background: var(--bg2);
 }
 .xls-drop-zone:hover {
-  border-color: var(--cyan);
-  background: rgba(0,229,200,0.04);
+  border-color: var(--accent);
+  background: rgba(62,207,178,0.04);
 }
 .xls-drop-icon { font-size: 32px; margin-bottom: 10px; }
 .xls-drop-text {
@@ -775,7 +747,7 @@ tr:hover td { background: rgba(0,229,200,0.02); }
   height: 6px; margin-bottom: 6px; overflow: hidden;
 }
 .xls-progress-bar-inner {
-  height: 100%; background: var(--cyan);
+  height: 100%; background: var(--accent);
   border-radius: 4px; transition: width 0.4s ease;
   width: 0%;
 }
@@ -789,8 +761,8 @@ tr:hover td { background: rgba(0,229,200,0.02); }
   border-bottom: 1px solid var(--brd); white-space: nowrap;
 }
 .xls-meta-bar {
-  padding: 10px 14px; background: rgba(0,229,200,0.06);
-  border: 1px solid rgba(0,229,200,0.2); border-radius: var(--rs);
+  padding: 10px 14px; background: rgba(62,207,178,0.06);
+  border: 1px solid rgba(62,207,178,0.2); border-radius: var(--rs);
   font-family: var(--mono); font-size: 10px; color: var(--txt2);
   margin-bottom: 14px; display: flex; flex-wrap: wrap; gap: 10px;
   align-items: center;
@@ -800,6 +772,58 @@ tr:hover td { background: rgba(0,229,200,0.02); }
   flex-shrink: 0; display: flex; gap: 10px; align-items: center;
 }
 </style>
+
+<style id="theme-overrides">
+/* ── Final theme overrides to unify glassmorphism across all inline styles ── */
+
+/* Sidebar nav active highlight */
+.nav-link.active { border-radius: 0; }
+
+/* Card headers uniform */
+.card-hd .card-title { font-size: 11px; }
+
+/* Season blocks use rounded corners */
+#page-bpm [style*="background:rgba(245,166,35"], 
+#page-ubm [style*="background:rgba(245,166,35"] {
+  border-radius: 12px;
+}
+#page-bpm [style*="background:rgba(68,136,255"],
+#page-ubm [style*="background:rgba(68,136,255"] {
+  border-radius: 12px;
+}
+
+/* Table corner radius */
+.tbl-wrap table { border-radius: 10px; overflow: hidden; }
+thead tr:first-child th:first-child { border-top-left-radius: 10px; }
+thead tr:first-child th:last-child { border-top-right-radius: 10px; }
+
+/* Param rows get better rounding */
+.param-row { border-radius: 8px; }
+
+/* Report page button adjustments */
+#page-report .btn { border-radius: 50px; }
+
+/* Override history panel bg */
+.history-panel-body { background: transparent; }
+.hi-name { color: var(--txt) !important; }
+
+/* Better input placeholder color */
+::placeholder { color: var(--mute); opacity: 0.6; }
+
+/* DB search input */
+#db-search { border-radius: 50px; }
+
+/* Make season header text match new font */
+.season-hd { font-family: var(--head) !important; }
+
+/* Better loading screen ring animation color */
+.loader-ring { border-top-color: #4aeacc !important; }
+.loader-ring-2 { border-bottom-color: rgba(107,200,232,0.3) !important; }
+
+/* Update loader wave bar color */
+.loader-waves span { background: linear-gradient(180deg, #4aeacc, #60aef0) !important; }
+</style>
+
 </head>
 <body>
 
@@ -810,7 +834,7 @@ tr:hover td { background: rgba(0,229,200,0.02); }
     <div class="loader-ring-2"></div>
     <img class="loader-logo-img" src="assets/logo.svg" alt="RiverLoad Logo">
   </div>
-  <div class="loader-wordmark">RIVERLOAD</div>
+  <div class="loader-wordmark" style="text-align:center">RIVERLOAD</div>
   <div class="loader-sub">Beban Pencemaran Sungai &nbsp;·&nbsp; PP 22/2021</div>
   <div class="loader-waves">
     <span></span><span></span><span></span><span></span>
@@ -820,80 +844,364 @@ tr:hover td { background: rgba(0,229,200,0.02); }
 </div>
 
 <!-- ═══ SIDEBAR ════════════════════════════════════════ -->
-<aside class="sidebar">
-  <div class="sb-brand">
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
-      <img src="assets/logo.svg" alt="RiverLoad" style="width:38px;height:38px;flex-shrink:0;filter:drop-shadow(0 0 6px rgba(0,229,200,0.4))">
-      <div class="sb-logo" style="font-size:26px;line-height:1">RIVER<br>LOAD</div>
+<input type="file" id="fi" accept=".riverload,.json" style="display:none" onchange="loadProject(this)">
+
+<header class="topbar">
+  <div class="tb-inner">
+
+    <!-- Logo kiri -->
+    <div class="tb-brand">
+      <img src="assets/logo.svg" alt="RiverLoad" class="tb-logo-img">
+      <div class="tb-wordmark">
+        <span class="tb-name">RiverLoad</span>
+        <span class="tb-sub">Beban Pencemaran · PP 22/2021</span>
+      </div>
     </div>
-    <div class="sb-tagline">Beban Pencemaran Sungai</div>
-    <div class="sb-ref">PP 22/2021 · LAMP. VI</div>
-  </div>
 
-  <div class="sb-sec">Analisis</div>
-  <div class="nav-link active" onclick="nav('bpm')" id="nav-bpm">
-    <span class="nav-icon">🌊</span><span>Beban Pencemar</span>
-  </div>
-  <div class="nav-link" onclick="nav('ubm')" id="nav-ubm">
-    <span class="nav-icon">⚗️</span><span>Usulan Baku Mutu</span>
-  </div>
-  <div class="nav-link" onclick="nav('modeling')" id="nav-modeling">
-    <span class="nav-icon">🗺</span><span>Modeling</span>
-  </div>
-  <div class="nav-link" onclick="nav('db')" id="nav-db">
-    <span class="nav-icon">🗄</span><span>Database BM</span>
-  </div>
+    <!-- Nav tengah -->
+    <nav class="tb-nav">
+      <div class="nav-link active" onclick="nav('home')" id="nav-home">Beranda</div>
+      <div class="nav-link" onclick="nav('bpm')" id="nav-bpm">Beban Pencemar</div>
+      <div class="nav-link" onclick="nav('ubm')" id="nav-ubm">Usulan Baku Mutu</div>
+      <div class="nav-link" onclick="nav('modeling')" id="nav-modeling">Modeling</div>
+      <div class="nav-link" onclick="nav('db')" id="nav-db">Database BM</div>
+      <div class="nav-link" onclick="nav('report')" id="nav-report">Laporan</div>
+      <div class="nav-link" onclick="nav('peta')" id="nav-peta">
+        Peta Sungai
+        <span class="tb-badge">Beta</span>
+      </div>
+    </nav>
 
-  <div class="sb-sec">Output</div>
-  <div class="nav-link" onclick="nav('report')" id="nav-report">
-    <span class="nav-icon">📋</span><span>Laporan</span>
-  </div>
+    <!-- Aksi kanan -->
+    <div class="tb-actions">
+      <button class="tb-btn-ghost" onclick="xlsImportOpen()" title="Import Excel dengan AI">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+        Import Lab
+        <span class="tb-ai-badge">AI</span>
+      </button>
 
-  <div class="nav-link" onclick="nav('peta')" id="nav-peta">
-    <span class="nav-icon">📍</span><span>Peta Sungai</span>
-    <span style="margin-left:auto;font-family:var(--mono);font-size:8px;font-weight:700;color:#ffc800;background:rgba(255,200,0,0.12);border:1px solid rgba(255,200,0,0.35);border-radius:6px;padding:1px 5px;letter-spacing:.5px;white-space:nowrap">BETA</span>
-  </div>
+      <div class="tb-sep"></div>
 
-  <div class="sb-sec">Import Data</div>
-  <div class="nav-link" onclick="xlsImportOpen()" style="background:rgba(0,229,200,0.05);border-left:3px solid rgba(0,229,200,0.4)">
-    <span class="nav-icon">📊</span>
-    <div>
-      <div style="font-size:11.5px;font-weight:600">Import Excel Lab</div>
-      <div style="font-size:9px;color:var(--mute);margin-top:1px">AI Auto-fill Hasil Uji</div>
+      <button class="tb-btn-icon" onclick="historySaveOnly()" title="Simpan ke Riwayat">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      </button>
+      <button class="tb-btn-icon" onclick="saveProject()" title="Ekspor File">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      </button>
+      <button class="tb-btn-icon" onclick="historyOpenPanel()" title="Riwayat Proyek">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      </button>
+      <button class="tb-btn-icon" onclick="document.getElementById('fi').click()" title="Buka File">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+      </button>
+
+      <div class="tb-sep"></div>
+
+      <button class="tb-btn-theme" onclick="toggleTheme()" id="theme-toggle-btn">
+        <span id="tico">☀</span>
+        <span id="tlbl">Light</span>
+      </button>
+
+      <span id="save-status" style="display:none"></span>
     </div>
-    <span style="margin-left:auto;font-family:var(--mono);font-size:8px;font-weight:700;color:var(--cyan);background:rgba(0,229,200,0.12);border:1px solid rgba(0,229,200,0.35);border-radius:6px;padding:1px 5px;letter-spacing:.5px;white-space:nowrap">AI</span>
   </div>
-
-  <div class="sb-sec">Proyek</div>
-  <div class="nav-link" onclick="historySaveOnly()">
-    <span class="nav-icon">💾</span><span>Simpan ke Riwayat</span>
-  </div>
-  <div class="nav-link" onclick="saveProject()">
-    <span class="nav-icon">⬇</span><span>Ekspor File</span>
-  </div>
-  <div class="nav-link" onclick="historyOpenPanel()">
-    <span class="nav-icon">📚</span><span>Riwayat Proyek</span>
-  </div>
-
-  <div class="nav-link" onclick="document.getElementById('fi').click()">
-    <span class="nav-icon">📁</span><span>Buka File</span>
-  </div>
-  <input type="file" id="fi" accept=".riverload,.json" style="display:none" onchange="loadProject(this)">
-
-  <div class="sb-foot">
-    <button class="theme-btn" onclick="toggleTheme()">
-      <span id="tlbl">☀ LIGHT</span>
-      <span id="tico">○</span>
-    </button>
-    <div class="sb-copy">RIVERLOAD v2.0<br>PP 22 / 2021 — LAMPIRAN VI<br>© Andyka Adhyaksa Sumarno</div>
-  </div>
-</aside>
+</header>
 
 <!-- ═══ MAIN ════════════════════════════════════════════ -->
 <main class="main">
 
+<!-- ═══ PAGE: BERANDA ══════════════════════════════════════ -->
+<div class="page active" id="page-home">
+
+  <!-- ── HERO SECTION ──────────────────────────────────────── -->
+  <div class="home-hero">
+    <div class="home-hero-bg"></div>
+    <div class="home-hero-content">
+      <div class="home-hero-badge">
+        <span class="home-badge-dot"></span>
+        PP 22/2021 · Lampiran VI · Beban Pencemaran Sungai
+      </div>
+      <h1 class="home-hero-title">
+        Analisis Hidrologi<br>
+        <span class="home-hero-accent">Sungai Indonesia</span>
+      </h1>
+      <p class="home-hero-desc">
+        Platform analisis beban pencemaran sungai berbasis ilmiah yang mengintegrasikan perhitungan BPM, BPA, pemodelan dispersi, dan visualisasi peta — sesuai regulasi PP 22/2021 Lampiran VI.
+      </p>
+      <div class="home-hero-cta">
+        <button class="home-btn-primary" onclick="nav('bpm')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>
+          Mulai Analisis
+        </button>
+        <button class="home-btn-ghost" onclick="nav('db')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+          Lihat Database BM
+        </button>
+      </div>
+    </div>
+    <div class="home-hero-visual">
+      <div class="home-river-diagram" id="home-river-anim">
+        <!-- SVG river diagram animated -->
+        <svg viewBox="0 0 420 320" width="100%" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="riverGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#3ecfb2" stop-opacity="0.9"/>
+              <stop offset="100%" stop-color="#6aaeee" stop-opacity="0.8"/>
+            </linearGradient>
+            <linearGradient id="cardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="rgba(255,255,255,0.12)"/>
+              <stop offset="100%" stop-color="rgba(255,255,255,0.04)"/>
+            </linearGradient>
+            <filter id="glow"><feGaussianBlur stdDeviation="3" result="blur"/><feComposite in="SourceGraphic" in2="blur" operator="over"/></filter>
+            <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M2 1L8 5L2 9" fill="none" stroke="#3ecfb2" stroke-width="1.5" stroke-linecap="round"/></marker>
+          </defs>
+
+          <!-- Background grid -->
+          <g opacity="0.06">
+            <line x1="0" y1="40" x2="420" y2="40" stroke="#3ecfb2" stroke-width="0.5"/>
+            <line x1="0" y1="80" x2="420" y2="80" stroke="#3ecfb2" stroke-width="0.5"/>
+            <line x1="0" y1="120" x2="420" y2="120" stroke="#3ecfb2" stroke-width="0.5"/>
+            <line x1="0" y1="160" x2="420" y2="160" stroke="#3ecfb2" stroke-width="0.5"/>
+            <line x1="0" y1="200" x2="420" y2="200" stroke="#3ecfb2" stroke-width="0.5"/>
+            <line x1="0" y1="240" x2="420" y2="240" stroke="#3ecfb2" stroke-width="0.5"/>
+            <line x1="0" y1="280" x2="420" y2="280" stroke="#3ecfb2" stroke-width="0.5"/>
+            <line x1="60" y1="0" x2="60" y2="320" stroke="#3ecfb2" stroke-width="0.5"/>
+            <line x1="120" y1="0" x2="120" y2="320" stroke="#3ecfb2" stroke-width="0.5"/>
+            <line x1="180" y1="0" x2="180" y2="320" stroke="#3ecfb2" stroke-width="0.5"/>
+            <line x1="240" y1="0" x2="240" y2="320" stroke="#3ecfb2" stroke-width="0.5"/>
+            <line x1="300" y1="0" x2="300" y2="320" stroke="#3ecfb2" stroke-width="0.5"/>
+            <line x1="360" y1="0" x2="360" y2="320" stroke="#3ecfb2" stroke-width="0.5"/>
+          </g>
+
+          <!-- River flow path -->
+          <path d="M0,160 Q60,140 120,160 Q180,180 240,155 Q300,130 360,155 Q390,165 420,160"
+            stroke="url(#riverGrad)" stroke-width="18" fill="none" opacity="0.25" stroke-linecap="round"/>
+          <path d="M0,160 Q60,140 120,160 Q180,180 240,155 Q300,130 360,155 Q390,165 420,160"
+            stroke="url(#riverGrad)" stroke-width="4" fill="none" opacity="0.9" stroke-linecap="round" filter="url(#glow)">
+            <animate attributeName="stroke-dashoffset" from="1000" to="0" dur="3s" repeatCount="indefinite"/>
+            <animate attributeName="stroke-dasharray" values="0,1000;400,600;0,1000" dur="3s" repeatCount="indefinite"/>
+          </path>
+
+          <!-- Sampling points -->
+          <g>
+            <circle cx="80" cy="155" r="10" fill="rgba(62,207,178,0.2)" stroke="#3ecfb2" stroke-width="2">
+              <animate attributeName="r" values="10;14;10" dur="2.5s" repeatCount="indefinite"/>
+            </circle>
+            <circle cx="80" cy="155" r="4" fill="#3ecfb2"/>
+            <text x="80" y="135" text-anchor="middle" fill="#3ecfb2" font-family="Inter,sans-serif" font-size="9" font-weight="600">S1</text>
+          </g>
+          <g>
+            <circle cx="200" cy="160" r="10" fill="rgba(62,207,178,0.2)" stroke="#3ecfb2" stroke-width="2">
+              <animate attributeName="r" values="10;14;10" dur="2.5s" begin="0.8s" repeatCount="indefinite"/>
+            </circle>
+            <circle cx="200" cy="160" r="4" fill="#3ecfb2"/>
+            <text x="200" y="140" text-anchor="middle" fill="#3ecfb2" font-family="Inter,sans-serif" font-size="9" font-weight="600">S2</text>
+          </g>
+          <g>
+            <circle cx="340" cy="152" r="10" fill="rgba(62,207,178,0.2)" stroke="#3ecfb2" stroke-width="2">
+              <animate attributeName="r" values="10;14;10" dur="2.5s" begin="1.6s" repeatCount="indefinite"/>
+            </circle>
+            <circle cx="340" cy="152" r="4" fill="#3ecfb2"/>
+            <text x="340" y="132" text-anchor="middle" fill="#3ecfb2" font-family="Inter,sans-serif" font-size="9" font-weight="600">S3</text>
+          </g>
+
+          <!-- Pollution source -->
+          <g>
+            <rect x="140" y="60" width="44" height="44" rx="8" fill="rgba(224,92,106,0.15)" stroke="#e05c6a" stroke-width="1.5"/>
+            <text x="162" y="77" text-anchor="middle" fill="#e05c6a" font-family="Inter,sans-serif" font-size="8" font-weight="600">IPAL</text>
+            <text x="162" y="89" text-anchor="middle" fill="#e05c6a" font-family="Inter,sans-serif" font-size="7">Industri</text>
+            <!-- Flow arrow down to river -->
+            <line x1="162" y1="104" x2="162" y2="148" stroke="#e05c6a" stroke-width="1.5" stroke-dasharray="3,2" marker-end="url(#arr)" opacity="0.8">
+              <animate attributeName="stroke-dashoffset" from="0" to="-10" dur="1s" repeatCount="indefinite"/>
+            </line>
+          </g>
+
+          <!-- Data cards floating -->
+          <g>
+            <rect x="16" y="20" width="110" height="52" rx="10" fill="url(#cardGrad)" stroke="rgba(62,207,178,0.3)" stroke-width="1"/>
+            <text x="28" y="38" fill="rgba(138,184,170,0.7)" font-family="Inter,sans-serif" font-size="8">BPM Hulu</text>
+            <text x="28" y="56" fill="#3ecfb2" font-family="Inter,sans-serif" font-size="18" font-weight="700">12.4</text>
+            <text x="85" y="56" fill="rgba(138,184,170,0.6)" font-family="Inter,sans-serif" font-size="9">kg/jam</text>
+          </g>
+          <g>
+            <rect x="295" y="20" width="110" height="52" rx="10" fill="url(#cardGrad)" stroke="rgba(232,184,75,0.3)" stroke-width="1"/>
+            <text x="307" y="38" fill="rgba(200,170,100,0.7)" font-family="Inter,sans-serif" font-size="8">C Aktual</text>
+            <text x="307" y="56" fill="#e8b84b" font-family="Inter,sans-serif" font-size="18" font-weight="700">3.27</text>
+            <text x="363" y="56" fill="rgba(200,170,100,0.6)" font-family="Inter,sans-serif" font-size="9">mg/L</text>
+          </g>
+          <g>
+            <rect x="16" y="248" width="110" height="52" rx="10" fill="url(#cardGrad)" stroke="rgba(106,174,238,0.3)" stroke-width="1"/>
+            <text x="28" y="266" fill="rgba(120,160,210,0.7)" font-family="Inter,sans-serif" font-size="8">Q Debit</text>
+            <text x="28" y="284" fill="#6aaeee" font-family="Inter,sans-serif" font-size="18" font-weight="700">8.50</text>
+            <text x="82" y="284" fill="rgba(120,160,210,0.6)" font-family="Inter,sans-serif" font-size="9">m³/s</text>
+          </g>
+          <g>
+            <rect x="295" y="248" width="110" height="52" rx="10" fill="url(#cardGrad)" stroke="rgba(79,216,154,0.3)" stroke-width="1"/>
+            <text x="307" y="266" fill="rgba(80,190,130,0.7)" font-family="Inter,sans-serif" font-size="8">Status BM</text>
+            <text x="307" y="284" fill="#4fd89a" font-family="Inter,sans-serif" font-size="14" font-weight="700">MEMENUHI</text>
+          </g>
+
+          <!-- Dispersion plume -->
+          <ellipse cx="200" cy="163" rx="55" ry="20" fill="rgba(224,92,106,0.08)" stroke="rgba(224,92,106,0.2)" stroke-width="1" stroke-dasharray="4,3">
+            <animate attributeName="rx" values="55;70;55" dur="4s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="0.6;1;0.6" dur="4s" repeatCount="indefinite"/>
+          </ellipse>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── STAT STRIP ─────────────────────────────────────────── -->
+  <div class="home-stats">
+    <div class="home-stat">
+      <div class="home-stat-num" data-target="49">0</div>
+      <div class="home-stat-label">Parameter Kualitas Air</div>
+    </div>
+    <div class="home-stat-div"></div>
+    <div class="home-stat">
+      <div class="home-stat-num" data-target="4">0</div>
+      <div class="home-stat-label">Kelas Sungai PP 22/2021</div>
+    </div>
+    <div class="home-stat-div"></div>
+    <div class="home-stat">
+      <div class="home-stat-num" data-target="6">0</div>
+      <div class="home-stat-label">Modul Analisis Terintegrasi</div>
+    </div>
+    <div class="home-stat-div"></div>
+    <div class="home-stat">
+      <div class="home-stat-num">100%</div>
+      <div class="home-stat-label">Berbasis Regulasi Indonesia</div>
+    </div>
+  </div>
+
+  <!-- ── FEATURE GRID ───────────────────────────────────────── -->
+  <div class="home-section-label">Modul Analisis</div>
+  <div class="home-feature-grid">
+
+    <div class="home-feat-card home-feat-primary" onclick="nav('bpm')">
+      <div class="home-feat-icon">🌊</div>
+      <div class="home-feat-title">Beban Pencemar</div>
+      <div class="home-feat-desc">Hitung BPM (Beban Pencemar Maksimum) dan BPA (Beban Pencemar Aktual) berdasarkan debit sungai, baku mutu, dan konsentrasi aktual per parameter.</div>
+      <div class="home-feat-formula">BPM = Q × BM × 3.6 <span style="opacity:0.5">kg/jam</span></div>
+      <div class="home-feat-arrow">→</div>
+    </div>
+
+    <div class="home-feat-card" onclick="nav('ubm')">
+      <div class="home-feat-icon">⚗️</div>
+      <div class="home-feat-title">Usulan Baku Mutu</div>
+      <div class="home-feat-desc">Hitung konsentrasi maksimum yang diperbolehkan dari sumber air limbah berdasarkan daya tampung sungai dan debit efluent.</div>
+      <div class="home-feat-tag">Cmaks = BM × (Qs + Qe) / Qe</div>
+    </div>
+
+    <div class="home-feat-card" onclick="nav('modeling')">
+      <div class="home-feat-icon">🗺️</div>
+      <div class="home-feat-title">Pemodelan Dispersi</div>
+      <div class="home-feat-desc">Visualisasi sebaran konsentrasi pencemar di sepanjang aliran sungai menggunakan model Streeter-Phelps dan adveksi-difusi.</div>
+      <div class="home-feat-tag">Model 1D · Graf interaktif</div>
+    </div>
+
+    <div class="home-feat-card" onclick="nav('db')">
+      <div class="home-feat-icon">🗄️</div>
+      <div class="home-feat-title">Database Baku Mutu</div>
+      <div class="home-feat-desc">49 parameter kualitas air dengan nilai baku mutu untuk 4 kelas sungai sesuai PP 22/2021 Lampiran VI — dapat difilter dan dicari.</div>
+      <div class="home-feat-tag">49 parameter · 4 kelas</div>
+    </div>
+
+    <div class="home-feat-card" onclick="nav('report')">
+      <div class="home-feat-icon">📋</div>
+      <div class="home-feat-title">Output Laporan</div>
+      <div class="home-feat-desc">Generate laporan analisis lengkap dalam format Excel (.xlsx) dengan tabel berwarna dan Word (.docx) siap cetak untuk keperluan pelaporan resmi.</div>
+      <div class="home-feat-tag">Export Excel · Word</div>
+    </div>
+
+    <div class="home-feat-card" onclick="nav('peta')">
+      <div class="home-feat-icon">📍</div>
+      <div class="home-feat-title">Peta Sungai Interaktif</div>
+      <div class="home-feat-desc">Petakan titik sampling, sumber limbah, dan alur sungai di atas peta OpenStreetMap. Input koordinat manual atau via format DMS. Database 80+ sungai Indonesia.</div>
+      <div class="home-feat-tag home-feat-beta">Beta · 80+ sungai Indonesia</div>
+    </div>
+
+  </div>
+
+  <!-- ── HOW IT WORKS ───────────────────────────────────────── -->
+  <div class="home-section-label" style="margin-top:40px">Alur Kerja</div>
+  <div class="home-steps">
+    <div class="home-step">
+      <div class="home-step-num">01</div>
+      <div class="home-step-content">
+        <div class="home-step-title">Input Data Sungai</div>
+        <div class="home-step-desc">Masukkan nama sungai, kelas mutu, dan debit aliran (m³/s) untuk musim kemarau dan hujan. Atau import otomatis dari file Excel hasil uji lab via fitur AI.</div>
+      </div>
+    </div>
+    <div class="home-step-connector"></div>
+    <div class="home-step">
+      <div class="home-step-num">02</div>
+      <div class="home-step-content">
+        <div class="home-step-title">Pilih Parameter & BM</div>
+        <div class="home-step-desc">Pilih parameter dari database 49 parameter. Nilai baku mutu terisi otomatis sesuai kelas sungai PP 22/2021. Masukkan konsentrasi aktual hasil uji laboratorium.</div>
+      </div>
+    </div>
+    <div class="home-step-connector"></div>
+    <div class="home-step">
+      <div class="home-step-num">03</div>
+      <div class="home-step-content">
+        <div class="home-step-title">Hitung & Analisis</div>
+        <div class="home-step-desc">BPM dan BPA dihitung otomatis. Status tiap parameter (memenuhi/melebihi baku mutu) ditampilkan. Jalankan pemodelan dispersi untuk proyeksi sebaran pencemar.</div>
+      </div>
+    </div>
+    <div class="home-step-connector"></div>
+    <div class="home-step">
+      <div class="home-step-num">04</div>
+      <div class="home-step-content">
+        <div class="home-step-title">Export Laporan</div>
+        <div class="home-step-desc">Generate laporan Excel berwarna dan Word terstruktur. Simpan proyek ke riwayat browser atau ekspor ke file .riverload untuk dibagikan ke rekan kerja.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── LEGAL BASIS ────────────────────────────────────────── -->
+  <div class="home-section-label" style="margin-top:40px">Dasar Hukum</div>
+  <div class="home-legal-grid">
+    <div class="home-legal-card">
+      <div class="home-legal-icon">⚖️</div>
+      <div class="home-legal-content">
+        <div class="home-legal-title">PP No. 22 Tahun 2021</div>
+        <div class="home-legal-desc">Penyelenggaraan Perlindungan dan Pengelolaan Lingkungan Hidup — dasar seluruh kalkulasi baku mutu dan beban pencemaran.</div>
+      </div>
+    </div>
+    <div class="home-legal-card">
+      <div class="home-legal-icon">📄</div>
+      <div class="home-legal-content">
+        <div class="home-legal-title">Lampiran VI PP 22/2021</div>
+        <div class="home-legal-desc">Baku Mutu Air Sungai untuk 4 kelas — 49 parameter fisika, kimia organik, anorganik, radioaktivitas, dan mikrobiologi.</div>
+      </div>
+    </div>
+    <div class="home-legal-card">
+      <div class="home-legal-icon">🏛️</div>
+      <div class="home-legal-content">
+        <div class="home-legal-title">PermenLHK P.21/2021</div>
+        <div class="home-legal-desc">Metodologi penghitungan daya tampung beban pencemaran air sungai — basis rumus BPM = Q × BM × 3.6 yang digunakan aplikasi ini.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── FOOTER INFO ────────────────────────────────────────── -->
+  <div class="home-footer">
+    <div class="home-footer-logo">
+      <img src="assets/logo.svg" alt="RiverLoad" style="width:28px;height:28px;filter:drop-shadow(0 0 8px rgba(62,207,178,0.5))">
+      <span style="font-family:var(--head);font-size:15px;font-weight:700;color:var(--accent);letter-spacing:-0.3px">RiverLoad</span>
+      <span style="font-size:11px;color:var(--mute)">v2.0</span>
+    </div>
+    <div class="home-footer-text">
+      Dikembangkan untuk mendukung analisis beban pencemaran sungai di Indonesia sesuai PP 22/2021.<br>
+      <span style="color:var(--mute)">© 2024 Andyka Adhyaksa Sumarno · Seluruh perhitungan bersifat referensial.</span>
+    </div>
+  </div>
+
+</div><!-- /page-home -->
+
 <!-- ═══ PAGE: BEBAN PENCEMAR ═══════════════════════════ -->
-<div class="page active" id="page-bpm">
+<div class="page" id="page-bpm">
   <div class="ph">
     <div>
       <div class="ph-title">BEBAN PENCEMAR</div>
@@ -926,7 +1234,7 @@ tr:hover td { background: rgba(0,229,200,0.02); }
         </select>
       </div>
     </div>
-    <div id="class-info" style="display:none;margin-top:12px;padding:9px 14px;background:rgba(0,229,200,0.04);border:1px solid var(--brd);border-radius:var(--rs)">
+    <div id="class-info" style="display:none;margin-top:12px;padding:9px 14px;background:rgba(62,207,178,0.04);border:1px solid var(--brd);border-radius:var(--rs)">
       <span style="font-family:var(--mono);font-size:9px;color:var(--mute);text-transform:uppercase;letter-spacing:1px">PERUNTUKAN &nbsp;·&nbsp; </span>
       <span id="class-desc" style="font-family:var(--mono);font-size:10.5px;color:var(--txt2)"></span>
     </div>
@@ -963,13 +1271,13 @@ tr:hover td { background: rgba(0,229,200,0.02); }
     <div class="card-hd">
       <div class="card-title">Jenis Air Limbah</div>
       <div style="display:flex;gap:8px;align-items:center">
-        <button class="btn btn-outline btn-sm" onclick="wsShowTypePicker()" style="background:rgba(0,229,200,0.08);border-color:var(--cyan);color:var(--cyan)">＋ Pilih Jenis Limbah</button>
+        <button class="btn btn-outline btn-sm" onclick="wsShowTypePicker()" style="background:rgba(62,207,178,0.08);border-color:var(--accent);color:var(--accent)">＋ Pilih Jenis Limbah</button>
         <button class="btn btn-outline btn-sm" onclick="addWasteSource()">＋ Input Manual</button>
       </div>
     </div>
-    <div style="font-family:var(--mono);font-size:9.5px;color:var(--txt2);margin-bottom:12px;padding:8px 12px;background:rgba(0,229,200,0.04);border:1px solid var(--brd);border-radius:var(--rs)">
+    <div style="font-family:var(--mono);font-size:9.5px;color:var(--txt2);margin-bottom:12px;padding:8px 12px;background:rgba(62,207,178,0.04);border:1px solid var(--brd);border-radius:var(--rs)">
       ℹ &nbsp;Pilih jenis air limbah dari database. Tabel baku mutu gabungan dan daftar parameter akan muncul otomatis.
-      Debit air limbah dimasukkan pada bagian <strong style="color:var(--cyan)">Sumber Air Limbah</strong> di bawah (untuk perhitungan BPM).
+      Debit air limbah dimasukkan pada bagian <strong style="color:var(--accent)">Sumber Air Limbah</strong> di bawah (untuk perhitungan BPM).
     </div>
     <!-- Header -->
     <div id="ws-hdr" style="display:none;display:grid;grid-template-columns:1fr 36px;gap:6px;padding:6px 8px;font-family:var(--mono);font-size:9px;color:var(--mute);text-transform:uppercase;letter-spacing:0.8px;border-bottom:1px solid var(--brd2);margin-bottom:6px">
@@ -986,7 +1294,7 @@ tr:hover td { background: rgba(0,229,200,0.02); }
   <!-- Tabel Baku Mutu Gabungan (muncul otomatis setelah ada jenis limbah) -->
   <div class="card mb18" id="bm-gabungan-card" style="display:none">
     <div class="card-hd">
-      <div class="card-title" style="color:var(--cyan)">Tabel Baku Mutu Gabungan Jenis Air Limbah</div>
+      <div class="card-title" style="color:var(--accent)">Tabel Baku Mutu Gabungan Jenis Air Limbah</div>
       <div style="font-family:var(--mono);font-size:9px;color:var(--mute)">Nilai paling ketat = nilai terkecil per parameter dari semua jenis</div>
     </div>
     <div style="overflow-x:auto">
@@ -1005,16 +1313,16 @@ tr:hover td { background: rgba(0,229,200,0.02); }
       <div style="display:flex;gap:8px;align-items:center">
         <button class="btn btn-outline btn-sm" id="btn-import-bm-gabungan"
           onclick="importParamsFromGabungan()"
-          style="background:rgba(0,229,200,0.08);border-color:var(--cyan);color:var(--cyan)">
+          style="background:rgba(62,207,178,0.08);border-color:var(--accent);color:var(--accent)">
           ⬇ Impor dari Parameter Air Limbah
         </button>
         <span style="font-size:11px;color:var(--mute);font-family:var(--mono)">
-          atau dari <span style="color:var(--cyan);cursor:pointer" onclick="nav('db')">Database BM →</span>
+          atau dari <span style="color:var(--accent);cursor:pointer" onclick="nav('db')">Database BM →</span>
         </span>
       </div>
     </div>
-    <div style="font-family:var(--mono);font-size:9.5px;color:var(--txt2);margin-bottom:12px;padding:8px 12px;background:rgba(0,229,200,0.04);border:1px solid var(--brd);border-radius:var(--rs)">
-      ℹ &nbsp;Pilih kelas sungai terlebih dahulu. Klik <strong style="color:var(--cyan)">Impor dari Parameter Air Limbah</strong> untuk menambah <em>nama parameter</em> sesuai jenis limbah yang dipilih — <strong>nilai C Maks diambil dari BM Sungai (PP 22/2021 Lampiran VI) sesuai kelas sungai</strong>, bukan dari BM jenis air limbah. Atau tambah manual dari <span style="color:var(--cyan);cursor:pointer;text-decoration:underline" onclick="nav('db')">Database Baku Mutu</span>.
+    <div style="font-family:var(--mono);font-size:9.5px;color:var(--txt2);margin-bottom:12px;padding:8px 12px;background:rgba(62,207,178,0.04);border:1px solid var(--brd);border-radius:var(--rs)">
+      ℹ &nbsp;Pilih kelas sungai terlebih dahulu. Klik <strong style="color:var(--accent)">Impor dari Parameter Air Limbah</strong> untuk menambah <em>nama parameter</em> sesuai jenis limbah yang dipilih — <strong>nilai C Maks diambil dari BM Sungai (PP 22/2021 Lampiran VI) sesuai kelas sungai</strong>, bukan dari BM jenis air limbah. Atau tambah manual dari <span style="color:var(--accent);cursor:pointer;text-decoration:underline" onclick="nav('db')">Database Baku Mutu</span>.
     </div>
 
     <!-- Season tabs untuk melihat hasil per musim -->
@@ -1028,7 +1336,7 @@ tr:hover td { background: rgba(0,229,200,0.02); }
       <div style="text-align:center">No</div>
       <div>Parameter</div>
       <div style="text-align:center">Satuan</div>
-      <div style="text-align:right">C Maks<br><span style="font-size:7.5px;font-weight:400;letter-spacing:0px;text-transform:none;color:var(--cyan)">(BM Sungai, mg/L)</span></div>
+      <div style="text-align:right">C Maks<br><span style="font-size:7.5px;font-weight:400;letter-spacing:0px;text-transform:none;color:var(--accent)">(BM Sungai, mg/L)</span></div>
       <div style="text-align:right">BPM<br><span style="font-size:7.5px;font-weight:400;letter-spacing:0px;text-transform:none">(kg/jam)</span></div>
       <div style="text-align:right">C Aktual<br><span style="font-size:7.5px;font-weight:400;letter-spacing:0px;text-transform:none">(mg/L) — Input</span></div>
       <div style="text-align:right">BPA<br><span style="font-size:7.5px;font-weight:400;letter-spacing:0px;text-transform:none">(kg/jam)</span></div>
@@ -1044,7 +1352,7 @@ tr:hover td { background: rgba(0,229,200,0.02); }
     </div>
 
     <!-- Footer total -->
-    <div id="param-footer" style="display:none;padding:10px 14px;background:rgba(0,229,200,0.06);border-top:1px solid var(--brd);margin-top:8px;display:none;justify-content:space-between;align-items:center">
+    <div id="param-footer" style="display:none;padding:10px 14px;background:rgba(62,207,178,0.06);border-top:1px solid var(--brd);margin-top:8px;display:none;justify-content:space-between;align-items:center">
       <span style="font-family:var(--mono);font-size:10px;color:var(--mute);letter-spacing:1px">TOTAL PARAMETER</span>
       <div id="footer-stats" style="font-family:var(--mono);font-size:11px;color:var(--txt2)"></div>
     </div>
@@ -1052,7 +1360,7 @@ tr:hover td { background: rgba(0,229,200,0.02); }
 
   <!-- Result KPI -->
   <div id="result-kpi" style="display:none;margin-top:18px">
-    <div style="font-family:var(--mono);font-size:9px;color:var(--mute);letter-spacing:2px;text-transform:uppercase;margin-bottom:12px" id="result-season-lbl">// HASIL PERHITUNGAN — MUSIM KEMARAU</div>
+    <div style="font-family:var(--mono);font-size:9px;color:var(--mute);letter-spacing: 0.2px;text-transform:uppercase;margin-bottom:12px" id="result-season-lbl">// HASIL PERHITUNGAN — MUSIM KEMARAU</div>
 
     <!-- KPI summary strip -->
     <div class="kpi-grid" id="kpi-grid" style="margin-bottom:16px"></div>
@@ -1062,7 +1370,7 @@ tr:hover td { background: rgba(0,229,200,0.02); }
       <!-- Kemarau -->
       <div id="rekap-dry">
         <div style="padding:10px 16px;background:rgba(255,160,30,0.08);border-bottom:1px solid var(--brd);display:flex;align-items:center;gap:10px">
-          <span style="font-family:var(--mono);font-size:10px;font-weight:700;color:#f39c12;letter-spacing:1.5px">☀ KEMARAU</span>
+          <span style="font-family:var(--mono);font-size:10px;font-weight:700;color:#f39c12;letter-spacing: 0.1px">☀ KEMARAU</span>
           <span id="rekap-dry-q" style="font-family:var(--mono);font-size:9.5px;color:var(--mute)"></span>
         </div>
         <div style="overflow-x:auto">
@@ -1071,9 +1379,9 @@ tr:hover td { background: rgba(0,229,200,0.02); }
             <tr style="background:rgba(255,160,30,0.06)">
               <th style="padding:8px 10px;font-family:var(--mono);font-size:9px;color:var(--mute);font-weight:700;border-bottom:2px solid var(--brd);text-align:center;width:36px">No</th>
               <th style="padding:8px 10px;font-family:var(--mono);font-size:9px;color:var(--mute);font-weight:700;border-bottom:2px solid var(--brd);text-align:left">Parameter</th>
-              <th style="padding:8px 10px;font-family:var(--mono);font-size:9px;color:var(--cyan);font-weight:700;border-bottom:2px solid var(--brd);text-align:right">Debit Sungai<br>(m³/s)</th>
+              <th style="padding:8px 10px;font-family:var(--mono);font-size:9px;color:var(--accent);font-weight:700;border-bottom:2px solid var(--brd);text-align:right">Debit Sungai<br>(m³/s)</th>
               <th style="padding:8px 10px;font-family:var(--mono);font-size:9px;color:var(--mute);font-weight:700;border-bottom:2px solid var(--brd);text-align:center">Satuan</th>
-              <th style="padding:8px 10px;font-family:var(--mono);font-size:9px;color:var(--cyan);font-weight:700;border-bottom:2px solid var(--brd);text-align:right">C Maks (BM Sungai)<br>(mg/L)</th>
+              <th style="padding:8px 10px;font-family:var(--mono);font-size:9px;color:var(--accent);font-weight:700;border-bottom:2px solid var(--brd);text-align:right">C Maks (BM Sungai)<br>(mg/L)</th>
               <th style="padding:8px 10px;font-family:var(--mono);font-size:9px;color:#f5a623;font-weight:700;border-bottom:2px solid var(--brd);text-align:right">BPM = Q × C_Maks × 3,6<br>(kg/jam)</th>
               <th style="padding:8px 10px;font-family:var(--mono);font-size:9px;color:var(--mute);font-weight:700;border-bottom:2px solid var(--brd);text-align:right">C Aktual<br>(mg/L)</th>
               <th style="padding:8px 10px;font-family:var(--mono);font-size:9px;color:var(--green);font-weight:700;border-bottom:2px solid var(--brd);text-align:right">BPA = Q × C_Aktual × 3,6<br>(kg/jam)</th>
@@ -1088,7 +1396,7 @@ tr:hover td { background: rgba(0,229,200,0.02); }
       <!-- Hujan -->
       <div id="rekap-wet">
         <div style="padding:10px 16px;background:rgba(30,120,220,0.08);border-bottom:1px solid var(--brd);border-top:2px solid var(--brd);display:flex;align-items:center;gap:10px">
-          <span style="font-family:var(--mono);font-size:10px;font-weight:700;color:#3498db;letter-spacing:1.5px">🌧 HUJAN</span>
+          <span style="font-family:var(--mono);font-size:10px;font-weight:700;color:#3498db;letter-spacing: 0.1px">🌧 HUJAN</span>
           <span id="rekap-wet-q" style="font-family:var(--mono);font-size:9.5px;color:var(--mute)"></span>
         </div>
         <div style="overflow-x:auto">
@@ -1097,9 +1405,9 @@ tr:hover td { background: rgba(0,229,200,0.02); }
             <tr style="background:rgba(30,120,220,0.06)">
               <th style="padding:8px 10px;font-family:var(--mono);font-size:9px;color:var(--mute);font-weight:700;border-bottom:2px solid var(--brd);text-align:center;width:36px">No</th>
               <th style="padding:8px 10px;font-family:var(--mono);font-size:9px;color:var(--mute);font-weight:700;border-bottom:2px solid var(--brd);text-align:left">Parameter</th>
-              <th style="padding:8px 10px;font-family:var(--mono);font-size:9px;color:var(--cyan);font-weight:700;border-bottom:2px solid var(--brd);text-align:right">Debit Sungai<br>(m³/s)</th>
+              <th style="padding:8px 10px;font-family:var(--mono);font-size:9px;color:var(--accent);font-weight:700;border-bottom:2px solid var(--brd);text-align:right">Debit Sungai<br>(m³/s)</th>
               <th style="padding:8px 10px;font-family:var(--mono);font-size:9px;color:var(--mute);font-weight:700;border-bottom:2px solid var(--brd);text-align:center">Satuan</th>
-              <th style="padding:8px 10px;font-family:var(--mono);font-size:9px;color:var(--cyan);font-weight:700;border-bottom:2px solid var(--brd);text-align:right">C Maks (BM Sungai)<br>(mg/L)</th>
+              <th style="padding:8px 10px;font-family:var(--mono);font-size:9px;color:var(--accent);font-weight:700;border-bottom:2px solid var(--brd);text-align:right">C Maks (BM Sungai)<br>(mg/L)</th>
               <th style="padding:8px 10px;font-family:var(--mono);font-size:9px;color:#4488ff;font-weight:700;border-bottom:2px solid var(--brd);text-align:right">BPM = Q × C_Maks × 3,6<br>(kg/jam)</th>
               <th style="padding:8px 10px;font-family:var(--mono);font-size:9px;color:var(--mute);font-weight:700;border-bottom:2px solid var(--brd);text-align:right">C Aktual<br>(mg/L)</th>
               <th style="padding:8px 10px;font-family:var(--mono);font-size:9px;color:var(--green);font-weight:700;border-bottom:2px solid var(--brd);text-align:right">BPA = Q × C_Aktual × 3,6<br>(kg/jam)</th>
@@ -1132,7 +1440,7 @@ tr:hover td { background: rgba(0,229,200,0.02); }
   <div class="card" style="padding:0;overflow:hidden">
     <div style="padding:12px 18px;border-bottom:1px solid var(--brd);display:flex;align-items:center;justify-content:space-between;gap:12px">
       <div style="font-family:var(--mono);font-size:9px;color:var(--mute);letter-spacing:1px">
-        FILTER AKTIF: <span id="db-filter-lbl" style="color:var(--cyan)">SEMUA KELAS</span>
+        FILTER AKTIF: <span id="db-filter-lbl" style="color:var(--accent)">SEMUA KELAS</span>
         &nbsp;·&nbsp; <span id="db-count" style="color:var(--txt2)">49 parameter</span>
       </div>
       <input class="finput" id="db-search" placeholder="Cari parameter…" style="width:220px;font-size:11px;padding:5px 10px" oninput="renderDB()">
@@ -1181,10 +1489,10 @@ tr:hover td { background: rgba(0,229,200,0.02); }
   <div id="rpt-empty" class="empty card mb14"><div class="empty-ico">📋</div><div class="empty-title">Belum Ada Data</div><div class="empty-sub">Lakukan perhitungan BPM & BPA terlebih dahulu</div></div>
   <div id="rpt-body" style="display:none">
     <!-- Header card -->
-    <div class="card mb18" style="border-left:3px solid var(--cyan)">
+    <div class="card mb18" style="border-left:3px solid var(--accent)">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
         <div>
-          <div style="font-family:var(--head);font-size:24px;letter-spacing:2px;color:var(--txt)">LAPORAN BEBAN PENCEMARAN SUNGAI</div>
+          <div style="font-family:var(--head);font-size:24px;letter-spacing: 0.2px;color:var(--txt)">LAPORAN BEBAN PENCEMARAN SUNGAI</div>
           <div style="font-family:var(--mono);font-size:9px;color:var(--mute);margin-top:4px;letter-spacing:1px">BERDASARKAN PP NO. 22 TAHUN 2021 — LAMPIRAN VI</div>
         </div>
         <div style="text-align:right;font-family:var(--mono);font-size:10px;color:var(--mute)" id="rpt-meta"></div>
@@ -1236,7 +1544,7 @@ tr:hover td { background: rgba(0,229,200,0.02); }
       <div class="card" style="padding:0;overflow:hidden;margin-bottom:0">
         <div style="padding:14px 20px;border-bottom:1px solid var(--brd);display:flex;align-items:center;justify-content:space-between">
           <div>
-            <div style="font-family:var(--mono);font-size:10px;color:var(--cyan);letter-spacing:1.5px;font-weight:700">REKAP HASIL</div>
+            <div style="font-family:var(--mono);font-size:10px;color:var(--accent);letter-spacing: 0.1px;font-weight:700">REKAP HASIL</div>
             <div style="font-family:var(--mono);font-size:13px;font-weight:700;color:var(--txt);margin-top:2px">Usulan Baku Mutu Air Limbah</div>
           </div>
           <div style="font-family:var(--mono);font-size:9px;color:var(--mute)">PermenLHK No.5/2021 &amp; PP 22/2021 Lamp.VI</div>
@@ -1245,7 +1553,7 @@ tr:hover td { background: rgba(0,229,200,0.02); }
         <!-- MUSIM HUJAN -->
         <div style="padding:0 0 16px 0">
           <div style="padding:10px 20px;background:rgba(68,136,255,0.08);border-bottom:1px solid rgba(68,136,255,0.2)">
-            <span style="font-family:var(--mono);font-size:10px;font-weight:700;color:#4488ff;letter-spacing:1.5px">🌧 MUSIM HUJAN</span>
+            <span style="font-family:var(--mono);font-size:10px;font-weight:700;color:#4488ff;letter-spacing: 0.1px">🌧 MUSIM HUJAN</span>
             <span id="rpt-rekap-wet-qs" style="font-family:var(--mono);font-size:9px;color:var(--mute);margin-left:12px"></span>
           </div>
           <div class="tbl-wrap">
@@ -1259,7 +1567,7 @@ tr:hover td { background: rgba(0,229,200,0.02); }
         <!-- MUSIM KEMARAU -->
         <div style="padding:0 0 16px 0;border-top:2px solid var(--brd)">
           <div style="padding:10px 20px;background:rgba(245,166,35,0.08);border-bottom:1px solid rgba(245,166,35,0.2)">
-            <span style="font-family:var(--mono);font-size:10px;font-weight:700;color:#f5a623;letter-spacing:1.5px">☀ MUSIM KEMARAU</span>
+            <span style="font-family:var(--mono);font-size:10px;font-weight:700;color:#f5a623;letter-spacing: 0.1px">☀ MUSIM KEMARAU</span>
             <span id="rpt-rekap-dry-qs" style="font-family:var(--mono);font-size:9px;color:var(--mute);margin-left:12px"></span>
           </div>
           <div class="tbl-wrap">
@@ -1291,21 +1599,21 @@ tr:hover td { background: rgba(0,229,200,0.02); }
   <div class="card mb18" id="ubm-river-card">
     <div class="card-hd" style="display:flex;align-items:center;justify-content:space-between">
       <div class="card-title">Informasi Sungai</div>
-      <span style="font-family:var(--mono);font-size:9px;color:var(--cyan);background:rgba(0,229,200,0.08);border:1px solid rgba(0,229,200,0.2);border-radius:4px;padding:2px 8px">
+      <span style="font-family:var(--mono);font-size:9px;color:var(--accent);background:rgba(62,207,178,0.08);border:1px solid rgba(62,207,178,0.2);border-radius:4px;padding:2px 8px">
         ⟵ Dari menu Beban Pencemar
       </span>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:10px">
-      <div style="padding:10px 14px;background:rgba(0,229,200,0.04);border:1px solid var(--brd);border-radius:var(--rs)">
+      <div style="padding:10px 14px;background:rgba(62,207,178,0.04);border:1px solid var(--brd);border-radius:var(--rs)">
         <div style="font-family:var(--mono);font-size:9px;color:var(--mute);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Nama Sungai / Badan Air</div>
         <div id="ubm-river-display" style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--txt)">—</div>
       </div>
-      <div style="padding:10px 14px;background:rgba(0,229,200,0.04);border:1px solid var(--brd);border-radius:var(--rs)">
+      <div style="padding:10px 14px;background:rgba(62,207,178,0.04);border:1px solid var(--brd);border-radius:var(--rs)">
         <div style="font-family:var(--mono);font-size:9px;color:var(--mute);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Kelas Sungai</div>
-        <div id="ubm-class-display" style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--cyan)">—</div>
+        <div id="ubm-class-display" style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--accent)">—</div>
       </div>
     </div>
-    <div id="ubm-class-info" style="padding:8px 14px;background:rgba(0,229,200,0.04);border:1px solid var(--brd);border-radius:var(--rs);font-family:var(--mono);font-size:10px;color:var(--txt2)"></div>
+    <div id="ubm-class-info" style="padding:8px 14px;background:rgba(62,207,178,0.04);border:1px solid var(--brd);border-radius:var(--rs);font-family:var(--mono);font-size:10px;color:var(--txt2)"></div>
     <!-- Hidden inputs untuk kompatibilitas save/load -->
     <input type="hidden" id="ubm-river">
     <input type="hidden" id="ubm-class">
@@ -1317,8 +1625,8 @@ tr:hover td { background: rgba(0,229,200,0.02); }
       <div class="card-title">Sumber Air Limbah</div>
       <button class="btn btn-outline btn-sm" onclick="ubmAddSource()">＋ Tambah Sumber</button>
     </div>
-    <div style="font-family:var(--mono);font-size:9.5px;color:var(--txt2);margin-bottom:10px;padding:8px 12px;background:rgba(0,229,200,0.04);border:1px solid var(--brd);border-radius:var(--rs)">
-      ℹ Masukkan debit dalam <strong style="color:var(--cyan)">m³/hari</strong> — dikonversi otomatis ke m³/jam dan m³/det
+    <div style="font-family:var(--mono);font-size:9.5px;color:var(--txt2);margin-bottom:10px;padding:8px 12px;background:rgba(62,207,178,0.04);border:1px solid var(--brd);border-radius:var(--rs)">
+      ℹ Masukkan debit dalam <strong style="color:var(--accent)">m³/hari</strong> — dikonversi otomatis ke m³/jam dan m³/det
     </div>
     <div id="ubm-src-hdr" style="display:none;grid-template-columns:180px 1fr 120px 90px 90px 32px;gap:6px;padding:5px 8px;font-family:var(--mono);font-size:9px;color:var(--mute);text-transform:uppercase;letter-spacing:0.8px;border-bottom:1px solid var(--brd2);margin-bottom:4px">
       <div>Jenis Air Limbah</div>
@@ -1330,10 +1638,10 @@ tr:hover td { background: rgba(0,229,200,0.02); }
     </div>
     <div id="ubm-src-list"></div>
     <div id="ubm-src-empty" style="padding:16px;text-align:center;font-family:var(--mono);font-size:10px;color:var(--mute)">Belum ada sumber air limbah</div>
-    <div id="ubm-src-footer" style="display:none;padding:8px 12px;background:rgba(0,229,200,0.05);border-top:1px solid var(--brd);margin-top:4px;justify-content:flex-end;gap:20px;align-items:center">
+    <div id="ubm-src-footer" style="display:none;padding:8px 12px;background:rgba(62,207,178,0.05);border-top:1px solid var(--brd);margin-top:4px;justify-content:flex-end;gap:20px;align-items:center">
       <span style="font-family:var(--mono);font-size:9px;color:var(--mute)">TOTAL</span>
-      <div style="text-align:right"><div style="font-family:var(--mono);font-size:9px;color:var(--mute)">m³/hari</div><div id="ubm-total-day" style="font-family:var(--mono);font-size:12px;color:var(--cyan)">—</div></div>
-      <div style="text-align:right"><div style="font-family:var(--mono);font-size:9px;color:var(--mute)">m³/det</div><div id="ubm-total-sec" style="font-family:var(--mono);font-size:12px;color:var(--cyan)">—</div></div>
+      <div style="text-align:right"><div style="font-family:var(--mono);font-size:9px;color:var(--mute)">m³/hari</div><div id="ubm-total-day" style="font-family:var(--mono);font-size:12px;color:var(--accent)">—</div></div>
+      <div style="text-align:right"><div style="font-family:var(--mono);font-size:9px;color:var(--mute)">m³/det</div><div id="ubm-total-sec" style="font-family:var(--mono);font-size:12px;color:var(--accent)">—</div></div>
     </div>
   </div>
 
@@ -1342,20 +1650,20 @@ tr:hover td { background: rgba(0,229,200,0.02); }
     <div class="card-hd">
       <div class="card-title">Parameter Kualitas Air</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn btn-outline btn-sm" onclick="ubmImportFromBPM()" style="background:rgba(0,229,200,0.08);border-color:rgba(0,229,200,0.35);color:var(--cyan)">⬆ Impor dari Beban Pencemar</button>
+        <button class="btn btn-outline btn-sm" onclick="ubmImportFromBPM()" style="background:rgba(62,207,178,0.08);border-color:rgba(62,207,178,0.35);color:var(--accent)">⬆ Impor dari Beban Pencemar</button>
         <button class="btn btn-outline btn-sm" onclick="ubmShowDBPicker()">📋 Dari Database</button>
         <button class="btn btn-outline btn-sm" onclick="ubmAddParamManual()">＋ Manual</button>
       </div>
     </div>
 
     <!-- Info panel: impor dari BPM -->
-    <div id="ubm-import-panel" style="display:none;margin-bottom:12px;padding:10px 14px;background:rgba(0,229,200,0.05);border:1px solid rgba(0,229,200,0.25);border-radius:var(--rs)">
+    <div id="ubm-import-panel" style="display:none;margin-bottom:12px;padding:10px 14px;background:rgba(62,207,178,0.05);border:1px solid rgba(62,207,178,0.25);border-radius:var(--rs)">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-        <div style="font-family:var(--mono);font-size:10px;color:var(--cyan);font-weight:700;letter-spacing:1px">IMPOR DARI MENU BEBAN PENCEMAR</div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--accent);font-weight:700;letter-spacing:1px">IMPOR DARI MENU BEBAN PENCEMAR</div>
         <button class="btn btn-outline btn-sm" onclick="document.getElementById('ubm-import-panel').style.display='none'">✕</button>
       </div>
       <div style="font-size:11.5px;color:var(--mute);margin-bottom:10px;line-height:1.6">
-        Parameter dan nilai <strong style="color:var(--txt)">C Aktual</strong> dari menu Beban Pencemar akan dimasukkan sebagai <strong style="color:var(--cyan)">C Hulu</strong> di sini.
+        Parameter dan nilai <strong style="color:var(--txt)">C Aktual</strong> dari menu Beban Pencemar akan dimasukkan sebagai <strong style="color:var(--accent)">C Hulu</strong> di sini.
         Pilih musim yang akan digunakan sebagai referensi.
       </div>
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
@@ -1382,7 +1690,7 @@ tr:hover td { background: rgba(0,229,200,0.02); }
     <!-- DB Picker -->
     <div id="ubm-db-picker" style="display:none;margin-bottom:12px;padding:12px;background:var(--bg2);border:1px solid var(--brd);border-radius:var(--rs)">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-        <span style="font-family:var(--mono);font-size:10px;color:var(--cyan);letter-spacing:1px">PILIH DARI DATABASE</span>
+        <span style="font-family:var(--mono);font-size:10px;color:var(--accent);letter-spacing:1px">PILIH DARI DATABASE</span>
         <button class="btn btn-outline btn-sm" onclick="document.getElementById('ubm-db-picker').style.display='none'">✕</button>
       </div>
       <input class="finput" id="ubm-db-search" placeholder="Cari parameter…" oninput="renderUbmDB()" style="margin-bottom:8px;font-size:12px">
@@ -1412,7 +1720,7 @@ tr:hover td { background: rgba(0,229,200,0.02); }
     <div class="card" style="padding:0;overflow:hidden">
       <div style="padding:12px 18px;border-bottom:1px solid var(--brd);display:flex;align-items:center;justify-content:space-between">
         <div>
-          <div style="font-family:var(--mono);font-size:10px;color:var(--cyan);font-weight:700;letter-spacing:1.5px">CR HILIR SUNGAI</div>
+          <div style="font-family:var(--mono);font-size:10px;color:var(--accent);font-weight:700;letter-spacing: 0.1px">CR HILIR SUNGAI</div>
           <div style="font-family:var(--mono);font-size:9px;color:var(--mute);margin-top:2px">CR = (Q<sub>s</sub>·C<sub>hulu</sub> + ΣQ<sub>i</sub>·C<sub>i</sub>) / (Q<sub>s</sub> + ΣQ<sub>i</sub>)</div>
         </div>
         <div style="font-family:var(--mono);font-size:9.5px;color:var(--mute)">
@@ -1451,8 +1759,8 @@ tr:hover td { background: rgba(0,229,200,0.02); }
         <div class="card-title">Usulan Baku Mutu Maksimum Air Limbah</div>
       </div>
       <!-- Formula box -->
-      <div style="margin-bottom:14px;padding:10px 14px;background:rgba(0,229,200,0.04);border:1px solid var(--brd);border-radius:var(--rs)">
-        <div style="font-family:var(--mono);font-size:10px;color:var(--cyan);font-weight:700;margin-bottom:4px">FORMULA</div>
+      <div style="margin-bottom:14px;padding:10px 14px;background:rgba(62,207,178,0.04);border:1px solid var(--brd);border-radius:var(--rs)">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--accent);font-weight:700;margin-bottom:4px">FORMULA</div>
         <div style="font-family:var(--mono);font-size:11px;color:var(--txt2);line-height:1.9">
           C<sub>maks</sub> = [ BM × (Q<sub>s</sub> + ΣQ<sub>i</sub>) − Q<sub>s</sub> × C<sub>hulu</sub> ] / ΣQ<sub>i</sub>
         </div>
@@ -1473,7 +1781,7 @@ tr:hover td { background: rgba(0,229,200,0.02); }
               <th class="th" rowspan="2" style="text-align:center;vertical-align:middle">Baku Mutu<br>Kelas Sungai</th>
               <th class="th" colspan="2" style="text-align:center;border-bottom:1px solid var(--brd)">CR Hilir (mg/L)</th>
               <th class="th" colspan="2" style="text-align:center;border-bottom:1px solid var(--brd)">C<sub>maks</sub> per Musim (mg/L)</th>
-              <th class="th" rowspan="2" style="text-align:center;vertical-align:middle;color:var(--cyan)">C<sub>maks</sub> Final<br>(Konservatif)</th>
+              <th class="th" rowspan="2" style="text-align:center;vertical-align:middle;color:var(--accent)">C<sub>maks</sub> Final<br>(Konservatif)</th>
               <th class="th" rowspan="2" style="text-align:center;vertical-align:middle">Keterangan</th>
             </tr>
             <tr>
@@ -1496,7 +1804,7 @@ tr:hover td { background: rgba(0,229,200,0.02); }
         <div class="card-title">Usulan Baku Mutu Akhir &amp; Alokasi Beban Pencemar</div>
         <div style="font-family:var(--mono);font-size:9px;color:var(--mute)">Alokasi (kg/hari) = Usulan BM × ΣQ<sub>limbah</sub> (m³/det) × 86.400 / 10⁶</div>
       </div>
-      <div style="font-size:11.5px;color:var(--txt2);margin-bottom:12px;padding:8px 12px;background:rgba(0,229,200,0.04);border:1px solid var(--brd);border-radius:var(--rs);line-height:1.7">
+      <div style="font-size:11.5px;color:var(--txt2);margin-bottom:12px;padding:8px 12px;background:rgba(62,207,178,0.04);border:1px solid var(--brd);border-radius:var(--rs);line-height:1.7">
         Kolom <strong style="color:var(--amber)">Usulan BM</strong> diisi langsung pada form di tabel Parameter Kualitas Air di atas (kolom paling kanan sebelum tombol hapus).
         Alokasi beban pencemar dihitung dari <strong style="color:var(--amber)">Usulan BM</strong> × total debit seluruh sumber air limbah.
       </div>
@@ -1505,7 +1813,7 @@ tr:hover td { background: rgba(0,229,200,0.02); }
           <thead><tr>
             <th class="th">Parameter</th>
             <th class="th" style="text-align:center">Satuan</th>
-            <th class="th" style="text-align:right;color:var(--cyan)">C<sub>maks</sub> Hitung<br><span style="font-weight:400;font-size:8px">(ambang batas agar CR ≤ BM)</span></th>
+            <th class="th" style="text-align:right;color:var(--accent)">C<sub>maks</sub> Hitung<br><span style="font-weight:400;font-size:8px">(ambang batas agar CR ≤ BM)</span></th>
             <th class="th" style="text-align:center;color:var(--amber)">Usulan BM<br><span style="font-weight:400;font-size:8px">(dari input parameter)</span></th>
             <th class="th" style="text-align:right;color:var(--amber)">Alokasi Beban (kg/hari)</th>
           </tr></thead>
@@ -1520,7 +1828,7 @@ tr:hover td { background: rgba(0,229,200,0.02); }
     <div class="card" style="padding:0;overflow:hidden">
       <div style="padding:12px 18px;border-bottom:1px solid var(--brd);display:flex;align-items:center;justify-content:space-between">
         <div>
-          <div style="font-family:var(--mono);font-size:10px;color:var(--cyan);font-weight:700;letter-spacing:1.5px">CR HILIR SUNGAI — HASIL USULAN BAKU MUTU</div>
+          <div style="font-family:var(--mono);font-size:10px;color:var(--accent);font-weight:700;letter-spacing: 0.1px">CR HILIR SUNGAI — HASIL USULAN BAKU MUTU</div>
           <div style="font-family:var(--mono);font-size:9px;color:var(--mute);margin-top:2px">
             CR = (Q<sub>s</sub>·C<sub>hulu</sub> + ΣQ<sub>i</sub>·C<sub>i,usulan</sub>) / (Q<sub>s</sub> + ΣQ<sub>i</sub>) &nbsp;|&nbsp; C<sub>SPWD</sub> diambil dari nilai <strong style="color:var(--amber)">Usulan BM</strong> yang telah diinput
           </div>
@@ -1561,7 +1869,7 @@ tr:hover td { background: rgba(0,229,200,0.02); }
     <div class="card" style="padding:0;overflow:hidden">
       <div style="padding:14px 20px;border-bottom:1px solid var(--brd);display:flex;align-items:center;justify-content:space-between">
         <div>
-          <div style="font-family:var(--mono);font-size:10px;color:var(--cyan);letter-spacing:1.5px;font-weight:700">REKAP HASIL</div>
+          <div style="font-family:var(--mono);font-size:10px;color:var(--accent);letter-spacing: 0.1px;font-weight:700">REKAP HASIL</div>
           <div style="font-family:var(--mono);font-size:13px;font-weight:700;color:var(--txt);margin-top:2px">Usulan Baku Mutu Air Limbah</div>
         </div>
         <div style="font-family:var(--mono);font-size:9px;color:var(--mute)">PermenLHK No.5/2021 &amp; PP 22/2021 Lamp.VI</div>
@@ -1570,7 +1878,7 @@ tr:hover td { background: rgba(0,229,200,0.02); }
       <!-- MUSIM HUJAN -->
       <div style="padding:0 0 16px 0">
         <div style="padding:10px 20px;background:rgba(68,136,255,0.08);border-bottom:1px solid rgba(68,136,255,0.2)">
-          <span style="font-family:var(--mono);font-size:10px;font-weight:700;color:#4488ff;letter-spacing:1.5px">🌧 MUSIM HUJAN</span>
+          <span style="font-family:var(--mono);font-size:10px;font-weight:700;color:#4488ff;letter-spacing: 0.1px">🌧 MUSIM HUJAN</span>
           <span id="rekap-wet-qs" style="font-family:var(--mono);font-size:9px;color:var(--mute);margin-left:12px"></span>
         </div>
         <div class="tbl-wrap" style="padding:0 0 0 0">
@@ -1579,12 +1887,12 @@ tr:hover td { background: rgba(0,229,200,0.02); }
             <tr style="background:rgba(30,120,220,0.06)">
               <th style="padding:8px 10px;font-family:var(--mono);font-size:9px;color:var(--mute);font-weight:700;border-bottom:2px solid var(--brd);text-align:center;width:36px">No</th>
               <th style="padding:8px 10px;font-family:var(--mono);font-size:9px;color:var(--mute);font-weight:700;border-bottom:2px solid var(--brd);text-align:left">Parameter</th>
-              <th style="padding:8px 10px;font-family:var(--mono);font-size:9px;color:var(--cyan);font-weight:700;border-bottom:2px solid var(--brd);text-align:right">Hulu Sungai<br>(mg/L)</th>
+              <th style="padding:8px 10px;font-family:var(--mono);font-size:9px;color:var(--accent);font-weight:700;border-bottom:2px solid var(--brd);text-align:right">Hulu Sungai<br>(mg/L)</th>
               <th style="padding:8px 10px;font-family:var(--mono);font-size:9px;color:var(--mute);font-weight:700;border-bottom:2px solid var(--brd);text-align:center">Satuan</th>
-              <th style="padding:8px 10px;font-family:var(--mono);font-size:9px;color:var(--cyan);font-weight:700;border-bottom:2px solid var(--brd);text-align:right">CR Sungai<br>(mg/L)</th>
+              <th style="padding:8px 10px;font-family:var(--mono);font-size:9px;color:var(--accent);font-weight:700;border-bottom:2px solid var(--brd);text-align:right">CR Sungai<br>(mg/L)</th>
               <th style="padding:8px 10px;font-family:var(--mono);font-size:9px;color:#4488ff;font-weight:700;border-bottom:2px solid var(--brd);text-align:right">Baku Mutu Air Sungai<br>(PP 22/2021)</th>
               <th style="padding:8px 10px;font-family:var(--mono);font-size:9px;color:var(--mute);font-weight:700;border-bottom:2px solid var(--brd);text-align:center">Status Mutu</th>
-              <th style="padding:8px 10px;font-family:var(--mono);font-size:9px;color:var(--cyan);font-weight:700;border-bottom:2px solid var(--brd);text-align:right">Usulan Max BM<br>Air Limbah (mg/L)</th>
+              <th style="padding:8px 10px;font-family:var(--mono);font-size:9px;color:var(--accent);font-weight:700;border-bottom:2px solid var(--brd);text-align:right">Usulan Max BM<br>Air Limbah (mg/L)</th>
               <th style="padding:8px 10px;font-family:var(--mono);font-size:9px;color:var(--amber);font-weight:700;border-bottom:2px solid var(--brd);text-align:right">Usulan BM<br>(mg/L)</th>
               <th style="padding:8px 10px;font-family:var(--mono);font-size:9px;color:var(--amber);font-weight:700;border-bottom:2px solid var(--brd);text-align:right">Alokasi Beban<br>(kg/hari)</th>
             </tr>
@@ -1597,7 +1905,7 @@ tr:hover td { background: rgba(0,229,200,0.02); }
       <!-- MUSIM KEMARAU -->
       <div style="padding:0 0 16px 0;border-top:2px solid var(--brd)">
         <div style="padding:10px 20px;background:rgba(245,166,35,0.08);border-bottom:1px solid rgba(245,166,35,0.2)">
-          <span style="font-family:var(--mono);font-size:10px;font-weight:700;color:#f5a623;letter-spacing:1.5px">☀ MUSIM KEMARAU</span>
+          <span style="font-family:var(--mono);font-size:10px;font-weight:700;color:#f5a623;letter-spacing: 0.1px">☀ MUSIM KEMARAU</span>
           <span id="rekap-dry-qs" style="font-family:var(--mono);font-size:9px;color:var(--mute);margin-left:12px"></span>
         </div>
         <div class="tbl-wrap">
@@ -1606,12 +1914,12 @@ tr:hover td { background: rgba(0,229,200,0.02); }
             <tr style="background:rgba(255,160,30,0.06)">
               <th style="padding:8px 10px;font-family:var(--mono);font-size:9px;color:var(--mute);font-weight:700;border-bottom:2px solid var(--brd);text-align:center;width:36px">No</th>
               <th style="padding:8px 10px;font-family:var(--mono);font-size:9px;color:var(--mute);font-weight:700;border-bottom:2px solid var(--brd);text-align:left">Parameter</th>
-              <th style="padding:8px 10px;font-family:var(--mono);font-size:9px;color:var(--cyan);font-weight:700;border-bottom:2px solid var(--brd);text-align:right">Hulu Sungai<br>(mg/L)</th>
+              <th style="padding:8px 10px;font-family:var(--mono);font-size:9px;color:var(--accent);font-weight:700;border-bottom:2px solid var(--brd);text-align:right">Hulu Sungai<br>(mg/L)</th>
               <th style="padding:8px 10px;font-family:var(--mono);font-size:9px;color:var(--mute);font-weight:700;border-bottom:2px solid var(--brd);text-align:center">Satuan</th>
-              <th style="padding:8px 10px;font-family:var(--mono);font-size:9px;color:var(--cyan);font-weight:700;border-bottom:2px solid var(--brd);text-align:right">CR Sungai<br>(mg/L)</th>
+              <th style="padding:8px 10px;font-family:var(--mono);font-size:9px;color:var(--accent);font-weight:700;border-bottom:2px solid var(--brd);text-align:right">CR Sungai<br>(mg/L)</th>
               <th style="padding:8px 10px;font-family:var(--mono);font-size:9px;color:#f5a623;font-weight:700;border-bottom:2px solid var(--brd);text-align:right">Baku Mutu Air Sungai<br>(PP 22/2021)</th>
               <th style="padding:8px 10px;font-family:var(--mono);font-size:9px;color:var(--mute);font-weight:700;border-bottom:2px solid var(--brd);text-align:center">Status Mutu</th>
-              <th style="padding:8px 10px;font-family:var(--mono);font-size:9px;color:var(--cyan);font-weight:700;border-bottom:2px solid var(--brd);text-align:right">Usulan Max BM<br>Air Limbah (mg/L)</th>
+              <th style="padding:8px 10px;font-family:var(--mono);font-size:9px;color:var(--accent);font-weight:700;border-bottom:2px solid var(--brd);text-align:right">Usulan Max BM<br>Air Limbah (mg/L)</th>
               <th style="padding:8px 10px;font-family:var(--mono);font-size:9px;color:var(--amber);font-weight:700;border-bottom:2px solid var(--brd);text-align:right">Usulan BM<br>(mg/L)</th>
               <th style="padding:8px 10px;font-family:var(--mono);font-size:9px;color:var(--amber);font-weight:700;border-bottom:2px solid var(--brd);text-align:right">Alokasi Beban<br>(kg/hari)</th>
             </tr>
@@ -1636,8 +1944,8 @@ tr:hover td { background: rgba(0,229,200,0.02); }
     </div>
   </div>
 
-  <div style="margin-bottom:16px;padding:10px 16px;background:rgba(0,229,200,0.04);border:1px solid var(--brd);border-radius:var(--rs);font-family:var(--mono);font-size:9.5px;color:var(--txt2);line-height:1.9">
-    ℹ &nbsp;Data sumber dan parameter diambil otomatis dari menu <strong style="color:var(--cyan)">Usulan Baku Mutu</strong>.
+  <div style="margin-bottom:16px;padding:10px 16px;background:rgba(62,207,178,0.04);border:1px solid var(--brd);border-radius:var(--rs);font-family:var(--mono);font-size:9.5px;color:var(--txt2);line-height:1.9">
+    ℹ &nbsp;Data sumber dan parameter diambil otomatis dari menu <strong style="color:var(--accent)">Usulan Baku Mutu</strong>.
     Atur <strong>urutan</strong> sumber (hulu→hilir) dan <strong>jarak dari titik hulu (km)</strong> untuk setiap sumber.
     Diagram menampilkan kurva konsentrasi CR di sepanjang badan sungai (mirip grafik R).
   </div>
@@ -1649,7 +1957,7 @@ tr:hover td { background: rgba(0,229,200,0.02); }
       <div style="font-family:var(--mono);font-size:9px;color:var(--mute)">Atur urutan &amp; jarak dari hulu per sumber</div>
     </div>
     <div id="mdl-no-src" style="padding:24px;text-align:center;font-family:var(--mono);font-size:11px;color:var(--mute)">
-      ⚠ Belum ada sumber — tambahkan di menu <span style="color:var(--cyan);cursor:pointer;text-decoration:underline" onclick="nav('ubm')">Usulan Baku Mutu</span>
+      ⚠ Belum ada sumber — tambahkan di menu <span style="color:var(--accent);cursor:pointer;text-decoration:underline" onclick="nav('ubm')">Usulan Baku Mutu</span>
     </div>
     <div id="mdl-src-hdr" style="display:none;grid-template-columns:52px 32px 1fr 150px 30px;gap:8px;padding:5px 10px;font-family:var(--mono);font-size:8.5px;color:var(--mute);text-transform:uppercase;letter-spacing:0.8px;border-bottom:1px solid var(--brd2);margin-bottom:6px">
       <div style="text-align:center">Urutan</div><div></div>
@@ -1735,7 +2043,7 @@ tr:hover td { background: rgba(0,229,200,0.02); }
       <div style="font-size:11px;color:var(--mute);font-family:var(--mono)" id="ws-type-count">0 dipilih</div>
       <div style="display:flex;gap:8px">
         <button onclick="wsCloseTypePicker()" style="padding:6px 14px;background:none;border:1px solid var(--brd);border-radius:var(--rs);color:var(--mute);cursor:pointer;font-size:12px">Batal</button>
-        <button onclick="wsConfirmTypes()" style="padding:6px 16px;background:var(--cyan);border:1px solid var(--cyan);border-radius:var(--rs);color:#000;cursor:pointer;font-size:12px;font-weight:700">✓ Tambahkan</button>
+        <button onclick="wsConfirmTypes()" style="padding:6px 16px;background:var(--accent);border:1px solid var(--accent);border-radius:var(--rs);color:#000;cursor:pointer;font-size:12px;font-weight:700">✓ Tambahkan</button>
       </div>
     </div>
   </div>
@@ -1857,6 +2165,7 @@ function nav(p) {
   document.getElementById('page-'+p).classList.add('active');
   const ni=document.getElementById('nav-'+p);
   if(ni) ni.classList.add('active');
+  if(p==='home') initHome();
   if(p==='db') renderDB();
   if(p==='report') buildReport();
   if(p==='ubm') { ubmSyncFromBPM(); ubmRenderSources(); ubmRenderParams(); }
@@ -1887,7 +2196,7 @@ let _tt;
 function toast(msg,type) {
   const el=document.getElementById('toast');
   el.textContent=msg;
-  el.style.borderLeftColor=type==='ok'?'var(--green)':type==='err'?'var(--red)':'var(--cyan)';
+  el.style.borderLeftColor=type==='ok'?'var(--green)':type==='err'?'var(--red)':'var(--accent)';
   el.style.borderLeftWidth='3px';
   el.classList.add('show');
   clearTimeout(_tt);
@@ -2166,7 +2475,7 @@ function renderParams() {
         <div style="font-family:var(--mono);font-size:9px;color:var(--mute);margin-top:1px">${p.unit}</div>
       </div>
       <div style="text-align:center;font-family:var(--mono);font-size:10.5px;color:var(--mute)">${p.unit}</div>
-      <div style="text-align:right;font-family:var(--mono);font-size:11.5px;color:var(--cyan)">${bmDisp}</div>
+      <div style="text-align:right;font-family:var(--mono);font-size:11.5px;color:var(--accent)">${bmDisp}</div>
       <div data-cell="bpm" style="text-align:right;font-family:var(--mono);font-size:11.5px;color:var(--txt2)">${bpmDisp}</div>
       <div>
         <input class="inp-sm" value="${cVal}" placeholder="0.000" inputmode="decimal"
@@ -2229,7 +2538,7 @@ function updateResultKPI() {
   const ngCur = s === 'dry' ? ngD : ngW;
   const anaCur = okCur + ngCur;
   document.getElementById('kpi-grid').innerHTML = [
-    {lbl:'Parameter', val:params.length, unit:'total', kc:'var(--cyan)'},
+    {lbl:'Parameter', val:params.length, unit:'total', kc:'var(--accent)'},
     {lbl:'Memenuhi',  val:okCur, unit:'parameter', kc:'var(--green)'},
     {lbl:'Melebihi BPM', val:ngCur, unit:'parameter', kc:'var(--red)'},
     {lbl:'Kepatuhan', val:anaCur ? Math.round(okCur/anaCur*100)+'%' : '—', unit:'', kc:'var(--blue)'},
@@ -2265,7 +2574,7 @@ function updateResultKPI() {
       const bpaColor = status === 'ng' ? 'var(--red)' : status === 'ok' ? 'var(--green)' : 'var(--txt2)';
 
       // Debit sungai: tampilkan hanya di baris pertama (rowspan visual — kita tampilkan di setiap baris tapi hanya tulis sekali)
-      const qCell = `<td style="padding:7px 10px;text-align:right;font-family:var(--mono);font-size:11px;color:var(--cyan)">${i===0?fN(qVal,3):''}</td>`;
+      const qCell = `<td style="padding:7px 10px;text-align:right;font-family:var(--mono);font-size:11px;color:var(--accent)">${i===0?fN(qVal,3):''}</td>`;
 
       // BPM & BPA display untuk rekap
       const rBpmDisp = isPH ? '— (pH)' : isDash ? '— (Tdk Dipersyaratkan)' : (bpm!=null ? fN(bpm,4) : '—');
@@ -2274,9 +2583,9 @@ function updateResultKPI() {
       return `<tr style="background:${rowBg};border-bottom:1px solid var(--brd2)">
         <td style="padding:7px 10px;text-align:center;font-family:var(--mono);font-size:10px;color:var(--mute)">${i+1}</td>
         <td style="padding:7px 10px;font-size:12px;font-weight:600;color:var(--txt)">${esc(p.name)}</td>
-        <td style="padding:7px 10px;text-align:right;font-family:var(--mono);font-size:11px;color:var(--cyan)">${fN(qVal,4)}</td>
+        <td style="padding:7px 10px;text-align:right;font-family:var(--mono);font-size:11px;color:var(--accent)">${fN(qVal,4)}</td>
         <td style="padding:7px 10px;text-align:center;font-family:var(--mono);font-size:10.5px;color:var(--mute)">${esc(p.unit)}</td>
-        <td style="padding:7px 10px;text-align:right;font-family:var(--mono);font-size:11px;color:var(--cyan);font-weight:600">${bmDisp}</td>
+        <td style="padding:7px 10px;text-align:right;font-family:var(--mono);font-size:11px;color:var(--accent);font-weight:600">${bmDisp}</td>
         <td style="padding:7px 10px;text-align:right;font-family:var(--mono);font-size:11px;color:var(--amber)">${rBpmDisp}</td>
         <td style="padding:7px 10px;text-align:right;font-family:var(--mono);font-size:11px;color:var(--txt2)">${cDisp}</td>
         <td style="padding:7px 10px;text-align:right;font-family:var(--mono);font-size:11px;color:${bpaColor};font-weight:${status?'600':'400'}">${rBpaDisp}</td>
@@ -2356,7 +2665,7 @@ function renderDB() {
     const cv=(v,highlight)=>{
       const isBm=_dbFilter&&row['k'+_dbFilter]===v;
       const col=String(v)==='-'?'var(--mute)':String(v).startsWith('Dev')?'var(--amber)':String(v)==='nihil'?'var(--mute)':'var(--txt)';
-      const bg=highlight&&isBm?'background:rgba(0,229,200,0.08);font-weight:600;':'';
+      const bg=highlight&&isBm?'background:rgba(62,207,178,0.08);font-weight:600;':'';
       return `<td class="td-c" style="font-family:var(--mono);font-size:11px;color:${col};${bg}">${valStr(v)}</td>`;
     };
     return `<tr>
@@ -2391,7 +2700,7 @@ function buildReport() {
   if(!hasData) return;
 
   const isDark=document.documentElement.getAttribute('data-theme')!=='light';
-  const GC=isDark?'rgba(0,229,200,0.08)':'rgba(0,120,100,0.08)';
+  const GC=isDark?'rgba(62,207,178,0.08)':'rgba(0,120,100,0.08)';
   const TC=isDark?'#3a6660':'#2a6055';
   const TBG=isDark?'#0a1e2e':'#fff';
 
@@ -2432,7 +2741,7 @@ function buildReport() {
         <td class="td-c td-mu">${i+1}</td>
         <td style="font-weight:600">${p.name}</td>
         <td class="td-c" style="font-family:var(--mono);font-size:10.5px;color:var(--mute)">${p.unit}</td>
-        <td class="td-r" style="color:var(--cyan)">${valStr(p.bm)}</td>
+        <td class="td-r" style="color:var(--accent)">${valStr(p.bm)}</td>
         <td class="td-r">${bpm!=null?fN(bpm):'—'}</td>
         <td class="td-r">${c||'—'}</td>
         <td class="td-r" style="color:${st==='ng'?'var(--red)':st==='ok'?'var(--green)':'var(--txt2)'}">${bpa!=null?fN(bpa):'—'}</td>
@@ -2458,16 +2767,16 @@ function buildReport() {
       data:{
         labels:cp.map(p=>p.name.length>12?p.name.substring(0,12)+'…':p.name),
         datasets:[
-          {label:'BPM',data:cp.map(p=>p[bpmK]),backgroundColor:'rgba(0,229,200,0.25)',borderColor:'var(--cyan)',borderWidth:1.5,borderRadius:2},
+          {label:'BPM',data:cp.map(p=>p[bpmK]),backgroundColor:'rgba(62,207,178,0.25)',borderColor:'var(--accent)',borderWidth:1.5,borderRadius:2},
           {label:'BPA',data:cp.map(p=>p[bpaK]||0),backgroundColor:cp.map(p=>p[stK]==='ng'?'rgba(255,68,68,0.5)':'rgba(0,232,122,0.4)'),borderColor:cp.map(p=>p[stK]==='ng'?'var(--red)':'var(--green)'),borderWidth:1.5,borderRadius:2},
         ]
       },
       options:{responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{labels:{color:TC,font:{family:'IBM Plex Mono',size:10}}},
-          tooltip:{backgroundColor:TBG,titleColor:'var(--cyan)',bodyColor:TC,borderColor:'var(--brd)',borderWidth:1,
+        plugins:{legend:{labels:{color:TC,font:{family:'Inter',size:10}}},
+          tooltip:{backgroundColor:TBG,titleColor:'var(--accent)',bodyColor:TC,borderColor:'var(--brd)',borderWidth:1,
             callbacks:{label:c=>` ${c.dataset.label}: ${fN(c.parsed.y)} kg/jam`}}},
-        scales:{x:{grid:{color:GC},ticks:{color:TC,font:{family:'IBM Plex Mono',size:8},maxRotation:35}},
-                y:{grid:{color:GC},ticks:{color:TC,font:{family:'IBM Plex Mono',size:8}}}}}
+        scales:{x:{grid:{color:GC},ticks:{color:TC,font:{family:'Inter',size:8},maxRotation:35}},
+                y:{grid:{color:GC},ticks:{color:TC,font:{family:'Inter',size:8}}}}}
     });
   }
   if(qDry) mkChart('ch-dry','dry');
@@ -3265,13 +3574,13 @@ function wsFilterTypes() {
   });
   const catColors = {Pertambangan:'#e67e22', Domestik:'#1a7fd4', Pemanfaatan:'#27ae60'};
   list.innerHTML = Object.entries(grouped).map(([kat, items]) => `
-    <div style="padding:6px 20px 3px;font-family:var(--mono);font-size:9px;color:${catColors[kat]||'var(--cyan)'};text-transform:uppercase;letter-spacing:1px;font-weight:700">${kat}</div>
+    <div style="padding:6px 20px 3px;font-family:var(--mono);font-size:9px;color:${catColors[kat]||'var(--accent)'};text-transform:uppercase;letter-spacing:1px;font-weight:700">${kat}</div>
     ${items.map(t => {
       const checked = wsTypePicked.has(t.id);
       return `<div onclick="wsToggleType('${t.id}')" style="display:flex;align-items:center;gap:12px;padding:9px 20px;cursor:pointer;transition:background 0.12s;border-bottom:1px solid var(--brd2)"
-        onmouseover="this.style.background='rgba(0,229,200,0.06)'" onmouseout="this.style.background=''"
+        onmouseover="this.style.background='rgba(62,207,178,0.06)'" onmouseout="this.style.background=''"
       >
-        <div style="width:16px;height:16px;border:2px solid ${checked?'var(--cyan)':'var(--brd)'};border-radius:3px;background:${checked?'var(--cyan)':'transparent'};display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.12s">
+        <div style="width:16px;height:16px;border:2px solid ${checked?'var(--accent)':'var(--brd)'};border-radius:3px;background:${checked?'var(--accent)':'transparent'};display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.12s">
           ${checked?'<svg width="10" height="10" viewBox="0 0 10 10"><polyline points="1.5,5 4,7.5 8.5,2.5" stroke="#000" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>':''}
         </div>
         <div>
@@ -3333,7 +3642,7 @@ function renderWasteSources(){
   list.innerHTML = wasteSources.map(w => {
     const typeLabel = w.typeLabel || '(Manual)';
     const typeBadge = w.typeId
-      ? `<span style="font-size:10px;font-family:var(--mono);color:var(--cyan);background:rgba(0,229,200,0.1);border:1px solid rgba(0,229,200,0.25);border-radius:4px;padding:3px 10px;font-weight:600">${esc(typeLabel)}</span>`
+      ? `<span style="font-size:10px;font-family:var(--mono);color:var(--accent);background:rgba(62,207,178,0.1);border:1px solid rgba(62,207,178,0.25);border-radius:4px;padding:3px 10px;font-weight:600">${esc(typeLabel)}</span>`
       : `<span style="font-size:10px;font-family:var(--mono);color:var(--mute);border:1px solid var(--brd2);border-radius:4px;padding:3px 10px">Manual</span>`;
     return `<div id="ws-row-${w.id}" style="display:grid;grid-template-columns:1fr 32px;gap:8px;padding:9px 12px;align-items:center;background:var(--bg2);border:1px solid var(--brd2);border-radius:var(--rs);margin-bottom:5px">
       <div style="display:flex;align-items:center;gap:10px;min-width:0;overflow:hidden">
@@ -3384,12 +3693,12 @@ function renderBMGabungan() {
   const TD = (v,extra='') => `<td style="padding:7px 10px;font-size:11px;font-family:var(--mono);text-align:center;border-bottom:1px solid var(--brd2);${extra}">${v}</td>`;
 
   // Thead
-  thead.innerHTML = `<tr style="background:rgba(0,229,200,0.08)">
+  thead.innerHTML = `<tr style="background:rgba(62,207,178,0.08)">
     ${TH('Parameter','text-align:left')}
     ${TH('Satuan')}
     ${types.map(t=>{
       const kat = t.kategori;
-      const col = catColors[kat]||'var(--cyan)';
+      const col = catColors[kat]||'var(--accent)';
       return TH(`<div style="color:${col};max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${t.label}">${t.label}</div>`);
     }).join('')}
     ${TH('⭐ Nilai Paling Ketat','color:#f39c12;background:rgba(243,156,18,0.08)')}
@@ -3425,9 +3734,9 @@ function renderBMGabungan() {
   tbody.innerHTML = rows.join('') || `<tr><td colspan="${types.length+3}" style="text-align:center;padding:20px;color:var(--mute)">Belum ada parameter</td></tr>`;
 
   // Tfoot — ringkasan jumlah parameter per jenis
-  tfoot.innerHTML = `<tr style="background:rgba(0,229,200,0.06);border-top:2px solid var(--brd)">
+  tfoot.innerHTML = `<tr style="background:rgba(62,207,178,0.06);border-top:2px solid var(--brd)">
     <td colspan="2" style="padding:8px 10px;font-family:var(--mono);font-size:10px;color:var(--mute);font-weight:700">JUMLAH PARAMETER</td>
-    ${types.map(t => `<td style="padding:8px 10px;font-family:var(--mono);font-size:11px;color:var(--cyan);text-align:center;font-weight:700">${t.params.length}</td>`).join('')}
+    ${types.map(t => `<td style="padding:8px 10px;font-family:var(--mono);font-size:11px;color:var(--accent);text-align:center;font-weight:700">${t.params.length}</td>`).join('')}
     <td style="padding:8px 10px;font-family:var(--mono);font-size:10px;color:var(--mute);text-align:center">${allParams.size} total</td>
   </tr>`;
 }
@@ -3809,7 +4118,7 @@ function ubmRenderSources(){
     row+='<input class="finput" style="font-size:12px;padding:5px 8px" value="'+esc(s.name)+'" placeholder="Nama sumber" data-sid="'+s.id+'" data-field="name" oninput="ubmSrcChange(+this.dataset.sid,this.dataset.field,this.value)">';
     row+='<input class="finput" style="font-size:12px;padding:5px 8px;text-align:right;font-family:var(--mono)" inputmode="decimal" value="'+s.qDay+'" placeholder="0.00" data-sid="'+s.id+'" data-field="qDay" oninput="ubmSrcChange(+this.dataset.sid,this.dataset.field,this.value)">';
     row+='<div data-cell="hr" style="font-family:var(--mono);font-size:11px;color:var(--txt2);text-align:right;padding-right:4px">'+(qDay>0?fmtN(qHr,2):'—')+'</div>';
-    row+='<div data-cell="sec" style="font-family:var(--mono);font-size:11px;color:var(--cyan);text-align:right;padding-right:4px">'+(qDay>0?fmtN(qSec,6):'—')+'</div>';
+    row+='<div data-cell="sec" style="font-family:var(--mono);font-size:11px;color:var(--accent);text-align:right;padding-right:4px">'+(qDay>0?fmtN(qSec,6):'—')+'</div>';
     row+='<button onclick="ubmDelSource('+s.id+')" style="width:28px;height:28px;background:rgba(255,80,80,0.1);border:1px solid rgba(255,80,80,0.25);border-radius:var(--rs);color:#ff6060;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center">🗑</button>';
     row+='</div>';
     return row;
@@ -3848,7 +4157,7 @@ function _ubmShowImportPreview(){
   }
   const lines=params.map(p=>`${p.name} (C Kemarau: ${p.cDry||'—'} | C Hujan: ${p.cWet||'—'} ${p.unit})`);
   prev.style.display='block';
-  prev.innerHTML='<span style="color:var(--cyan)">'+params.length+' parameter tersedia:</span><br>'+
+  prev.innerHTML='<span style="color:var(--accent)">'+params.length+' parameter tersedia:</span><br>'+
     lines.map(l=>'· '+l).join('<br>');
 }
 
@@ -4024,7 +4333,7 @@ function ubmRenderParams(){
       ? `<div style="font-family:var(--mono);font-size:10.5px;color:var(--mute);text-align:center">${esc(p.unit)}</div>`
       : `<input class="finput" style="font-size:11px;padding:4px 6px;text-align:center" value="${esc(p.unit)}" placeholder="mg/L" oninput="ubmPChange(${p.id},'unit',this.value)">`;
     const bmField=p.dbId
-      ? `<div id="ubm-bm-${p.id}" style="font-family:var(--mono);font-size:11px;color:var(--cyan);text-align:right">${p.bmStr||'—'}</div>`
+      ? `<div id="ubm-bm-${p.id}" style="font-family:var(--mono);font-size:11px;color:var(--accent);text-align:right">${p.bmStr||'—'}</div>`
       : `<input class="finput" style="font-size:11px;padding:4px 6px;text-align:right;font-family:var(--mono)" inputmode="decimal" value="${p.bmStr}" placeholder="BM" oninput="ubmPChange(${p.id},'bmStr',this.value);ubmPChange(${p.id},'bmVal',parseFloat(this.value.replace(',','.'))||null)">`;
     const cHD = p.cHuluDry ?? p.cHulu ?? '';
     const cHW = p.cHuluWet ?? p.cHulu ?? '';
@@ -4206,7 +4515,7 @@ function _ubmCalcAndShowResults(){
       ${TH('C Hulu<br>(mg/L)','text-align:right')}
       ${srcHeaders}
       ${TH(`CR Hilir<br>(mg/L)`,`text-align:right;color:${colorHex}`)}
-      ${TH('BM Air Sungai<br>(Sesuai Kelas)','text-align:right;color:var(--cyan)')}
+      ${TH('BM Air Sungai<br>(Sesuai Kelas)','text-align:right;color:var(--accent)')}
       ${jenisHeaders}
       ${TH('Keterangan','text-align:center')}
     </tr>`;
@@ -4301,7 +4610,7 @@ function _ubmCalcAndShowResults(){
         ${TD(cHulu!=null&&cHulu>0?fmtN(cHulu,4):'—', 'text-align:right;color:var(--txt2)')}
         ${srcCols}
         ${TD(cr!=null?fmtN(cr,4):'—', `text-align:right;color:${crColor};font-weight:700;font-size:12px`)}
-        ${TD(p.isPH ? '<span style="color:var(--cyan);font-weight:600">6–9</span>' : (bm!=null?fmtN(bm,4):'—'), 'text-align:right;color:var(--cyan);font-weight:600')}
+        ${TD(p.isPH ? '<span style="color:var(--accent);font-weight:600">6–9</span>' : (bm!=null?fmtN(bm,4):'—'), 'text-align:right;color:var(--accent);font-weight:600')}
         ${jenisCols}
         ${TD(ketBadge, 'text-align:center')}
       </tr>`;
@@ -4383,7 +4692,7 @@ function _ubmCalcAndShowResults(){
       // Keterangan
       let ket='', ketColor='var(--mute)';
       if(p.isPH){
-        ket='pH: BM adalah rentang 6–9 (bukan nilai tunggal)'; ketColor='var(--cyan)';
+        ket='pH: BM adalah rentang 6–9 (bukan nilai tunggal)'; ketColor='var(--accent)';
       } else if(bm==null){
         ket='BM tidak tersedia'; ketColor='var(--mute)';
       } else if(totalQi<=0){
@@ -4401,19 +4710,19 @@ function _ubmCalcAndShowResults(){
       const fmtCmax=(v)=>{
         if(v==null) return '—';
         if(v<0) return `<span style="color:var(--red);font-weight:700">${fmtN(v,2)} ⚠</span>`;
-        return `<span style="color:var(--cyan);font-weight:700">${fmtN(v,4)}</span>`;
+        return `<span style="color:var(--accent);font-weight:700">${fmtN(v,4)}</span>`;
       };
       const rowBg=cMaxFinal!=null&&cMaxFinal<0?'background:rgba(239,68,68,0.04)':'';
       return `<tr style="${rowBg}">
         <td style="font-weight:700;font-size:12.5px">${esc(p.name||'—')}</td>
         <td class="td-c" style="color:var(--mute);font-size:11px">${esc(p.unit)}</td>
         <td class="td-r" style="color:var(--mute2)">${cHuluDryVal>0||cHuluWetVal>0?fmtN(cHuluDryVal,4)+(cHuluWetVal!==cHuluDryVal?' / '+fmtN(cHuluWetVal,4):''):'—'}</td>
-        <td class="td-c" style="font-family:var(--mono);font-size:12px">${p.isPH ? '<span style=\"color:var(--cyan)\">6–9</span>' : (bm!=null?fmtN(bm,4):'—')}</td>
+        <td class="td-c" style="font-family:var(--mono);font-size:12px">${p.isPH ? '<span style=\"color:var(--accent)\">6–9</span>' : (bm!=null?fmtN(bm,4):'—')}</td>
         <td class="td-r" style="color:#f5a623">${crD!=null?fmtN(crD,4):'—'}</td>
         <td class="td-r" style="color:#4488ff">${crW!=null?fmtN(crW,4):'—'}</td>
         <td class="td-r">${fmtCmax(cmDraw)}</td>
         <td class="td-r">${fmtCmax(cmWraw)}</td>
-        <td class="td-c">${cMaxFinal!=null&&cMaxFinal>=0?`<span style="font-family:var(--mono);font-size:13px;font-weight:700;color:var(--cyan)">${fmtN(cMaxFinal,4)}</span>`:`<span style="color:var(--red);font-weight:700">Tidak tersedia</span>`}</td>
+        <td class="td-c">${cMaxFinal!=null&&cMaxFinal>=0?`<span style="font-family:var(--mono);font-size:13px;font-weight:700;color:var(--accent)">${fmtN(cMaxFinal,4)}</span>`:`<span style="color:var(--red);font-weight:700">Tidak tersedia</span>`}</td>
         <td style="font-size:11px;color:${ketColor};padding:6px 10px">${ket}</td>
       </tr>`;
     }).join('');
@@ -4437,7 +4746,7 @@ function _ubmCalcAndShowResults(){
       const rowBg     = overLimit ? 'background:rgba(239,68,68,0.05)' : '';
       // Tampilan nilai Usulan BM
       const usulanBMDisp = p.isPH
-        ? `<span style="color:var(--cyan);font-weight:700">6–9</span>`
+        ? `<span style="color:var(--accent);font-weight:700">6–9</span>`
         : noInput
           ? `<span style="color:var(--mute);font-size:10px;font-family:var(--mono)">— isi di tabel atas —</span>`
           : `<div style="font-family:var(--mono);font-size:13px;font-weight:700;color:${overLimit?'var(--red)':ok?'var(--amber)':'var(--mute2)'}">${fmtN(usulanBMVal,4)}</div>
@@ -4490,7 +4799,7 @@ function _buildRekapTable(resDry, resWet, totalQi){
       TH(`CR Sungai ${riverName}`, `background:${seasonColor}22`) +
       TH('Baku Mutu Air Sungai<br>(PP No. 22 Tahun 2021)', `background:${seasonColor}22`) +
       TH('Status Mutu', `background:${seasonColor}22`) +
-      TH('Usulan Max Baku Mutu Air Limbah', `background:${seasonColor}22;color:#00e5c8`) +
+      TH('Usulan Max Baku Mutu Air Limbah', `background:${seasonColor}22;color:#3ecfb2`) +
       TH('Usulan BM', `background:${seasonColor}22;color:#f5a623`) +
       TH('Alokasi Beban Pencemaran (Kg/hari)', `background:${seasonColor}22;color:#f5a623`);
   }
@@ -4503,11 +4812,11 @@ function _buildRekapTable(resDry, resWet, totalQi){
       const usulanBMVal = usulanBMRaw !== '' ? pNum(usulanBMRaw) : null;
       const alokasi  = usulanBMVal!=null&&totalQi>0 ? usulanBMVal*totalQi*86400/1000 : null;
       // Tampilan BM Sungai: "6–9" untuk pH, angka untuk lainnya
-      const bmSungaiDisp = p.isPH ? '<span style="color:var(--cyan);font-weight:700">6–9</span>'
+      const bmSungaiDisp = p.isPH ? '<span style="color:var(--accent);font-weight:700">6–9</span>'
                                   : (bm!=null ? fmtN(bm,4) : '—');
       const cMaxDisp = p.isPH ? '<span style="color:var(--mute);font-size:9.5px">Rentang 6–9</span>'
                                : (cMax!=null ? fmtN(cMax,4) : '—');
-      const usulanBMDisp = p.isPH ? '<span style="color:var(--cyan)">6–9</span>'
+      const usulanBMDisp = p.isPH ? '<span style="color:var(--accent)">6–9</span>'
                                  : (usulanBMVal!=null ? fmtN(usulanBMVal,4) : '—');
       // Status badge
       const statusBadge = status==='ok'
@@ -4524,10 +4833,10 @@ function _buildRekapTable(resDry, resWet, totalQi){
               ? fmtN(pNum(p.cHuluDry),4)+' / '+fmtN(pNum(p.cHuluWet??p.cHuluDry),4)
               : p.cHulu ? fmtN(pNum(p.cHulu),4) : '—') +
         ubmSources.map(s => TDr(p.cSrc[s.id] ? fmtN(pNum(p.cSrc[s.id]),4) : '—')).join('') +
-        TDr(cr!=null ? fmtN(cr,4) : '—', 'color:var(--cyan);font-weight:700') +
+        TDr(cr!=null ? fmtN(cr,4) : '—', 'color:var(--accent);font-weight:700') +
         TDc(bmSungaiDisp) +
         TDc(statusBadge) +
-        TDr(cMaxDisp, 'color:var(--cyan)') +
+        TDr(cMaxDisp, 'color:var(--accent)') +
         TDr(usulanBMDisp, 'color:#f5a623;font-weight:700') +
         TDr(alokasi!=null ? fmtN(alokasi,2) : '—', 'color:#f5a623;font-weight:700') +
         `</tr>`;
@@ -4591,7 +4900,7 @@ function _buildCRUsulanTable(resDryUsulan, resWetUsulan, totalQi) {
       ${TH('C Hulu<br>(mg/L)', 'text-align:right')}
       ${srcHeaders}
       ${TH('CR Hilir<br>(mg/L)', `text-align:right;color:${colorHex}`)}
-      ${TH('BM Air Sungai<br>(Sesuai Kelas)', 'text-align:right;color:var(--cyan)')}
+      ${TH('BM Air Sungai<br>(Sesuai Kelas)', 'text-align:right;color:var(--accent)')}
       ${TH('Alokasi Beban Pencemar<br>Berdasarkan Usulan BM<br>(kg/hari)', 'text-align:right;color:var(--amber)')}
       ${TH('Keterangan', 'text-align:center')}
     </tr>`;
@@ -4631,7 +4940,7 @@ function _buildCRUsulanTable(resDryUsulan, resWetUsulan, totalQi) {
         ${TD(cHulu!=null&&cHulu>0 ? fmtN(cHulu,4) : '—', 'text-align:right;color:var(--txt2)')}
         ${srcCols}
         ${TD(cr!=null ? fmtN(cr,4) : '—', `text-align:right;color:${crColor};font-weight:700;font-size:12px`)}
-        ${TD(p.isPH ? '<span style="color:var(--cyan);font-weight:600">6–9</span>' : (bm!=null?fmtN(bm,4):'—'), 'text-align:right;color:var(--cyan);font-weight:600')}
+        ${TD(p.isPH ? '<span style="color:var(--accent);font-weight:600">6–9</span>' : (bm!=null?fmtN(bm,4):'—'), 'text-align:right;color:var(--accent);font-weight:600')}
         ${TD(alokasiDisp, 'text-align:right')}
         ${TD(ketBadge, 'text-align:center')}
       </tr>`;
@@ -5277,7 +5586,7 @@ function mdlRenderSrcList() {
     const btnDown = `<button onclick="mdlMoveDown(${m.srcId})" ${i===N-1 ?'disabled':''} title="Turun" style="width:100%;height:19px;background:none;border:1px solid var(--brd);border-radius:2px;color:${i===N-1?'var(--mute)':'var(--txt2)'};cursor:${i===N-1?'default':'pointer'};font-size:11px;padding:0;line-height:1">▼</button>`;
     return `<div style="display:grid;grid-template-columns:52px 32px 1fr 150px 30px;gap:8px;padding:8px 10px;align-items:center;background:var(--bg2);border:1px solid var(--brd2);border-radius:var(--rs);margin-bottom:5px">
       <div style="display:flex;flex-direction:column;gap:3px">${btnUp}${btnDown}</div>
-      <div style="text-align:center;font-family:var(--mono);font-size:15px;font-weight:700;color:var(--cyan)">${m.order}</div>
+      <div style="text-align:center;font-family:var(--mono);font-size:15px;font-weight:700;color:var(--accent)">${m.order}</div>
       <div>
         <div style="font-size:12.5px;font-weight:600;color:var(--txt)">${esc(src.name||'Sumber '+m.order)}</div>
         <div style="font-family:var(--mono);font-size:9.5px;color:var(--mute);margin-top:1px">Q = ${qd>0?fmtN(qd,2)+' m³/hari':'—'}</div>
@@ -5418,7 +5727,7 @@ function mdlRender() {
   if (elTitle) elTitle.textContent = `DIAGRAM CR — ${riverName.toUpperCase()} (${seasonLabel.toUpperCase()})`;
 
   const isDark   = document.documentElement.getAttribute('data-theme') !== 'light';
-  const gridClr  = isDark ? 'rgba(0,229,200,0.07)' : 'rgba(0,100,80,0.09)';
+  const gridClr  = isDark ? 'rgba(62,207,178,0.07)' : 'rgba(0,100,80,0.09)';
   const lblClr   = isDark ? '#8bb8b0' : '#2a6055';
   const titleClr = isDark ? '#d4f0e8' : '#0d2e28';
   const bgClr    = isDark ? '#0a1e2e' : '#ffffff';
@@ -5469,7 +5778,7 @@ function mdlRender() {
         rotation: -90,
         backgroundColor: 'transparent',
         color: isDark ? '#ff9999' : '#cc2222',
-        font: { size: 10, family: 'IBM Plex Mono, monospace', weight:'600' },
+        font: { size: 10, family: 'Inter, sans-serif', weight:'600' },
         padding: 4
       }
     };
@@ -5482,7 +5791,7 @@ function mdlRender() {
   empty.style.display = 'none';
 
   const ctx = document.getElementById('mdl-canvas').getContext('2d');
-  const monoFont = 'IBM Plex Mono, monospace';
+  const monoFont = 'Inter, sans-serif';
 
   _mdlChart = new Chart(ctx, {
     type: 'line',
@@ -5504,7 +5813,7 @@ function mdlRender() {
         },
         title: {
           display: true, text: chartTitle, color: titleClr,
-          font: { size: 14, weight: 'bold', family: 'Bebas Neue, sans-serif' },
+          font: { size: 14, weight: 'bold', family: 'Sora, sans-serif' },
           padding: { top: 6, bottom: 10 }
         },
         tooltip: {
@@ -5547,9 +5856,9 @@ function mdlRender() {
   const tbody = document.getElementById('mdl-tbl-body');
   if (!thead || !tbody) return;
 
-  thead.innerHTML = `<tr style="background:rgba(0,229,200,0.05)">
+  thead.innerHTML = `<tr style="background:rgba(62,207,178,0.05)">
     ${['No','Titik / Sumber','Jarak (km)','Q_i (m³/det)','C_i Aktual','CR Hilir (mg/L)','C_maks (mg/L)','Status']
-      .map((h,i)=>`<th style="padding:8px 10px;font-family:var(--mono);font-size:9px;font-weight:700;border-bottom:1px solid var(--brd);color:${i===5?'var(--cyan)':i===6?'var(--amber)':'var(--mute)'};text-align:${i<2?'left':'right'}">${h}</th>`).join('')}
+      .map((h,i)=>`<th style="padding:8px 10px;font-family:var(--mono);font-size:9px;font-weight:700;border-bottom:1px solid var(--brd);color:${i===5?'var(--accent)':i===6?'var(--amber)':'var(--mute)'};text-align:${i<2?'left':'right'}">${h}</th>`).join('')}
     </tr>`;
 
   let qCum = Qs, cCum = pNum(param.cHulu);
@@ -5571,8 +5880,8 @@ function mdlRender() {
     const badge  = status==='ok'?'<span class="badge b-ok">✓ Memenuhi</span>'
                  : status==='ng'?'<span class="badge b-ng">✗ Melebihi</span>'
                  : '<span class="badge b-na">—</span>';
-    const crClr  = status==='ng'?'var(--red)':status==='ok'?'var(--green)':'var(--cyan)';
-    const alt    = i%2?'background:rgba(0,229,200,0.02)':'';
+    const crClr  = status==='ng'?'var(--red)':status==='ok'?'var(--green)':'var(--accent)';
+    const alt    = i%2?'background:rgba(62,207,178,0.02)':'';
     const TD = (v, right=true, clr='var(--txt2)') =>
       `<td style="padding:8px 10px;font-family:var(--mono);font-size:11px;text-align:${right?'right':'left'};color:${clr};border-bottom:1px solid var(--brd2)">${v}</td>`;
     return `<tr style="${alt}">
@@ -6141,7 +6450,7 @@ function _buildPreview(data) {
     const alreadyAdded = inSystem && params.find(x => x.no === p.no_wqdb);
 
     const rowColor = inSystem
-      ? (alreadyAdded ? 'rgba(255,200,0,0.06)' : 'rgba(0,229,200,0.04)')
+      ? (alreadyAdded ? 'rgba(255,200,0,0.06)' : 'rgba(62,207,178,0.04)')
       : 'rgba(255,68,68,0.04)';
 
     const statusBadge = !inSystem
@@ -6161,7 +6470,7 @@ function _buildPreview(data) {
           style="width:14px;height:14px;cursor:pointer">
       </td>
       <td style="padding:7px 8px;font-family:var(--mono);font-size:11px;color:var(--txt)">${p.nama_asli}</td>
-      <td style="padding:7px 8px;font-family:var(--mono);font-size:10px;color:var(--cyan)">${p.nama_sistem || '—'}</td>
+      <td style="padding:7px 8px;font-family:var(--mono);font-size:10px;color:var(--accent)">${p.nama_sistem || '—'}</td>
       <td style="padding:7px 8px;font-family:var(--mono);font-size:11px;color:var(--txt);text-align:right">
         ${valDry !== null && valDry !== undefined ? `<strong>${valDry}</strong>` : '<span style="color:var(--mute)">—</span>'}
       </td>
@@ -6317,7 +6626,7 @@ function _setProgress(pct, label) {
       <div class="ph-sub">Titik sampling · Sumber limbah · Alur sungai · Database sungai Indonesia</div>
     </div>
     <div class="ph-acts">
-      <button class="btn btn-outline btn-sm" onclick="petaAddMode('sampling')" style="color:var(--cyan);border-color:rgba(0,229,200,.4)">＋ Sampling</button>
+      <button class="btn btn-outline btn-sm" onclick="petaAddMode('sampling')" style="color:var(--accent);border-color:rgba(62,207,178,.4)">＋ Sampling</button>
       <button class="btn btn-outline btn-sm" onclick="petaAddMode('limbah')" style="color:var(--amber);border-color:rgba(245,166,35,.4)">＋ Limbah</button>
       <button class="btn btn-outline btn-sm" onclick="petaAddMode('sungai')" style="color:var(--blue);border-color:rgba(68,136,255,.4)">〰 Alur</button>
       <button class="btn btn-outline btn-sm" onclick="petaToggleDMS()" style="color:#b464ff;border-color:rgba(180,100,255,.4)">📐 DMS</button>
@@ -6326,7 +6635,7 @@ function _setProgress(pct, label) {
   </div>
 
   <!-- Mode bar -->
-  <div id="peta-mode-bar" style="display:none;margin-bottom:12px;padding:9px 16px;border-radius:var(--rs);font-family:var(--mono);font-size:10.5px;font-weight:600;background:rgba(0,229,200,0.08);border:1px solid var(--brd);align-items:center;gap:10px">
+  <div id="peta-mode-bar" style="display:none;margin-bottom:12px;padding:9px 16px;border-radius:var(--rs);font-family:var(--mono);font-size:10.5px;font-weight:600;background:rgba(62,207,178,0.08);border:1px solid var(--brd);align-items:center;gap:10px">
     <span id="peta-mode-txt"></span>
     <button onclick="petaCancelMode()" style="margin-left:auto;background:none;border:1px solid var(--brd);border-radius:var(--rs);color:var(--mute);cursor:pointer;font-family:var(--mono);font-size:10px;padding:3px 10px">✕ Batal</button>
   </div>
@@ -6339,7 +6648,7 @@ function _setProgress(pct, label) {
       <!-- Peta -->
       <div id="peta-map-wrap" style="width:100%;height:520px;border-radius:var(--rs);overflow:hidden;border:1px solid var(--brd);margin-bottom:14px;background:#a8d5e8;position:relative">
         <div id="peta-map" style="width:100%;height:100%"></div>
-        <div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);z-index:500;background:rgba(0,0,0,0.5);color:#fff;font-family:monospace;font-size:10px;padding:3px 10px;border-radius:10px;pointer-events:none;white-space:nowrap">Klik peta untuk scroll-zoom · Keluar untuk scroll halaman</div>
+        <div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);z-index:500;background:rgba(0,0,0,0.5);color:#fff;font-family:'Inter',sans-serif;font-size:10px;padding:3px 10px;border-radius:10px;pointer-events:none;white-space:nowrap">Klik peta untuk scroll-zoom · Keluar untuk scroll halaman</div>
       </div>
 
       <!-- Tabel ringkasan -->
@@ -6359,8 +6668,8 @@ function _setProgress(pct, label) {
                 <th style="padding:7px 10px;font-family:var(--mono);font-size:9px;color:var(--mute);text-align:center">#</th>
                 <th style="padding:7px 10px;font-family:var(--mono);font-size:9px;color:var(--mute)">Nama</th>
                 <th style="padding:7px 10px;font-family:var(--mono);font-size:9px;color:var(--mute);text-align:center">Tipe</th>
-                <th style="padding:7px 10px;font-family:var(--mono);font-size:9px;color:var(--cyan);text-align:right">Lat (DD)</th>
-                <th style="padding:7px 10px;font-family:var(--mono);font-size:9px;color:var(--cyan);text-align:right">Lng (DD)</th>
+                <th style="padding:7px 10px;font-family:var(--mono);font-size:9px;color:var(--accent);text-align:right">Lat (DD)</th>
+                <th style="padding:7px 10px;font-family:var(--mono);font-size:9px;color:var(--accent);text-align:right">Lng (DD)</th>
                 <th style="padding:7px 10px;font-family:var(--mono);font-size:9px;color:var(--mute)">DMS</th>
                 <th style="padding:7px 10px;font-family:var(--mono);font-size:9px;color:var(--mute);text-align:center">Status</th>
                 <th style="padding:7px 10px;font-family:var(--mono);font-size:9px;color:var(--mute);text-align:center">Aksi</th>
@@ -6377,7 +6686,7 @@ function _setProgress(pct, label) {
 
       <!-- Database Sungai -->
       <div class="card" style="padding:14px 15px;flex-shrink:0">
-        <div style="font-family:var(--mono);font-size:9.5px;font-weight:700;color:var(--cyan);text-transform:uppercase;letter-spacing:.8px;margin-bottom:9px">🗄 Database Sungai Indonesia</div>
+        <div style="font-family:var(--mono);font-size:9.5px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:9px">🗄 Database Sungai Indonesia</div>
         <input class="finput" id="peta-river-search" placeholder="Cari nama sungai..." style="font-size:11px;padding:6px 9px;width:100%;box-sizing:border-box;margin-bottom:7px" oninput="petaSearchDB(this.value)">
         <div id="peta-db-results" style="max-height:180px;overflow-y:auto;border-radius:var(--rs);border:1px solid var(--brd2);background:var(--bg2)">
           <div style="padding:10px;font-family:var(--mono);font-size:9.5px;color:var(--mute);text-align:center">Ketik ≥2 huruf untuk mencari...</div>
@@ -6402,9 +6711,9 @@ function _setProgress(pct, label) {
           <input class="finput" id="dms-lng-s" type="number" placeholder='0"' step="0.01" style="font-size:11px;padding:5px 6px;text-align:center" min="0" max="59.99" oninput="petaDMSPreview()">
           <select class="finput" id="dms-lng-dir" style="font-size:11px;padding:5px 4px" onchange="petaDMSPreview()"><option value="E">E</option><option value="W">W</option></select>
         </div>
-        <div id="dms-preview" style="font-family:var(--mono);font-size:9px;color:var(--cyan);margin-bottom:8px;min-height:12px;padding:4px 0"></div>
+        <div id="dms-preview" style="font-family:var(--mono);font-size:9px;color:var(--accent);margin-bottom:8px;min-height:12px;padding:4px 0"></div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-          <button class="btn btn-sm" onclick="petaDMSAddPoint('sampling')" style="font-size:9.5px;background:rgba(0,229,200,0.1);border-color:rgba(0,229,200,.4)">＋ Sampling</button>
+          <button class="btn btn-sm" onclick="petaDMSAddPoint('sampling')" style="font-size:9.5px;background:rgba(62,207,178,0.1);border-color:rgba(62,207,178,.4)">＋ Sampling</button>
           <button class="btn btn-sm" onclick="petaDMSAddPoint('limbah')" style="font-size:9.5px;background:rgba(245,166,35,0.1);border-color:rgba(245,166,35,.4);color:var(--amber)">＋ Limbah</button>
         </div>
       </div>
@@ -6423,7 +6732,7 @@ function _setProgress(pct, label) {
       <div class="card" style="padding:14px 15px;flex-shrink:0">
         <div style="font-family:var(--mono);font-size:9.5px;font-weight:700;color:var(--txt);text-transform:uppercase;letter-spacing:.8px;margin-bottom:9px">🗺 Legenda</div>
         <div style="display:flex;flex-direction:column;gap:7px;font-family:var(--mono);font-size:10.5px">
-          <div style="display:flex;align-items:center;gap:8px"><span style="width:11px;height:11px;border-radius:50%;background:#00e5c8;display:inline-block;flex-shrink:0"></span><span style="color:var(--txt2)">Titik Sampling</span></div>
+          <div style="display:flex;align-items:center;gap:8px"><span style="width:11px;height:11px;border-radius:50%;background:#3ecfb2;display:inline-block;flex-shrink:0"></span><span style="color:var(--txt2)">Titik Sampling</span></div>
           <div style="display:flex;align-items:center;gap:8px"><span style="width:11px;height:11px;border-radius:50%;background:#f5a623;display:inline-block;flex-shrink:0"></span><span style="color:var(--txt2)">Sumber Limbah</span></div>
           <div style="display:flex;align-items:center;gap:8px"><span style="width:14px;height:3px;border-radius:2px;background:#4488ff;display:inline-block;flex-shrink:0"></span><span style="color:var(--txt2)">Alur Manual</span></div>
           <div style="display:flex;align-items:center;gap:8px"><span style="width:14px;height:3px;border-radius:2px;background:#00b8d4;display:inline-block;flex-shrink:0;opacity:0.8"></span><span style="color:var(--txt2)">Sungai Database</span></div>
@@ -6575,7 +6884,7 @@ function _dmsToDec(d, m, s, dir) {
 
 /* ─── Icon ───────────────────────────────────────────────────── */
 function _icon(type, status) {
-  var fill  = type === 'limbah' ? '#f5a623' : '#00e5c8';
+  var fill  = type === 'limbah' ? '#f5a623' : '#3ecfb2';
   var ring  = status === 'ok' ? '#00e87a' : status === 'ng' ? '#ff4444' : fill;
   var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="30" height="38" viewBox="0 0 30 38">'
     + '<filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="rgba(0,0,0,0.4)"/></filter>'
@@ -6640,8 +6949,8 @@ function petaAddMode(mode) {
     limbah  : '🏭 Mode Sumber Air Limbah — klik lokasi di peta',
     sungai  : '〰 Mode Alur Sungai — klik titik-titik alur, lalu konfirmasi'
   };
-  var clrs = { sampling:'rgba(0,229,200,0.12)', limbah:'rgba(245,166,35,0.12)', sungai:'rgba(68,136,255,0.12)' };
-  bar.style.cssText = 'display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:9px 16px;border-radius:var(--rs);font-family:var(--mono);font-size:10.5px;font-weight:600;background:'+(clrs[mode]||'rgba(0,229,200,0.1)')+';border:1px solid var(--brd)';
+  var clrs = { sampling:'rgba(62,207,178,0.12)', limbah:'rgba(245,166,35,0.12)', sungai:'rgba(68,136,255,0.12)' };
+  bar.style.cssText = 'display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:9px 16px;border-radius:var(--rs);font-family:var(--mono);font-size:10.5px;font-weight:600;background:'+(clrs[mode]||'rgba(62,207,178,0.1)')+';border:1px solid var(--brd)';
   txt.textContent = lbls[mode] || '';
   _map.getContainer().style.cursor = 'crosshair';
 }
@@ -6719,28 +7028,28 @@ function petaDMSAddPoint(type) {
 function _addPopup(latlng, type) {
   var id    = 'p' + (_uid++);
   var label = type === 'limbah' ? 'Sumber Limbah' : 'Titik Sampling';
-  var color = type === 'limbah' ? '#f5a623' : '#00e5c8';
+  var color = type === 'limbah' ? '#f5a623' : '#3ecfb2';
   var dmsLat = _ddToDMS(latlng.lat, true);
   var dmsLng = _ddToDMS(latlng.lng, false);
 
   L.popup({ minWidth:260, closeButton:true })
     .setLatLng(latlng)
     .setContent(
-      '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;padding:2px 0">'
+      '<div style="font-family:\'Inter\',sans-serif;font-size:12px;padding:2px 0">'
     + '<div style="font-weight:700;color:'+color+';margin-bottom:8px;font-size:11px;letter-spacing:1.2px;text-transform:uppercase">＋ '+label+'</div>'
     + '<div style="color:#8bb8b0;font-size:9.5px;margin-bottom:8px">'+dmsLat+' / '+dmsLng+'</div>'
     + '<input id="pn-'+id+'" placeholder="Nama titik..." autofocus '
-    +   'style="width:100%;padding:7px 9px;margin-bottom:7px;background:#060f17;border:1px solid rgba(0,229,200,0.25);border-radius:3px;color:#d4f0e8;font-family:\'IBM Plex Mono\',monospace;font-size:12px;outline:none;box-sizing:border-box">'
+    +   'style="width:100%;padding:7px 9px;margin-bottom:7px;background:#060f17;border:1px solid rgba(62,207,178,0.25);border-radius:3px;color:#d4f0e8;font-family:\'Inter\',sans-serif;font-size:12px;outline:none;box-sizing:border-box">'
     + '<select id="ps-'+id+'" '
-    +   'style="width:100%;padding:6px 9px;margin-bottom:7px;background:#060f17;border:1px solid rgba(0,229,200,0.25);border-radius:3px;color:#d4f0e8;font-family:\'IBM Plex Mono\',monospace;font-size:12px;outline:none;box-sizing:border-box">'
+    +   'style="width:100%;padding:6px 9px;margin-bottom:7px;background:#060f17;border:1px solid rgba(62,207,178,0.25);border-radius:3px;color:#d4f0e8;font-family:\'Inter\',sans-serif;font-size:12px;outline:none;box-sizing:border-box">'
     + '  <option value="">— Status BM (opsional) —</option>'
     + '  <option value="ok">✓ Memenuhi Baku Mutu</option>'
     + '  <option value="ng">✗ Melebihi Baku Mutu</option>'
     + '</select>'
     + '<textarea id="pt-'+id+'" placeholder="Catatan..." rows="2" '
-    +   'style="width:100%;padding:6px 9px;margin-bottom:9px;background:#060f17;border:1px solid rgba(0,229,200,0.25);border-radius:3px;color:#d4f0e8;font-family:\'IBM Plex Mono\',monospace;font-size:11px;outline:none;box-sizing:border-box;resize:vertical"></textarea>'
+    +   'style="width:100%;padding:6px 9px;margin-bottom:9px;background:#060f17;border:1px solid rgba(62,207,178,0.25);border-radius:3px;color:#d4f0e8;font-family:\'Inter\',sans-serif;font-size:11px;outline:none;box-sizing:border-box;resize:vertical"></textarea>'
     + '<button onclick="_saveMarker(\''+id+'\','+latlng.lat+','+latlng.lng+',\''+type+'\')" '
-    +   'style="width:100%;padding:7px 0;background:'+color+';border:none;border-radius:3px;color:#060f17;font-family:\'IBM Plex Mono\',monospace;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:1px">SIMPAN</button>'
+    +   'style="width:100%;padding:7px 0;background:'+color+';border:none;border-radius:3px;color:#060f17;font-family:\'Inter\',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:1px">SIMPAN</button>'
     + '</div>'
     )
     .openOn(_map);
@@ -6772,24 +7081,24 @@ function _addLeafletMarker(m) {
 }
 
 function _markerPopupHTML(m) {
-  var color = m.type==='limbah'?'#f5a623':'#00e5c8';
+  var color = m.type==='limbah'?'#f5a623':'#3ecfb2';
   var label = m.type==='limbah'?'Sumber Air Limbah':'Titik Sampling';
   var badge = m.status==='ok'?'<span style="color:#00e87a;font-weight:700">✓ Memenuhi BM</span>'
             : m.status==='ng'?'<span style="color:#ff4444;font-weight:700">✗ Melebihi BM</span>'
             : '<span style="color:#3a6660">— Belum dievaluasi</span>';
   var dmsLat = _ddToDMS(m.lat, true);
   var dmsLng = _ddToDMS(m.lng, false);
-  return '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;min-width:220px">'
+  return '<div style="font-family:\'Inter\',sans-serif;font-size:12px;min-width:220px">'
     + '<div style="font-weight:700;font-size:13px;color:#d4f0e8;margin-bottom:2px">'+_e(m.name)+'</div>'
     + '<div style="color:'+color+';font-size:9.5px;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:10px">'+label+'</div>'
     + '<div style="display:flex;justify-content:space-between;margin-bottom:3px;font-size:11px"><span style="color:#8bb8b0">DD</span><span style="color:#d4f0e8">'+m.lat.toFixed(6)+', '+m.lng.toFixed(6)+'</span></div>'
     + '<div style="display:flex;justify-content:space-between;margin-bottom:3px;font-size:10px"><span style="color:#8bb8b0">DMS-Lat</span><span style="color:#a0c8b8">'+dmsLat+'</span></div>'
     + '<div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:10px"><span style="color:#8bb8b0">DMS-Lng</span><span style="color:#a0c8b8">'+dmsLng+'</span></div>'
     + '<div style="display:flex;justify-content:space-between;margin-bottom:'+(m.note?'8':'2')+'px;font-size:11px"><span style="color:#8bb8b0">Status BM</span>'+badge+'</div>'
-    + (m.note?'<div style="padding:6px 8px;background:rgba(0,229,200,0.05);border-radius:3px;color:#8bb8b0;font-size:10.5px;line-height:1.5;margin-bottom:8px">'+_e(m.note)+'</div>':'')
+    + (m.note?'<div style="padding:6px 8px;background:rgba(62,207,178,0.05);border-radius:3px;color:#8bb8b0;font-size:10.5px;line-height:1.5;margin-bottom:8px">'+_e(m.note)+'</div>':'')
     + '<div style="display:flex;gap:6px;margin-top:8px">'
-    + '<button onclick="_editMarker(\''+m.id+'\')" style="flex:1;padding:5px 0;background:rgba(0,229,200,0.08);border:1px solid rgba(0,229,200,0.25);border-radius:3px;color:#00e5c8;cursor:pointer;font-family:\'IBM Plex Mono\',monospace;font-size:10px;font-weight:700">✎ EDIT</button>'
-    + '<button onclick="_delMarker(\''+m.id+'\')" style="flex:1;padding:5px 0;background:rgba(255,68,68,0.08);border:1px solid rgba(255,68,68,0.25);border-radius:3px;color:#ff4444;cursor:pointer;font-family:\'IBM Plex Mono\',monospace;font-size:10px;font-weight:700">✕ HAPUS</button>'
+    + '<button onclick="_editMarker(\''+m.id+'\')" style="flex:1;padding:5px 0;background:rgba(62,207,178,0.08);border:1px solid rgba(62,207,178,0.25);border-radius:3px;color:#3ecfb2;cursor:pointer;font-family:\'Inter\',sans-serif;font-size:10px;font-weight:700">✎ EDIT</button>'
+    + '<button onclick="_delMarker(\''+m.id+'\')" style="flex:1;padding:5px 0;background:rgba(255,68,68,0.08);border:1px solid rgba(255,68,68,0.25);border-radius:3px;color:#ff4444;cursor:pointer;font-family:\'Inter\',sans-serif;font-size:10px;font-weight:700">✕ HAPUS</button>'
     + '</div></div>';
 }
 
@@ -6823,14 +7132,14 @@ function _riverConfirmPopup(latlng) {
   L.popup({minWidth:230,closeButton:true})
     .setLatLng(latlng)
     .setContent(
-      '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;padding:2px 0">'
+      '<div style="font-family:\'Inter\',sans-serif;font-size:12px;padding:2px 0">'
     + '<div style="font-weight:700;color:#4488ff;margin-bottom:8px;font-size:11px;letter-spacing:1.2px">〰 ALUR SUNGAI</div>'
     + '<div style="color:#8bb8b0;font-size:10px;margin-bottom:8px">'+_riverPts.length+' titik telah dipilih</div>'
     + '<input id="rn-'+id+'" placeholder="Nama sungai..." autofocus '
-    +   'style="width:100%;padding:7px 9px;margin-bottom:9px;background:#060f17;border:1px solid rgba(68,136,255,0.3);border-radius:3px;color:#d4f0e8;font-family:\'IBM Plex Mono\',monospace;font-size:12px;outline:none;box-sizing:border-box">'
+    +   'style="width:100%;padding:7px 9px;margin-bottom:9px;background:#060f17;border:1px solid rgba(68,136,255,0.3);border-radius:3px;color:#d4f0e8;font-family:\'Inter\',sans-serif;font-size:12px;outline:none;box-sizing:border-box">'
     + '<div style="display:flex;gap:6px">'
-    + '<button onclick="_saveRiver(\''+id+'\')" style="flex:1;padding:7px 0;background:#4488ff;border:none;border-radius:3px;color:#fff;font-family:\'IBM Plex Mono\',monospace;font-size:11px;font-weight:700;cursor:pointer">SIMPAN</button>'
-    + '<button onclick="petaCancelMode();_map.closePopup()" style="flex:1;padding:7px 0;background:none;border:1px solid rgba(68,136,255,0.35);border-radius:3px;color:#4488ff;font-family:\'IBM Plex Mono\',monospace;font-size:11px;cursor:pointer">Batal</button>'
+    + '<button onclick="_saveRiver(\''+id+'\')" style="flex:1;padding:7px 0;background:#4488ff;border:none;border-radius:3px;color:#fff;font-family:\'Inter\',sans-serif;font-size:11px;font-weight:700;cursor:pointer">SIMPAN</button>'
+    + '<button onclick="petaCancelMode();_map.closePopup()" style="flex:1;padding:7px 0;background:none;border:1px solid rgba(68,136,255,0.35);border-radius:3px;color:#4488ff;font-family:\'Inter\',sans-serif;font-size:11px;cursor:pointer">Batal</button>'
     + '</div></div>'
     ).openOn(_map);
   setTimeout(function(){var el=document.getElementById('rn-'+id);if(el)el.focus();},100);
@@ -6846,7 +7155,7 @@ function _saveRiver(id) {
   var obj={id:rid,name:nm,points:pts};
   _rivers.push(obj);
   var line=L.polyline(pts,{color:'#4488ff',weight:4,opacity:0.8}).addTo(_map)
-    .bindPopup('<div style="font-family:\'IBM Plex Mono\',monospace;font-size:12px"><div style="font-weight:700;color:#4488ff;font-size:13px;margin-bottom:4px">'+_e(nm)+'</div><div style="color:#8bb8b0;font-size:10.5px;margin-bottom:10px">'+pts.length+' titik · Alur Manual</div><button onclick="_delRiver(\''+rid+'\')" style="padding:5px 14px;background:rgba(255,68,68,0.08);border:1px solid rgba(255,68,68,0.25);border-radius:3px;color:#ff4444;cursor:pointer;font-family:\'IBM Plex Mono\',monospace;font-size:10px;font-weight:700">✕ HAPUS</button></div>');
+    .bindPopup('<div style="font-family:\'Inter\',sans-serif;font-size:12px"><div style="font-weight:700;color:#4488ff;font-size:13px;margin-bottom:4px">'+_e(nm)+'</div><div style="color:#8bb8b0;font-size:10.5px;margin-bottom:10px">'+pts.length+' titik · Alur Manual</div><button onclick="_delRiver(\''+rid+'\')" style="padding:5px 14px;background:rgba(255,68,68,0.08);border:1px solid rgba(255,68,68,0.25);border-radius:3px;color:#ff4444;cursor:pointer;font-family:\'Inter\',sans-serif;font-size:10px;font-weight:700">✕ HAPUS</button></div>');
   _layers[rid]=line;
   petaCancelMode(); _renderList(); _renderTable(); _persist();
 }
@@ -6880,7 +7189,7 @@ function petaSearchDB(query) {
   el.innerHTML = results.map(function(s) {
     return '<div onclick="petaShowDBRiver(\''+s.name+'\')" '
       + 'style="padding:8px 10px;cursor:pointer;border-bottom:1px solid var(--brd2);display:flex;flex-direction:column;gap:2px" '
-      + 'onmouseover="this.style.background=\'rgba(0,229,200,0.06)\'" onmouseout="this.style.background=\'\'">'
+      + 'onmouseover="this.style.background=\'rgba(62,207,178,0.06)\'" onmouseout="this.style.background=\'\'">'
       + '<div style="font-family:var(--mono);font-size:11px;font-weight:600;color:var(--txt2)">'+_e(s.name)+'</div>'
       + '<div style="font-family:var(--mono);font-size:9px;color:var(--mute)">'+_e(s.province)+' · ±'+s.length+' km</div>'
       + '</div>';
@@ -6903,13 +7212,13 @@ function petaShowDBRiver(name) {
     radius:10, color:'#00b8d4', weight:3, fillColor:'#00b8d4', fillOpacity:0.25
   }).addTo(_dbRiverLayer)
     .bindPopup(
-      '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;min-width:200px">'
+      '<div style="font-family:\'Inter\',sans-serif;font-size:12px;min-width:200px">'
     + '<div style="font-weight:700;color:#00b8d4;font-size:13px;margin-bottom:3px">'+_e(s.name)+'</div>'
     + '<div style="color:#8bb8b0;font-size:10px;margin-bottom:8px">'+_e(s.province)+'</div>'
     + '<div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px"><span style="color:#8bb8b0">Panjang ±</span><span style="color:#d4f0e8">'+s.length+' km</span></div>'
     + '<div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:#8bb8b0">Koordinat</span><span style="color:#d4f0e8">'+s.lat.toFixed(3)+', '+s.lng.toFixed(3)+'</span></div>'
     + '<div style="margin-top:10px;display:flex;gap:6px">'
-    + '<button onclick="petaAddFromDB(\''+s.name+'\')" style="flex:1;padding:5px 0;background:rgba(0,184,212,0.12);border:1px solid rgba(0,184,212,0.4);border-radius:3px;color:#00b8d4;cursor:pointer;font-family:\'IBM Plex Mono\',monospace;font-size:10px;font-weight:700">＋ Tambah Alur</button>'
+    + '<button onclick="petaAddFromDB(\''+s.name+'\')" style="flex:1;padding:5px 0;background:rgba(0,184,212,0.12);border:1px solid rgba(0,184,212,0.4);border-radius:3px;color:#00b8d4;cursor:pointer;font-family:\'Inter\',sans-serif;font-size:10px;font-weight:700">＋ Tambah Alur</button>'
     + '</div></div>'
     ).openPopup();
 
@@ -6929,7 +7238,7 @@ function petaAddFromDB(name) {
   var obj = {id:rid, name:s.name, points:pts, fromDB:true};
   _rivers.push(obj);
   var line = L.polyline(pts, {color:'#00b8d4', weight:3, opacity:0.8, dashArray:'8,4'}).addTo(_map)
-    .bindPopup('<div style="font-family:\'IBM Plex Mono\',monospace"><b style="color:#00b8d4">'+_e(s.name)+'</b><br><span style="font-size:10px;color:#8bb8b0">'+_e(s.province)+' · ±'+s.length+' km (dari database)</span></div>');
+    .bindPopup('<div style="font-family:\'Inter\',sans-serif"><b style="color:#00b8d4">'+_e(s.name)+'</b><br><span style="font-size:10px;color:#8bb8b0">'+_e(s.province)+' · ±'+s.length+' km (dari database)</span></div>');
   _layers[rid] = line;
   _renderList(); _renderTable(); _persist();
   if(typeof toast==='function') toast('✅ '+s.name+' ditambahkan ke peta');
@@ -6946,7 +7255,7 @@ function _renderList() {
     return;
   }
   el.innerHTML=all.map(function(m){
-    var dot=m.type==='limbah'?'#f5a623':m.type==='sungai'?'#4488ff':'#00e5c8';
+    var dot=m.type==='limbah'?'#f5a623':m.type==='sungai'?'#4488ff':'#3ecfb2';
     var shape=m.type==='sungai'
       ?'<span style="width:14px;height:4px;background:#4488ff;border-radius:2px;display:inline-block;flex-shrink:0;margin-bottom:2px"></span>'
       :'<span style="width:9px;height:9px;border-radius:50%;background:'+dot+';display:inline-block;flex-shrink:0"></span>';
@@ -6954,7 +7263,7 @@ function _renderList() {
             :m.status==='ng'?'<span style="color:#ff4444;font-size:9px;font-weight:700">✗</span>':'';
     return '<div onclick="_flyTo(\''+m.id+'\')" title="'+_e(m.name)+'"'
       +' style="display:flex;align-items:center;gap:8px;padding:7px 6px;cursor:pointer;border-bottom:1px solid var(--brd2)"'
-      +' onmouseover="this.style.background=\'rgba(0,229,200,0.05)\'" onmouseout="this.style.background=\'\'">'
+      +' onmouseover="this.style.background=\'rgba(62,207,178,0.05)\'" onmouseout="this.style.background=\'\'">'
       +shape+'<span style="font-family:var(--mono);font-size:11px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--txt2)">'+_e(m.name)+'</span>'
       +badge+'</div>';
   }).join('');
@@ -6981,7 +7290,7 @@ function _renderTable() {
   if(!tbody) return;
   var rows='',i=1;
   _markers.forEach(function(m){
-    var tc=m.type==='limbah'?'#f5a623':'#00e5c8';
+    var tc=m.type==='limbah'?'#f5a623':'#3ecfb2';
     var tl=m.type==='limbah'?'Sumber Limbah':'Titik Sampling';
     var b=m.status==='ok'?'<span style="color:#00e87a;font-weight:700;font-size:10px">✓ OK</span>'
         :m.status==='ng'?'<span style="color:#ff4444;font-weight:700;font-size:10px">✗ NG</span>'
@@ -7057,7 +7366,7 @@ function petaSearch() {
       var label=d.display_name.length>55?d.display_name.substring(0,55)+'…':d.display_name;
       return '<div onclick="_goTo('+d.lat+','+d.lon+')" '
         +'style="padding:6px 8px;font-family:var(--mono);font-size:10.5px;cursor:pointer;border-bottom:1px solid var(--brd2);color:var(--txt2);line-height:1.4" '
-        +'onmouseover="this.style.background=\'rgba(0,229,200,0.06)\'" onmouseout="this.style.background=\'\'">'
+        +'onmouseover="this.style.background=\'rgba(62,207,178,0.06)\'" onmouseout="this.style.background=\'\'">'
         +_e(label)+'</div>';
     }).join('');
   })
@@ -7100,7 +7409,7 @@ function petaOnOpen() {
             var clr=r.fromDB?'#00b8d4':'#4488ff';
             var style=r.fromDB?{color:clr,weight:3,opacity:0.8,dashArray:'8,4'}:{color:clr,weight:4,opacity:0.8};
             var line=L.polyline(r.points,style).addTo(_map)
-              .bindPopup('<div style="font-family:\'IBM Plex Mono\',monospace;font-weight:700;color:'+clr+'">'+_e(r.name)+'</div>');
+              .bindPopup('<div style="font-family:\'Inter\',sans-serif;font-weight:700;color:'+clr+'">'+_e(r.name)+'</div>');
             _layers[r.id]=line;
           });
         }
@@ -7170,7 +7479,7 @@ function petaOnOpen() {
 
     <div style="display:flex;gap:8px;justify-content:flex-end">
       <button class="btn btn-outline btn-sm" onclick="shareModalClose()">Tutup</button>
-      <button class="btn btn-sm" onclick="shareCopyLink()" style="background:rgba(0,229,200,0.15);border-color:rgba(0,229,200,.4);color:var(--cyan)">
+      <button class="btn btn-sm" onclick="shareCopyLink()" style="background:rgba(62,207,178,0.15);border-color:rgba(62,207,178,.4);color:var(--accent)">
         📋 Salin Link
       </button>
     </div>
@@ -7215,6 +7524,26 @@ function petaOnOpen() {
     });
   }
 })();
+
+// ═══════════════════════════════════════════════════════════════
+// BERANDA — counter animation
+// ═══════════════════════════════════════════════════════════════
+function initHome() {
+  const nums = document.querySelectorAll('.home-stat-num[data-target]');
+  nums.forEach(el => {
+    const target = parseInt(el.dataset.target);
+    let current = 0;
+    const step = Math.max(1, Math.floor(target / 30));
+    const timer = setInterval(() => {
+      current = Math.min(current + step, target);
+      el.textContent = current + (el.dataset.suffix || '');
+      if (current >= target) clearInterval(timer);
+    }, 40);
+  });
+}
+// Run on first load since home is active
+setTimeout(initHome, 800);
+
 </script>
 
 <!-- ══ XLS IMPORT OVERLAY ═══════════════════════════════════ -->
@@ -7244,7 +7573,7 @@ function petaOnOpen() {
       </div>
 
       <div class="xls-drop-zone" onclick="document.getElementById('xls-file-input').click()"
-           ondragover="event.preventDefault();this.style.borderColor='var(--cyan)'"
+           ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
            ondragleave="this.style.borderColor='var(--brd)'"
            ondrop="event.preventDefault();document.getElementById('xls-file-input').files=event.dataTransfer.files;xlsHandleFile(document.getElementById('xls-file-input'))">
         <div class="xls-drop-icon">📋</div>
@@ -7282,7 +7611,7 @@ function petaOnOpen() {
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
           <span style="font-size:14px">🔑</span>
           <div style="font-family:var(--mono);font-size:9px;font-weight:700;color:#ffc800;text-transform:uppercase;letter-spacing:.7px">Anthropic API Key</div>
-          <a href="https://console.anthropic.com/settings/keys" target="_blank" style="margin-left:auto;font-family:var(--mono);font-size:8px;color:var(--cyan)">Dapatkan key →</a>
+          <a href="https://console.anthropic.com/settings/keys" target="_blank" style="margin-left:auto;font-family:var(--mono);font-size:8px;color:var(--accent)">Dapatkan key →</a>
         </div>
         <input type="password" id="xls-api-key-input" class="finput"
           placeholder="sk-ant-api03-..."
@@ -7305,9 +7634,9 @@ function petaOnOpen() {
         </div>
       </div>
 
-      <div style="padding:10px 14px;background:rgba(0,229,200,0.06);border:1px solid rgba(0,229,200,0.2);border-radius:var(--rs);margin-bottom:16px">
+      <div style="padding:10px 14px;background:rgba(62,207,178,0.06);border:1px solid rgba(62,207,178,0.2);border-radius:var(--rs);margin-bottom:16px">
         <div style="font-family:var(--mono);font-size:10px;color:var(--txt2);line-height:1.7">
-          🤖 <strong style="color:var(--cyan)">AI (Claude)</strong> akan membaca file dan:<br>
+          🤖 <strong style="color:var(--accent)">AI (Claude)</strong> akan membaca file dan:<br>
           • Mencocokkan nama parameter dengan database PP 22/2021<br>
           • Mengekstrak nilai konsentrasi per parameter<br>
           • Mengisi otomatis nama sungai, kelas, debit (jika ada)<br>
@@ -7379,7 +7708,7 @@ function petaOnOpen() {
     <div id="xls-footer-step2" style="width:100%;display:none">
       <button class="btn btn-outline btn-sm" onclick="_resetImportUI();document.getElementById('xls-step1').style.display='block'">← Ganti File</button>
       <button class="btn btn-sm" onclick="xlsRunAI()" id="xls-run-ai-btn"
-        style="margin-left:auto;background:rgba(0,229,200,0.15);border-color:rgba(0,229,200,.5);color:var(--cyan);font-weight:700">
+        style="margin-left:auto;background:rgba(62,207,178,0.15);border-color:rgba(62,207,178,.5);color:var(--accent);font-weight:700">
         🤖 Analisis dengan AI →
       </button>
     </div>
@@ -7388,7 +7717,7 @@ function petaOnOpen() {
       <div style="margin-left:auto;display:flex;gap:8px">
         <button class="btn btn-outline btn-sm" onclick="_resetImportUI();document.getElementById('xls-step1').style.display='block'">← Ulangi</button>
         <button class="btn btn-sm" onclick="xlsApplyImport()"
-          style="background:rgba(0,229,200,0.2);border-color:var(--cyan);color:var(--cyan);font-weight:700">
+          style="background:rgba(62,207,178,0.2);border-color:var(--accent);color:var(--accent);font-weight:700">
           ✅ Import ke Aplikasi
         </button>
       </div>

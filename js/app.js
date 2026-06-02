@@ -423,7 +423,7 @@ function renderParams() {
       <div style="text-align:right;font-family:var(--mono);font-size:11.5px;color:var(--accent)">${bmDisp}</div>
       <div data-cell="bpm" style="text-align:right;font-family:var(--mono);font-size:11.5px;color:var(--txt2)">${bpmDisp}</div>
       <div>
-        <input class="inp-sm" value="${cVal}" placeholder="0.000" inputmode="decimal"
+        <input class="inp-sm" value="${cVal}" placeholder="0,000" inputmode="decimal"
           oninput="pChange(${p.id},'${cField}',this.value)"
           style="text-align:right">
       </div>
@@ -507,7 +507,7 @@ function updateResultKPI() {
       const bmDisp  = valStr(p.bm);
       const bpmDisp = isPH ? '—' : (bpm != null ? fN(bpm, 2) : '—');
       const bpaDisp = isPH ? (cAkt !== '' ? cAkt : '—') : (bpa != null ? fN(bpa, 2) : '—');
-      const cDisp   = cAkt !== '' ? cAkt : '—';
+      const cDisp   = cAkt !== '' ? fmtInputVal(cAkt) : '—';
 
       const stBadge = status === 'ok'
         ? `<span style="color:var(--green);font-family:var(--mono);font-size:9.5px;font-weight:700">✓ Memenuhi</span>`
@@ -688,7 +688,7 @@ function buildReport() {
         <td class="td-c" style="font-family:var(--mono);font-size:10.5px;color:var(--mute)">${p.unit}</td>
         <td class="td-r" style="color:var(--accent)">${valStr(p.bm)}</td>
         <td class="td-r">${bpm!=null?fN(bpm):'—'}</td>
-        <td class="td-r">${c||'—'}</td>
+        <td class="td-r">${c?fmtInputVal(c):'—'}</td>
         <td class="td-r" style="color:${st==='ng'?'var(--red)':st==='ok'?'var(--green)':'var(--txt2)'}">${bpa!=null?fN(bpa):'—'}</td>
         <td class="td-c">${badge}</td>
       </tr>`;
@@ -721,7 +721,7 @@ function buildReport() {
           tooltip:{backgroundColor:TBG,titleColor:'var(--accent)',bodyColor:TC,borderColor:'var(--brd)',borderWidth:1,
             callbacks:{label:c=>` ${c.dataset.label}: ${fN(c.parsed.y)} kg/jam`}}},
         scales:{x:{grid:{color:GC},ticks:{color:TC,font:{family:'Inter',size:8},maxRotation:35}},
-                y:{grid:{color:GC},ticks:{color:TC,font:{family:'Inter',size:8}}}}}
+                y:{grid:{color:GC},ticks:{color:TC,font:{family:'Inter',size:8},callback:v=>fmtN(v,2)}}}}
     });
   }
   if(qDry) mkChart('ch-dry','dry');
@@ -1963,6 +1963,24 @@ function ubmSrcChange(id,field,val){
 // [dup removed] };
 
 function pNum(s){if(typeof s==='number')return s;return parseFloat(String(s||'').replace(/\./g,'').replace(',','.'))||0;}
+
+// Helper: tampilkan nilai string dari input user dalam format Indonesia
+// Jika sudah format ID (ada koma desimal) → tampilkan apa adanya
+// Jika format internasional (ada titik desimal) → konversi ke ID
+function fmtInputVal(s) {
+  if (!s || s === '') return '';
+  const n = pNum(s);
+  if (isNaN(n) || n === 0 && s.trim() === '0') return s;
+  if (isNaN(n)) return s;
+  // Format angka yang sudah di-parse ke format Indonesia
+  // Deteksi jumlah desimal dari input asli
+  const sClean = String(s).replace(/\./g,'').replace(',','.');
+  const parts = sClean.split('.');
+  const dec = parts.length > 1 ? parts[1].length : 0;
+  return n.toLocaleString('id-ID', {minimumFractionDigits: dec, maximumFractionDigits: Math.max(dec, 2)});
+}
+
+
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 // fmtN defined above
 
@@ -2061,7 +2079,7 @@ function ubmRenderSources(){
     var row='<div id="ubm-src-row-'+s.id+'" style="'+GRID+'">';
     row+='<select class="fselect" style="font-size:11px;padding:4px 6px" onchange="ubmSrcTypeChange('+s.id+',this.value)">'+selOpts+'</select>';
     row+='<input class="finput" style="font-size:12px;padding:5px 8px" value="'+esc(s.name)+'" placeholder="Nama sumber" data-sid="'+s.id+'" data-field="name" oninput="ubmSrcChange(+this.dataset.sid,this.dataset.field,this.value)">';
-    row+='<input class="finput" style="font-size:12px;padding:5px 8px;text-align:right;font-family:var(--mono)" inputmode="decimal" value="'+s.qDay+'" placeholder="0.00" data-sid="'+s.id+'" data-field="qDay" oninput="ubmSrcChange(+this.dataset.sid,this.dataset.field,this.value)">';
+    row+='<input class="finput" style="font-size:12px;padding:5px 8px;text-align:right;font-family:var(--mono)" inputmode="decimal" value="'+s.qDay+'" placeholder="0,00" data-sid="'+s.id+'" data-field="qDay" oninput="ubmSrcChange(+this.dataset.sid,this.dataset.field,this.value)">';
     row+='<div data-cell="hr" style="font-family:var(--mono);font-size:11px;color:var(--txt2);text-align:right;padding-right:4px">'+(qDay>0?fmtN(qHr,2):'—')+'</div>';
     row+='<div data-cell="sec" style="font-family:var(--mono);font-size:11px;color:var(--accent);text-align:right;padding-right:4px">'+(qDay>0?fmtN(qSec,6):'—')+'</div>';
     row+='<button onclick="ubmDelSource('+s.id+')" style="width:28px;height:28px;background:rgba(255,80,80,0.1);border:1px solid rgba(255,80,80,0.25);border-radius:var(--rs);color:#ff6060;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center">🗑</button>';
@@ -2270,7 +2288,7 @@ function ubmRenderParams(){
   const INP_WET='style="width:100%;background:var(--inp);border:1px solid rgba(68,136,255,0.5);border-radius:3px;color:var(--txt);font-family:var(--mono);font-size:11.5px;padding:4px 6px;text-align:right;outline:none"';
 
   list.innerHTML=ubmParams.map(p=>{
-    const srcInputs=ubmSources.map(s=>`<input ${INP} inputmode="decimal" value="${p.cSrc[s.id]||''}" placeholder="0.000" oninput="ubmPChange(${p.id},'cSrc',{srcId:${s.id},v:this.value})">`).join('');
+    const srcInputs=ubmSources.map(s=>`<input ${INP} inputmode="decimal" value="${p.cSrc[s.id]||''}" placeholder="0,000" oninput="ubmPChange(${p.id},'cSrc',{srcId:${s.id},v:this.value})">`).join('');
     const nameField=p.dbId
       ? `<div style="font-size:12.5px;font-weight:600;color:var(--txt2)">${esc(p.name)}</div>`
       : `<input class="finput" style="font-size:12px;padding:4px 8px" value="${esc(p.name)}" placeholder="Nama parameter" oninput="ubmPChange(${p.id},'name',this.value)">`;
@@ -2287,8 +2305,8 @@ function ubmRenderParams(){
     return `<div style="${ROW};display:grid;grid-template-columns:${widths};gap:6px;align-items:center">
       ${nameField}
       ${unitField}
-      <input ${INP_DRY} data-chulud="${p.id}" inputmode="decimal" value="${cHD}" placeholder="0.000" oninput="ubmPChange(${p.id},'cHuluDry',this.value)">
-      <input ${INP_WET} data-chuluw="${p.id}" inputmode="decimal" value="${cHW}" placeholder="0.000" oninput="ubmPChange(${p.id},'cHuluWet',this.value)">
+      <input ${INP_DRY} data-chulud="${p.id}" inputmode="decimal" value="${cHD}" placeholder="0,000" oninput="ubmPChange(${p.id},'cHuluDry',this.value)">
+      <input ${INP_WET} data-chuluw="${p.id}" inputmode="decimal" value="${cHW}" placeholder="0,000" oninput="ubmPChange(${p.id},'cHuluWet',this.value)">
       ${srcInputs}
       ${bmField}
       <input ${INP_AMB} data-usulanbm="${p.id}" inputmode="decimal" value="${usulanBMVal}" placeholder="Isi BM…" title="Usulan Baku Mutu (digunakan untuk alokasi beban)" oninput="ubmPChange(${p.id},'usulanBM',this.value)">
@@ -2984,10 +3002,10 @@ async function exportExcel(){
     // Data rows — alternating white / pale slate
     dat:     {font:font(false,10,C.ink),  fill:fill(C.white),   alignment:align('left','center',true), border:bdr()},
     datC:    {font:font(false,10,C.ink),  fill:fill(C.white),   alignment:align('center','center',false),border:bdr()},
-    datR:    {font:font(false,10,C.ink),  fill:fill(C.white),   alignment:align('right','center',false),border:bdr()},
+    datR:    {font:font(false,10,C.ink),  fill:fill(C.white),   alignment:align('right','center',false),border:bdr(),numFmt:'#,##0.0000'},
     datAlt:  {font:font(false,10,C.ink),  fill:fill(C.slateLL), alignment:align('left','center',true), border:bdr()},
     datAltC: {font:font(false,10,C.ink),  fill:fill(C.slateLL), alignment:align('center','center',false),border:bdr()},
-    datAltR: {font:font(false,10,C.ink),  fill:fill(C.slateLL), alignment:align('right','center',false),border:bdr()},
+    datAltR: {font:font(false,10,C.ink),  fill:fill(C.slateLL), alignment:align('right','center',false),border:bdr(),numFmt:'#,##0.0000'},
     // Key value cells
     lbl:     {font:font(true,10,C.teal2), fill:fill(C.tealBg2), alignment:align('left','center',false), border:bdr(C.teal3)},
     val:     {font:font(false,11,C.ink),  fill:fill(C.white),   alignment:align('left','center',false), border:bdr()},
@@ -3001,8 +3019,8 @@ async function exportExcel(){
     ng:      {font:font(true,10,C.redDk), fill:fill(C.redBg),   alignment:align('center','center',false),border:bdr(C.redMd)},
     na:      {font:font(false,10,C.muted),fill:fill(C.slateL),   alignment:align('center','center',false),border:bdr()},
     // BPA highlight
-    bpaOk:   {font:font(true,10,C.grnMd), fill:fill(C.grnBg2),  alignment:align('right','center',false), border:bdr(C.grnMd)},
-    bpaNg:   {font:font(true,10,C.redDk), fill:fill(C.redBg),   alignment:align('right','center',false), border:bdr(C.redMd)},
+    bpaOk:   {font:font(true,10,C.grnMd), fill:fill(C.grnBg2),  alignment:align('right','center',false), border:bdr(C.grnMd),numFmt:'#,##0.0000'},
+    bpaNg:   {font:font(true,10,C.redDk), fill:fill(C.redBg),   alignment:align('right','center',false), border:bdr(C.redMd),numFmt:'#,##0.0000'},
     // Ratio
     ratioOk: {font:font(false,10,C.grnDk),fill:fill(C.grnBg2),  alignment:align('right','center',false), border:bdr(C.grnMd)},
     ratioWrn:{font:font(true,10,C.gldDk), fill:fill(C.gldBg),   alignment:align('right','center',false), border:bdr(C.gldMd)},
@@ -3012,8 +3030,8 @@ async function exportExcel(){
     totA:    {font:font(true,10,C.amb1),  fill:fill(C.ambBg),    alignment:align('center','center',false),border:bdrT(C.amb2)},
     totB:    {font:font(true,10,C.blu1),  fill:fill(C.bluBg),    alignment:align('center','center',false),border:bdrT(C.blu2)},
     // CR / UBM
-    cr:      {font:font(true,11,C.teal2), fill:fill(C.tealBg2),  alignment:align('right','center',false), border:bdrT()},
-    crNg:    {font:font(true,11,C.redDk), fill:fill(C.redBg),    alignment:align('right','center',false), border:bdrT(C.redMd)},
+    cr:      {font:font(true,11,C.teal2), fill:fill(C.tealBg2),  alignment:align('right','center',false), border:bdrT(),numFmt:'#,##0.0000'},
+    crNg:    {font:font(true,11,C.redDk), fill:fill(C.redBg),    alignment:align('right','center',false), border:bdrT(C.redMd),numFmt:'#,##0.0000'},
     cmax:    {font:font(false,10,C.amb1), fill:fill(C.ambBg2),   alignment:align('right','center',false), border:bdr(C.amb3)},
     cmaxNeg: {font:font(true,10,C.redDk), fill:fill(C.redBg),    alignment:align('right','center',false), border:bdr(C.redMd)},
     alok:    {font:font(true,11,C.gldDk), fill:fill(C.gldBg),    alignment:align('right','center',false), border:bdrT(C.gldMd)},
@@ -3536,7 +3554,7 @@ function mdlRenderSrcList() {
         <div style="font-size:12.5px;font-weight:600;color:var(--txt)">${esc(src.name||'Sumber '+m.order)}</div>
         <div style="font-family:var(--mono);font-size:9.5px;color:var(--mute);margin-top:1px">Q = ${qd>0?fmtN(qd,2)+' m³/hari':'—'}</div>
       </div>
-      <input class="inp-sm" inputmode="decimal" value="${m.distKm}" placeholder="0.000"
+      <input class="inp-sm" inputmode="decimal" value="${m.distKm}" placeholder="0,000"
         data-sid="${m.srcId}" oninput="mdlOnDist(+this.dataset.sid,this.value)"
         style="text-align:right;font-family:var(--mono)">
       <div style="font-family:var(--mono);font-size:9px;color:var(--mute)">km</div>
@@ -3779,7 +3797,8 @@ function mdlRender() {
           min: 0,
           title: { display:true, text:`${param.name||'Konsentrasi'} (${param.unit||'mg/L'})`, color:lblClr, font:{size:11,family:monoFont} },
           grid: { color: gridClr },
-          ticks: { color: tickClr, font:{family:monoFont,size:10} }
+          ticks: { color: tickClr, font:{family:monoFont,size:10},
+            callback: function(v){ return fmtN(v,4); } }
         }
       }
     },

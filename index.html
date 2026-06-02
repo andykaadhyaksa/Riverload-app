@@ -807,6 +807,22 @@ thead tr:first-child th:last-child { border-top-right-radius: 10px; }
 .history-panel-body { background: transparent; }
 .hi-name { color: var(--txt) !important; }
 
+/* Format angka Indonesia hint */
+
+/* ── Format angka Indonesia hint ── */
+.format-hint {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--mute);
+  margin-top: 3px;
+  opacity: 0.75;
+}
+input.finput::placeholder,
+input.inp-sm::placeholder {
+  font-style: italic;
+  opacity: 0.5;
+}
+
 /* Better input placeholder color */
 ::placeholder { color: var(--mute); opacity: 0.6; }
 
@@ -1251,7 +1267,8 @@ thead tr:first-child th:last-child { border-top-right-radius: 10px; }
         <div class="season-hd season-hd-dry">☀ Musim Kemarau</div>
         <div class="fg">
           <label class="flabel">Q Kemarau (m³/det)</label>
-          <input class="finput" id="q-dry" placeholder="0.000" inputmode="decimal" oninput="recalcAll();if(typeof _ubmCalcAndShowResults==='function')_ubmCalcAndShowResults()">
+          <input class="finput" id="q-dry" placeholder="0,000" inputmode="decimal" title="Gunakan koma sebagai desimal, contoh: 1,500 atau 25,75" oninput="recalcAll();if(typeof _ubmCalcAndShowResults==='function')_ubmCalcAndShowResults()">
+          <div class="format-hint">Contoh: 12,5 atau 1.500,25</div>
         </div>
         <div class="fhint" style="margin-top:4px">Debit andalan saat kemarau</div>
       </div>
@@ -1259,7 +1276,8 @@ thead tr:first-child th:last-child { border-top-right-radius: 10px; }
         <div class="season-hd season-hd-wet">🌧 Musim Hujan</div>
         <div class="fg">
           <label class="flabel">Q Hujan (m³/det)</label>
-          <input class="finput" id="q-wet" placeholder="0.000" inputmode="decimal" oninput="recalcAll();if(typeof _ubmCalcAndShowResults==='function')_ubmCalcAndShowResults()">
+          <input class="finput" id="q-wet" placeholder="0,000" inputmode="decimal" title="Gunakan koma sebagai desimal, contoh: 1,500 atau 25,75" oninput="recalcAll();if(typeof _ubmCalcAndShowResults==='function')_ubmCalcAndShowResults()">
+          <div class="format-hint">Contoh: 12,5 atau 1.500,25</div>
         </div>
         <div class="fhint" style="margin-top:4px">Debit andalan saat hujan</div>
       </div>
@@ -2478,7 +2496,7 @@ function renderParams() {
       <div style="text-align:right;font-family:var(--mono);font-size:11.5px;color:var(--accent)">${bmDisp}</div>
       <div data-cell="bpm" style="text-align:right;font-family:var(--mono);font-size:11.5px;color:var(--txt2)">${bpmDisp}</div>
       <div>
-        <input class="inp-sm" value="${cVal}" placeholder="0.000" inputmode="decimal"
+        <input class="inp-sm" value="${cVal}" placeholder="0,000" inputmode="decimal"
           oninput="pChange(${p.id},'${cField}',this.value)"
           style="text-align:right">
       </div>
@@ -4116,7 +4134,7 @@ function ubmRenderSources(){
     var row='<div id="ubm-src-row-'+s.id+'" style="'+GRID+'">';
     row+='<select class="fselect" style="font-size:11px;padding:4px 6px" onchange="ubmSrcTypeChange('+s.id+',this.value)">'+selOpts+'</select>';
     row+='<input class="finput" style="font-size:12px;padding:5px 8px" value="'+esc(s.name)+'" placeholder="Nama sumber" data-sid="'+s.id+'" data-field="name" oninput="ubmSrcChange(+this.dataset.sid,this.dataset.field,this.value)">';
-    row+='<input class="finput" style="font-size:12px;padding:5px 8px;text-align:right;font-family:var(--mono)" inputmode="decimal" value="'+s.qDay+'" placeholder="0.00" data-sid="'+s.id+'" data-field="qDay" oninput="ubmSrcChange(+this.dataset.sid,this.dataset.field,this.value)">';
+    row+='<input class="finput" style="font-size:12px;padding:5px 8px;text-align:right;font-family:var(--mono)" inputmode="decimal" value="'+s.qDay+'" placeholder="0,00" data-sid="'+s.id+'" data-field="qDay" oninput="ubmSrcChange(+this.dataset.sid,this.dataset.field,this.value)">';
     row+='<div data-cell="hr" style="font-family:var(--mono);font-size:11px;color:var(--txt2);text-align:right;padding-right:4px">'+(qDay>0?fmtN(qHr,2):'—')+'</div>';
     row+='<div data-cell="sec" style="font-family:var(--mono);font-size:11px;color:var(--accent);text-align:right;padding-right:4px">'+(qDay>0?fmtN(qSec,6):'—')+'</div>';
     row+='<button onclick="ubmDelSource('+s.id+')" style="width:28px;height:28px;background:rgba(255,80,80,0.1);border:1px solid rgba(255,80,80,0.25);border-radius:var(--rs);color:#ff6060;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center">🗑</button>';
@@ -4325,7 +4343,7 @@ function ubmRenderParams(){
   const INP_WET='style="width:100%;background:var(--inp);border:1px solid rgba(68,136,255,0.5);border-radius:3px;color:var(--txt);font-family:var(--mono);font-size:11.5px;padding:4px 6px;text-align:right;outline:none"';
 
   list.innerHTML=ubmParams.map(p=>{
-    const srcInputs=ubmSources.map(s=>`<input ${INP} inputmode="decimal" value="${p.cSrc[s.id]||''}" placeholder="0.000" oninput="ubmPChange(${p.id},'cSrc',{srcId:${s.id},v:this.value})">`).join('');
+    const srcInputs=ubmSources.map(s=>`<input ${INP} inputmode="decimal" value="${p.cSrc[s.id]||''}" placeholder="0,000" oninput="ubmPChange(${p.id},'cSrc',{srcId:${s.id},v:this.value})">`).join('');
     const nameField=p.dbId
       ? `<div style="font-size:12.5px;font-weight:600;color:var(--txt2)">${esc(p.name)}</div>`
       : `<input class="finput" style="font-size:12px;padding:4px 8px" value="${esc(p.name)}" placeholder="Nama parameter" oninput="ubmPChange(${p.id},'name',this.value)">`;
@@ -4342,8 +4360,8 @@ function ubmRenderParams(){
     return `<div style="${ROW};display:grid;grid-template-columns:${widths};gap:6px;align-items:center">
       ${nameField}
       ${unitField}
-      <input ${INP_DRY} data-chulud="${p.id}" inputmode="decimal" value="${cHD}" placeholder="0.000" oninput="ubmPChange(${p.id},'cHuluDry',this.value)">
-      <input ${INP_WET} data-chuluw="${p.id}" inputmode="decimal" value="${cHW}" placeholder="0.000" oninput="ubmPChange(${p.id},'cHuluWet',this.value)">
+      <input ${INP_DRY} data-chulud="${p.id}" inputmode="decimal" value="${cHD}" placeholder="0,000" oninput="ubmPChange(${p.id},'cHuluDry',this.value)">
+      <input ${INP_WET} data-chuluw="${p.id}" inputmode="decimal" value="${cHW}" placeholder="0,000" oninput="ubmPChange(${p.id},'cHuluWet',this.value)">
       ${srcInputs}
       ${bmField}
       <input ${INP_AMB} data-usulanbm="${p.id}" inputmode="decimal" value="${usulanBMVal}" placeholder="Isi BM…" title="Usulan Baku Mutu (digunakan untuk alokasi beban)" oninput="ubmPChange(${p.id},'usulanBM',this.value)">
@@ -5591,7 +5609,7 @@ function mdlRenderSrcList() {
         <div style="font-size:12.5px;font-weight:600;color:var(--txt)">${esc(src.name||'Sumber '+m.order)}</div>
         <div style="font-family:var(--mono);font-size:9.5px;color:var(--mute);margin-top:1px">Q = ${qd>0?fmtN(qd,2)+' m³/hari':'—'}</div>
       </div>
-      <input class="inp-sm" inputmode="decimal" value="${m.distKm}" placeholder="0.000"
+      <input class="inp-sm" inputmode="decimal" value="${m.distKm}" placeholder="0,000"
         data-sid="${m.srcId}" oninput="mdlOnDist(+this.dataset.sid,this.value)"
         style="text-align:right;font-family:var(--mono)">
       <div style="font-family:var(--mono);font-size:9px;color:var(--mute)">km</div>

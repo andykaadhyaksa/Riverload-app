@@ -92,7 +92,7 @@
 }
 
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;overflow:hidden}
+html,body{min-height:100%}
 
 body {
   font-family: var(--body);
@@ -100,8 +100,7 @@ body {
   color: var(--txt);
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  overflow: hidden;
+  min-height: 100vh;
   font-size: 13px;
 }
 
@@ -160,8 +159,7 @@ body {
 
 /* ─── MAIN ───────────────────────────────────────────── */
 .main {
-  flex: 1; min-height: 0;
-  overflow-y: auto; overflow-x: hidden;
+  flex: 1;
   display: flex; flex-direction: column;
 }
 .page { display: none; padding: 28px 32px 80px; animation: fadeIn 0.2s ease; }
@@ -436,7 +434,7 @@ tr:hover td { background: rgba(62,207,178,0.02); }
 .rl-dd {
   display:none; position:absolute; top:100%; left:0; min-width:215px;
   background:var(--panel); border:1px solid var(--brd); border-radius:10px;
-  padding:6px; margin-top:1px; box-shadow:0 14px 34px rgba(0,0,0,0.35); z-index:50;
+  padding:6px; margin-top:1px; box-shadow:0 14px 34px rgba(0,0,0,0.35); z-index:9999;
 }
 .rl-nav-group:hover .rl-dd { display:block; }
 .rl-dd-item {
@@ -699,6 +697,49 @@ tr:hover td { background: rgba(62,207,178,0.02); }
 .ubm-wiz-btn-back { background: transparent; color: var(--mute); border: 1.5px solid var(--brd); }
 .ubm-wiz-btn-back:hover { color: var(--txt); border-color: var(--mute); background: rgba(255,255,255,0.04); }
 @media (max-width: 700px) { .ubm-wiz-label { display: none; } }
+
+/* ── Wizard ketiga untuk Pemetaan (struktur identik, prefix berbeda) ── */
+.peta-wiz-tabs { display: flex; align-items: center; justify-content: center; gap: 0; margin-bottom: 22px; max-width: 420px; margin-left: auto; margin-right: auto; }
+.peta-wiz-tab { display: flex; flex-direction: column; align-items: center; gap: 6px; opacity: 0.45; transition: opacity .2s; flex-shrink: 0; }
+.peta-wiz-tab.active { opacity: 1; }
+.peta-wiz-tab.done { opacity: 0.75; }
+.peta-wiz-num { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 700; background: var(--card2); border: 2px solid var(--brd); color: var(--mute); transition: all .2s; }
+.peta-wiz-tab.active .peta-wiz-num { background: var(--accent); border-color: var(--accent); color: #04161a; box-shadow: 0 0 0 4px rgba(78,234,204,0.18); }
+.peta-wiz-tab.done .peta-wiz-num { background: rgba(78,234,204,0.15); border-color: var(--accent); color: var(--accent); }
+.peta-wiz-label { font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; color: var(--txt); white-space: nowrap; }
+.peta-wiz-tab:not(.active) .peta-wiz-label { color: var(--mute); }
+.peta-wiz-line { width: 60px; height: 2px; background: var(--brd); flex-shrink: 0; margin: 0 2px; margin-bottom: 19px; }
+.peta-wiz-step { display: none; animation: fadeIn 0.25s ease both; }
+.peta-wiz-step.active { display: block; }
+.peta-wiz-nav { display: flex; align-items: center; justify-content: space-between; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--brd); }
+.peta-wiz-btn-next, .peta-wiz-btn-back { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 700; padding: 10px 20px; border-radius: var(--rs); cursor: pointer; transition: all .15s; border: none; }
+.peta-wiz-btn-next { background: var(--accent); color: #04161a; box-shadow: 0 3px 14px rgba(78,234,204,0.25); }
+.peta-wiz-btn-next:hover { transform: translateY(-1px); box-shadow: 0 5px 18px rgba(78,234,204,0.35); }
+.peta-wiz-btn-back { background: transparent; color: var(--mute); border: 1.5px solid var(--brd); }
+.peta-wiz-btn-back:hover { color: var(--txt); border-color: var(--mute); background: rgba(255,255,255,0.04); }
+@media (max-width: 700px) { .peta-wiz-label { display: none; } }
+
+/* ── Accordion jenis titik (Input Koordinat DMS) ── */
+#dms-acc-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 4px; }
+.dms-acc-item { border: 1px solid var(--brd2); border-radius: var(--rs); overflow: hidden; }
+.dms-acc-header {
+  width: 100%; display: flex; align-items: center; gap: 8px; padding: 9px 11px;
+  background: var(--card2); border: none; cursor: pointer; transition: background .12s;
+  font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 600; color: var(--txt);
+}
+.dms-acc-header:hover { background: rgba(78,234,204,0.05); }
+.dms-acc-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.dms-acc-title { flex: 1; text-align: left; }
+.dms-acc-count {
+  font-family: var(--mono); font-size: 9.5px; font-weight: 700; color: var(--mute);
+  background: var(--bg2); border-radius: 8px; padding: 1px 7px; min-width: 16px; text-align: center;
+}
+.dms-acc-arrow { font-size: 9px; color: var(--mute); transition: transform .15s; flex-shrink: 0; }
+.dms-acc-item.open .dms-acc-arrow { transform: rotate(180deg); }
+.dms-acc-item.open .dms-acc-header { background: rgba(78,234,204,0.06); }
+.dms-acc-slot { padding: 0 11px; }
+.dms-acc-slot:not(:empty) { padding: 11px; border-top: 1px solid var(--brd2); }
+.dms-form-body { animation: fadeIn 0.2s ease both; }
 
 </style>
 
@@ -1206,7 +1247,7 @@ input.inp-sm::placeholder {
         <div class="rl-dd">
           <div class="rl-dd-item" onclick="nav('bpm')" id="nav-bpm"><span class="rl-dd-icon">📊</span> Beban Pencemar</div>
           <div class="rl-dd-item" onclick="nav('ubm')" id="nav-ubm"><span class="rl-dd-icon">🎯</span> Usulan Baku Mutu</div>
-          <div class="rl-dd-item" onclick="nav('peta')" id="nav-peta"><span class="rl-dd-icon">🗺</span> Peta Sungai</div>
+          <div class="rl-dd-item" onclick="nav('peta')" id="nav-peta"><span class="rl-dd-icon">🗺</span> Pemetaan</div>
         </div>
       </div>
 
@@ -1457,7 +1498,7 @@ input.inp-sm::placeholder {
 
     <div class="home-feat-card" onclick="nav('peta')">
       <div class="home-feat-icon">📍</div>
-      <div class="home-feat-title">Peta Sungai Interaktif</div>
+      <div class="home-feat-title">Pemetaan Interaktif</div>
       <div class="home-feat-desc">Petakan titik sampling, sumber limbah, dan alur sungai di atas peta OpenStreetMap. Input koordinat manual atau via format DMS. Database 80+ sungai Indonesia.</div>
       <div class="home-feat-tag">100+ sungai Indonesia</div>
     </div>
@@ -7161,139 +7202,274 @@ function _setProgress(pct, label) {
   <!-- Header -->
   <div class="ph">
     <div>
-      <div class="ph-title">PETA SUNGAI</div>
-      <div class="ph-sub">Titik sampling · Sumber limbah · Alur sungai · Database sungai Indonesia</div>
-    </div>
-    <div class="ph-acts">
-      <button class="btn btn-outline btn-sm" onclick="petaAddMode('sampling')" style="color:var(--accent);border-color:rgba(62,207,178,.4)">＋ Sampling</button>
-      <button class="btn btn-outline btn-sm" onclick="petaAddMode('limbah')" style="color:var(--amber);border-color:rgba(245,166,35,.4)">＋ Limbah</button>
-      <button class="btn btn-outline btn-sm" onclick="petaAddMode('sungai')" style="color:var(--blue);border-color:rgba(68,136,255,.4)">〰 Alur</button>
-      <button class="btn btn-outline btn-sm" onclick="petaToggleDMS()" style="color:#b464ff;border-color:rgba(180,100,255,.4)">📐 DMS</button>
-      <button class="btn btn-outline btn-sm" id="btn-toggle-wetar" onclick="petaToggleWetarLayer()" style="color:#00b8d4;border-color:rgba(0,184,212,.4)">🗺 Sungai MBD (SHP)</button>
-      <button class="btn btn-outline btn-sm" onclick="petaClearAll()" style="color:var(--red);border-color:rgba(255,68,68,.3)">🗑 Hapus</button>
+      <div class="ph-title">PEMETAAN</div>
+      <div class="ph-sub">Titik sampling · Outfall · Outlet · Pantau hulu/hilir · Alur sungai</div>
     </div>
   </div>
 
-  <!-- Mode bar -->
-  <div id="peta-mode-bar" style="display:none;margin-bottom:12px;padding:9px 16px;border-radius:var(--rs);font-family:var(--mono);font-size:10.5px;font-weight:600;background:rgba(62,207,178,0.08);border:1px solid var(--brd);align-items:center;gap:10px">
-    <span id="peta-mode-txt"></span>
-    <button onclick="petaCancelMode()" style="margin-left:auto;background:none;border:1px solid var(--brd);border-radius:var(--rs);color:var(--mute);cursor:pointer;font-family:var(--mono);font-size:10px;padding:3px 10px">✕ Batal</button>
+  <!-- Wizard tabs -->
+  <div class="peta-wiz-tabs">
+    <div class="peta-wiz-tab active" id="peta-wt-1" data-step="1"><span class="peta-wiz-num">1</span><span class="peta-wiz-label">Input Lokasi</span></div>
+    <div class="peta-wiz-line"></div>
+    <div class="peta-wiz-tab" id="peta-wt-2" data-step="2"><span class="peta-wiz-num">2</span><span class="peta-wiz-label">Lihat Peta</span></div>
   </div>
 
-  <!-- ── Layout: Peta kiri | Panel kanan ── -->
-  <div style="display:grid;grid-template-columns:1fr 300px;gap:14px;align-items:start">
+  <!-- Glosarium bahasa awam -->
+  <div class="glossary-box">
+    <div class="gi">💡</div>
+    <div class="gt">
+      <b>Cara pakai:</b> masukkan koordinat titik (sampling, outfall, outlet, pantau hulu/hilir) di Langkah 1 menggunakan format derajat-menit-detik (DMS) dari GPS lapangan.
+      Setelah semua titik diinput, lanjut ke Langkah 2 untuk melihatnya terpetakan di peta interaktif.
+    </div>
+  </div>
 
-    <!-- KIRI: Peta + Tabel -->
-    <div>
-      <!-- Peta -->
-      <div id="peta-map-wrap" style="width:100%;height:520px;border-radius:var(--rs);overflow:hidden;border:1px solid var(--brd);margin-bottom:14px;background:#a8d5e8;position:relative">
-        <div id="peta-map" style="width:100%;height:100%"></div>
-        <div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);z-index:500;background:rgba(0,0,0,0.5);color:#fff;font-family:'Inter',sans-serif;font-size:10px;padding:3px 10px;border-radius:10px;pointer-events:none;white-space:nowrap">Ctrl/⌘ + scroll atau tombol +/− untuk zoom · Drag untuk geser peta</div>
-      </div>
-
-      <!-- Tabel ringkasan -->
-      <div class="card">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-          <div style="font-family:var(--mono);font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase;letter-spacing:.8px">Ringkasan Titik Terpetakan</div>
-          <div style="display:flex;gap:8px;align-items:center">
-            <span style="font-family:var(--mono);font-size:9px;color:var(--mute)" id="peta-summary-count">0 titik</span>
-            <button class="btn btn-outline btn-sm" onclick="petaExportCSV()" style="font-size:9px">⬇ CSV</button>
-          </div>
-        </div>
-        <div id="peta-table-empty" style="padding:14px;text-align:center;font-family:var(--mono);font-size:10.5px;color:var(--mute)">Belum ada titik yang ditambahkan</div>
-        <div id="peta-table-wrap" style="display:none;overflow-x:auto;overflow-y:auto;max-height:360px;border:1px solid var(--brd2);border-radius:var(--rs)">
-          <table style="width:100%;border-collapse:collapse;font-size:11.5px">
-            <thead>
-              <tr style="border-bottom:1px solid var(--brd);position:sticky;top:0;background:var(--bg2);z-index:2">
-                <th style="padding:7px 10px;font-family:var(--mono);font-size:9px;color:var(--mute);text-align:center">#</th>
-                <th style="padding:7px 10px;font-family:var(--mono);font-size:9px;color:var(--mute)">Nama</th>
-                <th style="padding:7px 10px;font-family:var(--mono);font-size:9px;color:var(--mute);text-align:center">Tipe</th>
-                <th style="padding:7px 10px;font-family:var(--mono);font-size:9px;color:var(--accent);text-align:right">Lat (DD)</th>
-                <th style="padding:7px 10px;font-family:var(--mono);font-size:9px;color:var(--accent);text-align:right">Lng (DD)</th>
-                <th style="padding:7px 10px;font-family:var(--mono);font-size:9px;color:var(--mute)">DMS</th>
-                <th style="padding:7px 10px;font-family:var(--mono);font-size:9px;color:var(--mute);text-align:center">Status</th>
-                <th style="padding:7px 10px;font-family:var(--mono);font-size:9px;color:var(--mute);text-align:center">Aksi</th>
-              </tr>
-            </thead>
-            <tbody id="peta-tbody"></tbody>
-          </table>
-        </div>
-      </div>
-    </div><!-- /kiri -->
-
-    <!-- KANAN: Panel kontrol -->
-    <div style="display:flex;flex-direction:column;gap:12px">
-
-      <!-- Database Sungai -->
-      <div class="card" style="padding:14px 15px;flex-shrink:0">
-        <div style="font-family:var(--mono);font-size:9.5px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:9px">🗄 Database Sungai Indonesia</div>
-        <input class="finput" id="peta-river-search" placeholder="Cari nama sungai..." style="font-size:11px;padding:6px 9px;width:100%;box-sizing:border-box;margin-bottom:7px" oninput="petaSearchDB(this.value)">
-        <div id="peta-db-results" style="max-height:180px;overflow-y:auto;border-radius:var(--rs);border:1px solid var(--brd2);background:var(--bg2)">
-          <div style="padding:10px;font-family:var(--mono);font-size:9.5px;color:var(--mute);text-align:center">Ketik ≥2 huruf untuk mencari...</div>
-        </div>
-        <div style="margin-top:6px;font-family:var(--mono);font-size:9px;color:var(--mute);line-height:1.5">Klik sungai → zoom ke lokasi &amp; tampilkan alur</div>
-      </div>
-
+  <!-- ══════════ STEP 1 — INPUT LOKASI ══════════ -->
+  <div class="peta-wiz-step active" id="peta-step-1">
+    <div class="wiz-card">
       <!-- Input DMS -->
-      <div class="card" id="peta-dms-card" style="padding:14px 15px;flex-shrink:0">
-        <div style="font-family:var(--mono);font-size:9.5px;font-weight:700;color:#b464ff;text-transform:uppercase;letter-spacing:.8px;margin-bottom:9px">📐 Input Koordinat DMS</div>
-        <div style="font-family:var(--mono);font-size:8.5px;color:var(--mute);margin-bottom:4px;letter-spacing:.5px">LINTANG (LATITUDE)</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1.2fr auto;gap:4px;margin-bottom:8px">
-          <input class="finput" id="dms-lat-d" type="number" placeholder="0°" style="font-size:11px;padding:5px 6px;text-align:center" min="0" max="11" oninput="petaDMSPreview()">
-          <input class="finput" id="dms-lat-m" type="number" placeholder="0'" style="font-size:11px;padding:5px 6px;text-align:center" min="0" max="59" oninput="petaDMSPreview()">
-          <input class="finput" id="dms-lat-s" type="number" placeholder='0"' step="0.01" style="font-size:11px;padding:5px 6px;text-align:center" min="0" max="59.99" oninput="petaDMSPreview()">
-          <select class="finput" id="dms-lat-dir" style="font-size:11px;padding:5px 4px" onchange="petaDMSPreview()"><option value="S">S</option><option value="N">N</option></select>
-        </div>
-        <div style="font-family:var(--mono);font-size:8.5px;color:var(--mute);margin-bottom:4px;letter-spacing:.5px">BUJUR (LONGITUDE)</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1.2fr auto;gap:4px;margin-bottom:8px">
-          <input class="finput" id="dms-lng-d" type="number" placeholder="0°" style="font-size:11px;padding:5px 6px;text-align:center" min="95" max="141" oninput="petaDMSPreview()">
-          <input class="finput" id="dms-lng-m" type="number" placeholder="0'" style="font-size:11px;padding:5px 6px;text-align:center" min="0" max="59" oninput="petaDMSPreview()">
-          <input class="finput" id="dms-lng-s" type="number" placeholder='0"' step="0.01" style="font-size:11px;padding:5px 6px;text-align:center" min="0" max="59.99" oninput="petaDMSPreview()">
-          <select class="finput" id="dms-lng-dir" style="font-size:11px;padding:5px 4px" onchange="petaDMSPreview()"><option value="E">E</option><option value="W">W</option></select>
-        </div>
-        <div id="dms-preview" style="font-family:var(--mono);font-size:9px;color:var(--accent);margin-bottom:8px;min-height:12px;padding:4px 0"></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-          <button class="btn btn-sm" onclick="petaDMSAddPoint('sampling')" style="font-size:9.5px;background:rgba(62,207,178,0.1);border-color:rgba(62,207,178,.4)">＋ Sampling</button>
-          <button class="btn btn-sm" onclick="petaDMSAddPoint('limbah')" style="font-size:9.5px;background:rgba(245,166,35,0.1);border-color:rgba(245,166,35,.4);color:var(--amber)">＋ Limbah</button>
-        </div>
-      </div>
-
-      <!-- Cari Lokasi -->
-      <div class="card" style="padding:14px 15px;flex-shrink:0">
-        <div style="font-family:var(--mono);font-size:9.5px;font-weight:700;color:var(--txt);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">🔍 Cari Lokasi</div>
-        <div style="display:flex;gap:5px;margin-bottom:6px">
-          <input class="finput" id="peta-search-inp" placeholder="Nama sungai / kota..." style="font-size:11px;padding:5px 8px;flex:1;min-width:0" onkeydown="if(event.key==='Enter')petaSearch()">
-          <button class="btn btn-outline btn-sm" onclick="petaSearch()" style="padding:5px 10px;flex-shrink:0">↵</button>
-        </div>
-        <div id="peta-search-results" style="max-height:120px;overflow-y:auto"></div>
-      </div>
-
-      <!-- Legenda -->
-      <div class="card" style="padding:14px 15px;flex-shrink:0">
-        <div style="font-family:var(--mono);font-size:9.5px;font-weight:700;color:var(--txt);text-transform:uppercase;letter-spacing:.8px;margin-bottom:9px">🗺 Legenda</div>
-        <div style="display:flex;flex-direction:column;gap:7px;font-family:var(--mono);font-size:10.5px">
-          <div style="display:flex;align-items:center;gap:8px"><span style="width:11px;height:11px;border-radius:50%;background:#3ecfb2;display:inline-block;flex-shrink:0"></span><span style="color:var(--txt2)">Titik Sampling</span></div>
-          <div style="display:flex;align-items:center;gap:8px"><span style="width:11px;height:11px;border-radius:50%;background:#f5a623;display:inline-block;flex-shrink:0"></span><span style="color:var(--txt2)">Sumber Limbah</span></div>
-          <div style="display:flex;align-items:center;gap:8px"><span style="width:14px;height:3px;border-radius:2px;background:#4488ff;display:inline-block;flex-shrink:0"></span><span style="color:var(--txt2)">Alur Manual</span></div>
-          <div style="display:flex;align-items:center;gap:8px"><span style="width:14px;height:3px;border-radius:2px;background:#00b8d4;display:inline-block;flex-shrink:0;opacity:0.8"></span><span style="color:var(--txt2)">Sungai Database</span></div>
-          <div style="display:flex;align-items:center;gap:8px"><span style="width:14px;height:3px;border-radius:2px;background:#ff7a45;display:inline-block;flex-shrink:0"></span><span style="color:var(--txt2)">Sungai Maluku Barat Daya (SHP asli)</span></div>
-          <div style="margin-top:6px;padding-top:7px;border-top:1px solid var(--brd2);display:flex;flex-direction:column;gap:5px">
-            <div style="display:flex;align-items:center;gap:8px"><span style="width:9px;height:9px;border-radius:50%;background:var(--green);display:inline-block;flex-shrink:0"></span><span style="color:var(--mute)">Memenuhi BM</span></div>
-            <div style="display:flex;align-items:center;gap:8px"><span style="width:9px;height:9px;border-radius:50%;background:var(--red);display:inline-block;flex-shrink:0"></span><span style="color:var(--mute)">Melebihi BM</span></div>
+      <div class="card mb18" id="peta-dms-card">
+        <div class="card-hd">
+          <div>
+            <div class="card-title" style="color:#b464ff">📐 Input Koordinat DMS</div>
+            <div class="card-help">Klik salah satu jenis titik di bawah untuk membuka form input koordinat. Tiap jenis bisa diisi lebih dari satu titik.</div>
           </div>
         </div>
+
+        <div id="dms-acc-list">
+          <div class="dms-acc-item" data-type="sampling">
+            <button class="dms-acc-header" onclick="petaDmsAccToggle('sampling')">
+              <span class="dms-acc-dot" style="background:#3ecfb2"></span>
+              <span class="dms-acc-title">Titik Sampling</span>
+              <span class="dms-acc-count" id="dms-cnt-sampling">0</span>
+              <span class="dms-acc-arrow" id="dms-arrow-sampling">▾</span>
+            </button>
+            <div class="dms-acc-slot" id="dms-slot-sampling"></div>
+          </div>
+          <div class="dms-acc-item" data-type="inlet">
+            <button class="dms-acc-header" onclick="petaDmsAccToggle('inlet')">
+              <span class="dms-acc-dot" style="background:#2ecc71"></span>
+              <span class="dms-acc-title">Titik Inlet</span>
+              <span class="dms-acc-count" id="dms-cnt-inlet">0</span>
+              <span class="dms-acc-arrow" id="dms-arrow-inlet">▾</span>
+            </button>
+            <div class="dms-acc-slot" id="dms-slot-inlet"></div>
+          </div>
+          <div class="dms-acc-item" data-type="outlet">
+            <button class="dms-acc-header" onclick="petaDmsAccToggle('outlet')">
+              <span class="dms-acc-dot" style="background:#e74c3c"></span>
+              <span class="dms-acc-title">Titik Outlet</span>
+              <span class="dms-acc-count" id="dms-cnt-outlet">0</span>
+              <span class="dms-acc-arrow" id="dms-arrow-outlet">▾</span>
+            </button>
+            <div class="dms-acc-slot" id="dms-slot-outlet"></div>
+          </div>
+          <div class="dms-acc-item" data-type="outfall">
+            <button class="dms-acc-header" onclick="petaDmsAccToggle('outfall')">
+              <span class="dms-acc-dot" style="background:#f5a623"></span>
+              <span class="dms-acc-title">Titik Outfall</span>
+              <span class="dms-acc-count" id="dms-cnt-outfall">0</span>
+              <span class="dms-acc-arrow" id="dms-arrow-outfall">▾</span>
+            </button>
+            <div class="dms-acc-slot" id="dms-slot-outfall"></div>
+          </div>
+          <div class="dms-acc-item" data-type="hulu">
+            <button class="dms-acc-header" onclick="petaDmsAccToggle('hulu')">
+              <span class="dms-acc-dot" style="background:#4488ff"></span>
+              <span class="dms-acc-title">Titik Pantau Hulu</span>
+              <span class="dms-acc-count" id="dms-cnt-hulu">0</span>
+              <span class="dms-acc-arrow" id="dms-arrow-hulu">▾</span>
+            </button>
+            <div class="dms-acc-slot" id="dms-slot-hulu"></div>
+          </div>
+          <div class="dms-acc-item" data-type="hilir">
+            <button class="dms-acc-header" onclick="petaDmsAccToggle('hilir')">
+              <span class="dms-acc-dot" style="background:#9b59b6"></span>
+              <span class="dms-acc-title">Titik Pantau Hilir</span>
+              <span class="dms-acc-count" id="dms-cnt-hilir">0</span>
+              <span class="dms-acc-arrow" id="dms-arrow-hilir">▾</span>
+            </button>
+            <div class="dms-acc-slot" id="dms-slot-hilir"></div>
+          </div>
+        </div>
+
+        <!-- Form bersama — dipindah (via JS) ke slot jenis yang sedang dibuka -->
+        <div id="dms-form-body" class="dms-form-body" style="display:none">
+          <div style="font-family:var(--mono);font-size:8.5px;color:var(--mute);margin-bottom:4px;letter-spacing:.5px">LINTANG (LATITUDE)</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1.2fr auto;gap:4px;margin-bottom:8px">
+            <input class="finput" id="dms-lat-d" type="number" placeholder="0°" style="font-size:11px;padding:5px 6px;text-align:center" min="0" max="11" oninput="petaDMSPreview()">
+            <input class="finput" id="dms-lat-m" type="number" placeholder="0'" style="font-size:11px;padding:5px 6px;text-align:center" min="0" max="59" oninput="petaDMSPreview()">
+            <input class="finput" id="dms-lat-s" type="number" placeholder='0"' step="0.01" style="font-size:11px;padding:5px 6px;text-align:center" min="0" max="59.99" oninput="petaDMSPreview()">
+            <select class="finput" id="dms-lat-dir" style="font-size:11px;padding:5px 4px" onchange="petaDMSPreview()"><option value="S">S</option><option value="N">N</option></select>
+          </div>
+          <div style="font-family:var(--mono);font-size:8.5px;color:var(--mute);margin-bottom:4px;letter-spacing:.5px">BUJUR (LONGITUDE)</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1.2fr auto;gap:4px;margin-bottom:8px">
+            <input class="finput" id="dms-lng-d" type="number" placeholder="0°" style="font-size:11px;padding:5px 6px;text-align:center" min="95" max="141" oninput="petaDMSPreview()">
+            <input class="finput" id="dms-lng-m" type="number" placeholder="0'" style="font-size:11px;padding:5px 6px;text-align:center" min="0" max="59" oninput="petaDMSPreview()">
+            <input class="finput" id="dms-lng-s" type="number" placeholder='0"' step="0.01" style="font-size:11px;padding:5px 6px;text-align:center" min="0" max="59.99" oninput="petaDMSPreview()">
+            <select class="finput" id="dms-lng-dir" style="font-size:11px;padding:5px 4px" onchange="petaDMSPreview()"><option value="E">E</option><option value="W">W</option></select>
+          </div>
+          <div id="dms-preview" style="font-family:var(--mono);font-size:9px;color:var(--accent);margin-bottom:10px;min-height:12px;padding:4px 0"></div>
+
+          <div style="font-family:var(--mono);font-size:8.5px;color:var(--mute);margin-bottom:4px;letter-spacing:.5px">NAMA TITIK</div>
+
+          <!-- Mode polos: untuk Sampling, Pantau Hulu, Pantau Hilir -->
+          <div id="dms-name-plain-wrap" style="margin-bottom:10px">
+            <input class="finput" id="dms-name" placeholder="cth: Titik Sampling 1" style="font-size:11.5px;padding:6px 9px;width:100%;box-sizing:border-box">
+          </div>
+
+          <!-- Mode sinkron UBM: untuk Inlet, Outlet, Outfall -->
+          <div id="dms-name-ubm-wrap" style="display:none;margin-bottom:10px">
+            <select class="finput" id="dms-name-select" onchange="petaDmsNameSelectChange()" style="font-size:11.5px;padding:6px 9px;width:100%;box-sizing:border-box;margin-bottom:6px">
+              <option value="">— Pilih dari Sumber Air Limbah (UBM) —</option>
+            </select>
+            <input class="finput" id="dms-name-manual" placeholder="Atau ketik nama manual..." style="display:none;font-size:11.5px;padding:6px 9px;width:100%;box-sizing:border-box">
+            <div style="font-family:var(--mono);font-size:8.5px;color:var(--mute);margin-top:4px;line-height:1.5">Daftar ini sinkron dari "Nama Sumber / Titik Penaatan" di menu Usulan Baku Mutu</div>
+          </div>
+
+          <button class="btn btn-sm" id="dms-add-btn" onclick="petaDMSAddPoint()" style="width:100%;font-size:10.5px;font-weight:700">＋ Tambah Titik</button>
+        </div>
       </div>
 
-      <!-- Daftar Titik -->
-      <div class="card" style="padding:14px 15px;flex-shrink:0">
-        <div style="font-family:var(--mono);font-size:9.5px;font-weight:700;color:var(--txt);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">📋 Daftar Titik</div>
+      <!-- Daftar Titik (preview) -->
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-title">📋 Titik yang Sudah Ditambahkan</div>
+          <span id="peta-step1-count" style="font-family:var(--mono);font-size:9px;color:var(--mute)">0 titik</span>
+        </div>
         <div id="peta-marker-list">
           <div style="font-family:var(--mono);font-size:10px;color:var(--mute);text-align:center;padding:12px 0">Belum ada titik.</div>
         </div>
       </div>
+    </div>
 
-    </div><!-- /kanan -->
-  </div><!-- /grid -->
+    <div class="peta-wiz-nav wiz-card">
+      <span></span>
+      <button class="peta-wiz-btn-next" onclick="petaWizGoto(2)">Lanjut: Lihat Peta →</button>
+    </div>
+  </div>
+
+  <!-- ══════════ STEP 2 — LIHAT PETA ══════════ -->
+  <div class="peta-wiz-step" id="peta-step-2">
+
+    <!-- Toolbar aksi peta -->
+    <div class="ph" style="margin-bottom:14px">
+      <div></div>
+      <div class="ph-acts">
+        <div class="rl-nav-group" style="height:auto">
+          <button class="btn btn-outline btn-sm" style="color:var(--accent);border-color:rgba(62,207,178,.4)">＋ Titik <span class="rl-nav-arrow" style="font-size:8px">▾</span></button>
+          <div class="rl-dd" style="min-width:170px">
+            <div class="rl-dd-item" onclick="petaAddMode('sampling')"><span class="rl-dd-icon" style="color:#3ecfb2">●</span> Titik Sampling</div>
+            <div class="rl-dd-item" onclick="petaAddMode('inlet')"><span class="rl-dd-icon" style="color:#2ecc71">●</span> Titik Inlet</div>
+            <div class="rl-dd-item" onclick="petaAddMode('outlet')"><span class="rl-dd-icon" style="color:#e74c3c">●</span> Titik Outlet</div>
+            <div class="rl-dd-item" onclick="petaAddMode('outfall')"><span class="rl-dd-icon" style="color:#f5a623">●</span> Titik Outfall</div>
+            <div class="rl-dd-item" onclick="petaAddMode('hulu')"><span class="rl-dd-icon" style="color:#4488ff">●</span> Titik Pantau Hulu</div>
+            <div class="rl-dd-item" onclick="petaAddMode('hilir')"><span class="rl-dd-icon" style="color:#9b59b6">●</span> Titik Pantau Hilir</div>
+          </div>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="petaAddMode('sungai')" style="color:var(--blue);border-color:rgba(68,136,255,.4)">〰 Alur</button>
+        <button class="btn btn-outline btn-sm" id="btn-toggle-wetar" onclick="petaToggleWetarLayer()" style="color:#00b8d4;border-color:rgba(0,184,212,.4)">🗺 Sungai MBD (SHP)</button>
+        <button class="btn btn-outline btn-sm" onclick="petaClearAll()" style="color:var(--red);border-color:rgba(255,68,68,.3)">🗑 Hapus</button>
+      </div>
+    </div>
+
+    <!-- Mode bar -->
+    <div id="peta-mode-bar" style="display:none;margin-bottom:12px;padding:9px 16px;border-radius:var(--rs);font-family:var(--mono);font-size:10.5px;font-weight:600;background:rgba(62,207,178,0.08);border:1px solid var(--brd);align-items:center;gap:10px">
+      <span id="peta-mode-txt"></span>
+      <button onclick="petaCancelMode()" style="margin-left:auto;background:none;border:1px solid var(--brd);border-radius:var(--rs);color:var(--mute);cursor:pointer;font-family:var(--mono);font-size:10px;padding:3px 10px">✕ Batal</button>
+    </div>
+
+    <!-- ── Layout: Peta kiri | Panel kanan ── -->
+    <div style="display:grid;grid-template-columns:1fr 300px;gap:14px;align-items:start">
+
+      <!-- KIRI: Peta + Tabel -->
+      <div>
+        <!-- Peta -->
+        <div id="peta-map-wrap" style="width:100%;height:520px;border-radius:var(--rs);overflow:hidden;border:1px solid var(--brd);margin-bottom:14px;background:#a8d5e8;position:relative;z-index:0;isolation:isolate">
+          <div id="peta-map" style="width:100%;height:100%"></div>
+          <div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);z-index:500;background:rgba(0,0,0,0.5);color:#fff;font-family:'Inter',sans-serif;font-size:10px;padding:3px 10px;border-radius:10px;pointer-events:none;white-space:nowrap">Ctrl/⌘ + scroll atau tombol +/− untuk zoom · Drag untuk geser peta</div>
+        </div>
+
+        <!-- Tabel ringkasan -->
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <div style="font-family:var(--mono);font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase;letter-spacing:.8px">Ringkasan Titik Terpetakan</div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <span style="font-family:var(--mono);font-size:9px;color:var(--mute)" id="peta-summary-count">0 titik</span>
+              <button class="btn btn-outline btn-sm" onclick="petaExportCSV()" style="font-size:9px">⬇ CSV</button>
+            </div>
+          </div>
+          <div id="peta-table-empty" style="padding:14px;text-align:center;font-family:var(--mono);font-size:10.5px;color:var(--mute)">Belum ada titik yang ditambahkan</div>
+          <div id="peta-table-wrap" style="display:none;overflow-x:auto;overflow-y:auto;max-height:360px;border:1px solid var(--brd2);border-radius:var(--rs)">
+            <table style="width:100%;border-collapse:collapse;font-size:11.5px">
+              <thead>
+                <tr style="border-bottom:1px solid var(--brd);position:sticky;top:0;background:var(--bg2);z-index:2">
+                  <th style="padding:7px 10px;font-family:var(--mono);font-size:9px;color:var(--mute);text-align:center">#</th>
+                  <th style="padding:7px 10px;font-family:var(--mono);font-size:9px;color:var(--mute)">Nama</th>
+                  <th style="padding:7px 10px;font-family:var(--mono);font-size:9px;color:var(--mute);text-align:center">Tipe</th>
+                  <th style="padding:7px 10px;font-family:var(--mono);font-size:9px;color:var(--accent);text-align:right">Lat (DD)</th>
+                  <th style="padding:7px 10px;font-family:var(--mono);font-size:9px;color:var(--accent);text-align:right">Lng (DD)</th>
+                  <th style="padding:7px 10px;font-family:var(--mono);font-size:9px;color:var(--mute)">DMS</th>
+                  <th style="padding:7px 10px;font-family:var(--mono);font-size:9px;color:var(--mute);text-align:center">Status</th>
+                  <th style="padding:7px 10px;font-family:var(--mono);font-size:9px;color:var(--mute);text-align:center">Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="peta-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div><!-- /kiri -->
+
+      <!-- KANAN: Panel kontrol -->
+      <div style="display:flex;flex-direction:column;gap:12px">
+
+        <!-- Database Sungai -->
+        <div class="card" style="padding:14px 15px;flex-shrink:0">
+          <div style="font-family:var(--mono);font-size:9.5px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:9px">🗄 Database Sungai Indonesia</div>
+          <input class="finput" id="peta-river-search" placeholder="Cari nama sungai..." style="font-size:11px;padding:6px 9px;width:100%;box-sizing:border-box;margin-bottom:7px" oninput="petaSearchDB(this.value)">
+          <div id="peta-db-results" style="max-height:180px;overflow-y:auto;border-radius:var(--rs);border:1px solid var(--brd2);background:var(--bg2)">
+            <div style="padding:10px;font-family:var(--mono);font-size:9.5px;color:var(--mute);text-align:center">Ketik ≥2 huruf untuk mencari...</div>
+          </div>
+          <div style="margin-top:6px;font-family:var(--mono);font-size:9px;color:var(--mute);line-height:1.5">Klik sungai → zoom ke lokasi &amp; tampilkan alur</div>
+        </div>
+
+        <!-- Cari Lokasi -->
+        <div class="card" style="padding:14px 15px;flex-shrink:0">
+          <div style="font-family:var(--mono);font-size:9.5px;font-weight:700;color:var(--txt);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">🔍 Cari Lokasi</div>
+          <div style="display:flex;gap:5px;margin-bottom:6px">
+            <input class="finput" id="peta-search-inp" placeholder="Nama sungai / kota..." style="font-size:11px;padding:5px 8px;flex:1;min-width:0" onkeydown="if(event.key==='Enter')petaSearch()">
+            <button class="btn btn-outline btn-sm" onclick="petaSearch()" style="padding:5px 10px;flex-shrink:0">↵</button>
+          </div>
+          <div id="peta-search-results" style="max-height:120px;overflow-y:auto"></div>
+        </div>
+
+        <!-- Legenda -->
+        <div class="card" style="padding:14px 15px;flex-shrink:0">
+          <div style="font-family:var(--mono);font-size:9.5px;font-weight:700;color:var(--txt);text-transform:uppercase;letter-spacing:.8px;margin-bottom:9px">🗺 Legenda</div>
+          <div style="display:flex;flex-direction:column;gap:7px;font-family:var(--mono);font-size:10.5px">
+            <div style="display:flex;align-items:center;gap:8px"><span style="width:11px;height:11px;border-radius:50%;background:#3ecfb2;display:inline-block;flex-shrink:0"></span><span style="color:var(--txt2)">Titik Sampling</span></div>
+            <div style="display:flex;align-items:center;gap:8px"><span style="width:11px;height:11px;border-radius:50%;background:#2ecc71;display:inline-block;flex-shrink:0"></span><span style="color:var(--txt2)">Titik Inlet</span></div>
+            <div style="display:flex;align-items:center;gap:8px"><span style="width:11px;height:11px;border-radius:50%;background:#e74c3c;display:inline-block;flex-shrink:0"></span><span style="color:var(--txt2)">Titik Outlet</span></div>
+            <div style="display:flex;align-items:center;gap:8px"><span style="width:11px;height:11px;border-radius:50%;background:#f5a623;display:inline-block;flex-shrink:0"></span><span style="color:var(--txt2)">Titik Outfall</span></div>
+            <div style="display:flex;align-items:center;gap:8px"><span style="width:11px;height:11px;border-radius:50%;background:#4488ff;display:inline-block;flex-shrink:0"></span><span style="color:var(--txt2)">Titik Pantau Hulu</span></div>
+            <div style="display:flex;align-items:center;gap:8px"><span style="width:11px;height:11px;border-radius:50%;background:#9b59b6;display:inline-block;flex-shrink:0"></span><span style="color:var(--txt2)">Titik Pantau Hilir</span></div>
+            <div style="display:flex;align-items:center;gap:8px"><span style="width:14px;height:3px;border-radius:2px;background:#4488ff;display:inline-block;flex-shrink:0"></span><span style="color:var(--txt2)">Alur Manual</span></div>
+            <div style="display:flex;align-items:center;gap:8px"><span style="width:14px;height:3px;border-radius:2px;background:#00b8d4;display:inline-block;flex-shrink:0;opacity:0.8"></span><span style="color:var(--txt2)">Sungai Database</span></div>
+            <div style="display:flex;align-items:center;gap:8px"><span style="width:14px;height:3px;border-radius:2px;background:#ff7a45;display:inline-block;flex-shrink:0"></span><span style="color:var(--txt2)">Sungai Maluku Barat Daya (SHP asli)</span></div>
+            <div style="margin-top:6px;padding-top:7px;border-top:1px solid var(--brd2);display:flex;flex-direction:column;gap:5px">
+              <div style="display:flex;align-items:center;gap:8px"><span style="width:9px;height:9px;border-radius:50%;background:var(--green);display:inline-block;flex-shrink:0"></span><span style="color:var(--mute)">Memenuhi BM</span></div>
+              <div style="display:flex;align-items:center;gap:8px"><span style="width:9px;height:9px;border-radius:50%;background:var(--red);display:inline-block;flex-shrink:0"></span><span style="color:var(--mute)">Melebihi BM</span></div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /kanan -->
+    </div><!-- /grid -->
+
+    <div class="peta-wiz-nav">
+      <button class="peta-wiz-btn-back" onclick="petaWizGoto(1)">← Kembali: Input Lokasi</button>
+      <span></span>
+    </div>
+  </div>
 
 </div>
 <script>
@@ -7303,7 +7479,7 @@ function _setProgress(pct, label) {
    ═══════════════════════════════════════════════════════════════ */
 
 var _map        = null;
-var _mode       = null;   // 'sampling' | 'limbah' | 'sungai' | null
+var _mode       = null;   // 'sampling' | 'outfall' | 'outlet' | 'hulu' | 'hilir' | 'sungai' | null
 var _markers    = [];     // [{id,type,name,lat,lng,status,note}]
 var _rivers     = [];     // [{id,name,points}]
 var _layers     = {};     // id → Leaflet layer
@@ -7314,6 +7490,23 @@ var _dbRiverLayer = null; // layer group sungai dari database
 var _wetarRiverLayer = null; // layer group sungai dari SHP asli (Pulau Wetar)
 var _wetarLoaded = false;
 var PETA_STORE  = 'rl_peta_v2';
+
+/* ─── Jenis titik (terpusat — satu sumber kebenaran untuk warna & label) ─── */
+var PETA_PT_TYPES = {
+  sampling: { label:'Titik Sampling',     short:'Sampling',     color:'#3ecfb2', useUbmName:false },
+  inlet:    { label:'Titik Inlet',        short:'Inlet',        color:'#2ecc71', useUbmName:true  },
+  outlet:   { label:'Titik Outlet',       short:'Outlet',       color:'#e74c3c', useUbmName:true  },
+  outfall:  { label:'Titik Outfall',      short:'Outfall',      color:'#f5a623', useUbmName:true  },
+  hulu:     { label:'Titik Pantau Hulu',  short:'Pantau Hulu',  color:'#4488ff', useUbmName:false },
+  hilir:    { label:'Titik Pantau Hilir', short:'Pantau Hilir', color:'#9b59b6', useUbmName:false }
+};
+var PETA_PT_ORDER = ['sampling','inlet','outlet','outfall','hulu','hilir'];
+function _ptType(type) { return PETA_PT_TYPES[type] || PETA_PT_TYPES.sampling; }
+function _hexToRgba(hex, alpha) {
+  var h = hex.replace('#','');
+  var r = parseInt(h.substring(0,2),16), g = parseInt(h.substring(2,4),16), b = parseInt(h.substring(4,6),16);
+  return 'rgba('+r+','+g+','+b+','+alpha+')';
+}
 
 /* ─── Database Sungai Indonesia ─────────────────────────────── */
 /* Data: {name, province, length_km, lat, lng, bbox:[s,w,n,e]}  */
@@ -7461,7 +7654,7 @@ function _dmsToDec(d, m, s, dir) {
 
 /* ─── Icon ───────────────────────────────────────────────────── */
 function _icon(type, status) {
-  var fill  = type === 'limbah' ? '#f5a623' : '#3ecfb2';
+  var fill  = _ptType(type).color;
   var ring  = status === 'ok' ? '#00e87a' : status === 'ng' ? '#ff4444' : fill;
   var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="30" height="38" viewBox="0 0 30 38">'
     + '<filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="rgba(0,0,0,0.4)"/></filter>'
@@ -7523,14 +7716,11 @@ function petaAddMode(mode) {
   var bar = document.getElementById('peta-mode-bar');
   var txt = document.getElementById('peta-mode-txt');
   if (!bar || !txt) return;
-  var lbls = {
-    sampling: '📍 Mode Titik Sampling — klik lokasi di peta',
-    limbah  : '🏭 Mode Sumber Air Limbah — klik lokasi di peta',
-    sungai  : '〰 Mode Alur Sungai — klik titik-titik alur, lalu konfirmasi'
-  };
-  var clrs = { sampling:'rgba(62,207,178,0.12)', limbah:'rgba(245,166,35,0.12)', sungai:'rgba(68,136,255,0.12)' };
-  bar.style.cssText = 'display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:9px 16px;border-radius:var(--rs);font-family:var(--mono);font-size:10.5px;font-weight:600;background:'+(clrs[mode]||'rgba(62,207,178,0.1)')+';border:1px solid var(--brd)';
-  txt.textContent = lbls[mode] || '';
+  var icons = { sampling:'📍', inlet:'⬅', outfall:'🏭', outlet:'🚿', hulu:'⬆', hilir:'⬇', sungai:'〰' };
+  var label = mode === 'sungai' ? 'Alur Sungai' : _ptType(mode).label;
+  var bg = mode === 'sungai' ? 'rgba(68,136,255,0.12)' : _hexToRgba(_ptType(mode).color, 0.12);
+  bar.style.cssText = 'display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:9px 16px;border-radius:var(--rs);font-family:var(--mono);font-size:10.5px;font-weight:600;background:'+bg+';border:1px solid var(--brd)';
+  txt.textContent = (icons[mode]||'📍')+' Mode '+label+' — '+(mode==='sungai'?'klik titik-titik alur, lalu konfirmasi':'klik lokasi di peta');
   _map.getContainer().style.cursor = 'crosshair';
 }
 
@@ -7600,6 +7790,80 @@ function petaToggleDMS() {
 }
 
 /* ─── DMS realtime preview ───────────────────────────────────── */
+var _dmsCurrentType = null;
+
+function petaDmsAccToggle(type) {
+  var slot = document.getElementById('dms-slot-'+type);
+  var form = document.getElementById('dms-form-body');
+  if (!slot || !form) return;
+
+  // Tutup kalau klik jenis yang sedang terbuka
+  if (_dmsCurrentType === type) {
+    form.style.display = 'none';
+    document.querySelectorAll('.dms-acc-item').forEach(function(it){ it.classList.remove('open'); });
+    _dmsCurrentType = null;
+    return;
+  }
+
+  // Pindahkan form bersama ke slot jenis yang baru diklik
+  slot.appendChild(form);
+  form.style.display = 'block';
+  document.querySelectorAll('.dms-acc-item').forEach(function(it){
+    it.classList.toggle('open', it.getAttribute('data-type') === type);
+  });
+  _dmsCurrentType = type;
+
+  // Reset form & sesuaikan mode nama (polos vs sinkron UBM)
+  ['dms-lat-d','dms-lat-m','dms-lat-s','dms-lng-d','dms-lng-m','dms-lng-s','dms-name','dms-name-manual'].forEach(function(id){
+    var el = document.getElementById(id); if (el) el.value = '';
+  });
+  petaDMSPreview();
+
+  var c = _ptType(type).color;
+  var btn = document.getElementById('dms-add-btn');
+  if (btn) {
+    btn.textContent = '＋ Tambah '+_ptType(type).label;
+    btn.style.background = _hexToRgba(c, 0.12);
+    btn.style.borderColor = _hexToRgba(c, 0.4);
+    btn.style.color = c;
+  }
+
+  var plainWrap = document.getElementById('dms-name-plain-wrap');
+  var ubmWrap = document.getElementById('dms-name-ubm-wrap');
+  if (_ptType(type).useUbmName) {
+    if (plainWrap) plainWrap.style.display = 'none';
+    if (ubmWrap) ubmWrap.style.display = 'block';
+    petaDmsPopulateUbmNames();
+  } else {
+    if (plainWrap) plainWrap.style.display = 'block';
+    if (ubmWrap) ubmWrap.style.display = 'none';
+  }
+}
+
+/* ─── Sinkronisasi nama dari "Nama Sumber / Titik Penaatan" (menu Usulan Baku Mutu) ── */
+function petaDmsPopulateUbmNames() {
+  var sel = document.getElementById('dms-name-select');
+  if (!sel) return;
+  var names = (typeof ubmSources !== 'undefined' ? ubmSources : []).map(function(s){return s.name;}).filter(Boolean);
+  var opts = '<option value="">— Pilih dari Sumber Air Limbah (UBM) —</option>';
+  names.forEach(function(n){ opts += '<option value="'+_e(n)+'">'+_e(n)+'</option>'; });
+  opts += '<option value="__manual__">✎ Ketik nama manual...</option>';
+  sel.innerHTML = opts;
+  if (!names.length) {
+    sel.innerHTML = '<option value="">— Belum ada Sumber Air Limbah di UBM —</option><option value="__manual__">✎ Ketik nama manual...</option>';
+  }
+  var manual = document.getElementById('dms-name-manual');
+  if (manual) manual.style.display = 'none';
+}
+
+function petaDmsNameSelectChange() {
+  var sel = document.getElementById('dms-name-select');
+  var manual = document.getElementById('dms-name-manual');
+  if (!sel || !manual) return;
+  manual.style.display = sel.value === '__manual__' ? 'block' : 'none';
+  if (sel.value === '__manual__') manual.focus();
+}
+
 function petaDMSPreview() {
   var ld = document.getElementById('dms-lat-d')?.value || 0;
   var lm = document.getElementById('dms-lat-m')?.value || 0;
@@ -7630,7 +7894,10 @@ function petaDMSPreview() {
 })();
 
 /* ─── Tambah titik dari DMS ──────────────────────────────────── */
-function petaDMSAddPoint(type) {
+function petaDMSAddPoint() {
+  var type = _dmsCurrentType;
+  if (!type) { if(typeof toast==='function') toast('⚠ Pilih jenis titik terlebih dahulu','err'); return; }
+
   var ld   = document.getElementById('dms-lat-d')?.value;
   var lm   = document.getElementById('dms-lat-m')?.value;
   var ls   = document.getElementById('dms-lat-s')?.value;
@@ -7649,15 +7916,53 @@ function petaDMSAddPoint(type) {
     if(typeof toast==='function') toast('⚠ Koordinat di luar wilayah Indonesia','err'); return;
   }
 
-  _addPopup({lat:lat, lng:lng}, type);
+  var name;
+  if (_ptType(type).useUbmName) {
+    var sel = document.getElementById('dms-name-select');
+    var manual = document.getElementById('dms-name-manual');
+    name = (sel && sel.value === '__manual__') ? (manual && manual.value.trim())
+         : (sel ? sel.value : '');
+  } else {
+    var nameEl = document.getElementById('dms-name');
+    name = nameEl && nameEl.value.trim();
+  }
+  name = name || _ptType(type).label;
+
+  _addMarkerDirect(lat, lng, type, name, '');
+
+  // Bersihkan koordinat & nama untuk input titik berikutnya, accordion tetap terbuka di jenis yang sama
+  ['dms-lat-d','dms-lat-m','dms-lat-s','dms-lng-d','dms-lng-m','dms-lng-s','dms-name','dms-name-manual'].forEach(function(id){
+    var el = document.getElementById(id); if (el) el.value = '';
+  });
+  var selEl = document.getElementById('dms-name-select'); if (selEl) selEl.value = '';
+  var manualEl = document.getElementById('dms-name-manual'); if (manualEl) manualEl.style.display = 'none';
+  petaDMSPreview();
+
+  var cnt = document.getElementById('dms-cnt-'+type);
+  if (cnt) cnt.textContent = _markers.filter(function(m){return m.type===type;}).length;
+
   if (_map) _map.flyTo([lat, lng], 13, {duration:0.8});
 }
 
-/* ─── Popup tambah marker ────────────────────────────────────── */
+/* ─── Simpan marker langsung dari form (tanpa perlu popup di peta) ───── */
+function _addMarkerDirect(lat, lng, type, name, status) {
+  var m = {
+    id:'mk_'+(_uid++), type:type,
+    name: name || _ptType(type).label,
+    lat:lat, lng:lng, status: status || '', note: ''
+  };
+  _markers.push(m);
+  if (_map) _addLeafletMarker(m); // kalau peta sudah ada, render langsung; kalau belum, akan dirender saat Langkah 2 dibuka
+  _renderList(); _renderTable(); _persist();
+  if (typeof toast === 'function') toast('✅ '+m.name+' ditambahkan');
+  return m;
+}
+
+/* ─── Popup tambah marker (dipakai saat klik langsung di peta, Langkah 2) ── */
 function _addPopup(latlng, type) {
   var id    = 'p' + (_uid++);
-  var label = type === 'limbah' ? 'Sumber Limbah' : 'Titik Sampling';
-  var color = type === 'limbah' ? '#f5a623' : '#3ecfb2';
+  var label = _ptType(type).label;
+  var color = _ptType(type).color;
   var dmsLat = _ddToDMS(latlng.lat, true);
   var dmsLng = _ddToDMS(latlng.lng, false);
 
@@ -7692,7 +7997,7 @@ function _saveMarker(id, lat, lng, type) {
   var t=document.getElementById('pt-'+id);
   var m = {
     id:'mk_'+(_uid++), type:type,
-    name:(n&&n.value.trim())||(type==='limbah'?'Sumber Limbah':'Titik Sampling'),
+    name:(n&&n.value.trim())||_ptType(type).label,
     lat:lat, lng:lng, status:s?s.value:'', note:t?t.value.trim():''
   };
   _map.closePopup();
@@ -7710,8 +8015,8 @@ function _addLeafletMarker(m) {
 }
 
 function _markerPopupHTML(m) {
-  var color = m.type==='limbah'?'#f5a623':'#3ecfb2';
-  var label = m.type==='limbah'?'Sumber Air Limbah':'Titik Sampling';
+  var color = _ptType(m.type).color;
+  var label = _ptType(m.type).label;
   var badge = m.status==='ok'?'<span style="color:#00e87a;font-weight:700">✓ Memenuhi BM</span>'
             : m.status==='ng'?'<span style="color:#ff4444;font-weight:700">✗ Melebihi BM</span>'
             : '<span style="color:#3a6660">— Belum dievaluasi</span>';
@@ -7910,15 +8215,20 @@ function petaAddFromDB(name) {
 /* ─── Render list panel ──────────────────────────────────────── */
 function _renderList() {
   var el=document.getElementById('peta-marker-list'); if(!el) return;
+  PETA_PT_ORDER.forEach(function(t){
+    var c=document.getElementById('dms-cnt-'+t);
+    if(c) c.textContent=_markers.filter(function(m){return m.type===t;}).length;
+  });
   var all=_markers.map(function(m){return{id:m.id,type:m.type,name:m.name,status:m.status};})
     .concat(_rivers.map(function(r){return{id:r.id,type:'sungai',name:r.name,status:''};
   }));
+  var cnt1=document.getElementById('peta-step1-count'); if(cnt1) cnt1.textContent=all.length+' titik';
   if(!all.length){
     el.innerHTML='<div style="text-align:center;padding:16px 0;font-family:var(--mono);font-size:10.5px;color:var(--mute)">Belum ada titik.</div>';
     return;
   }
   el.innerHTML=all.map(function(m){
-    var dot=m.type==='limbah'?'#f5a623':m.type==='sungai'?'#4488ff':'#3ecfb2';
+    var dot=m.type==='sungai'?'#4488ff':_ptType(m.type).color;
     var shape=m.type==='sungai'
       ?'<span style="width:14px;height:4px;background:#4488ff;border-radius:2px;display:inline-block;flex-shrink:0;margin-bottom:2px"></span>'
       :'<span style="width:9px;height:9px;border-radius:50%;background:'+dot+';display:inline-block;flex-shrink:0"></span>';
@@ -7953,8 +8263,8 @@ function _renderTable() {
   if(!tbody) return;
   var rows='',i=1;
   _markers.forEach(function(m){
-    var tc=m.type==='limbah'?'#f5a623':'#3ecfb2';
-    var tl=m.type==='limbah'?'Sumber Limbah':'Titik Sampling';
+    var tc=_ptType(m.type).color;
+    var tl=_ptType(m.type).label;
     var b=m.status==='ok'?'<span style="color:#00e87a;font-weight:700;font-size:10px">✓ OK</span>'
         :m.status==='ng'?'<span style="color:#ff4444;font-weight:700;font-size:10px">✗ NG</span>'
         :'<span style="color:var(--mute);font-size:10px">—</span>';
@@ -8004,7 +8314,7 @@ function petaExportCSV() {
   if(!_markers.length&&!_rivers.length){if(typeof toast==='function')toast('⚠ Tidak ada data','err');return;}
   var header='No,Nama,Tipe,Lat (DD),Lng (DD),Lat DMS,Lng DMS,Status BM,Catatan\n';
   var rows=_markers.map(function(m,i){
-    return (i+1)+',"'+m.name+'","'+(m.type==='limbah'?'Sumber Limbah':'Titik Sampling')+'",'+m.lat+','+m.lng+',"'+_ddToDMS(m.lat,true)+'","'+_ddToDMS(m.lng,false)+'","'+(m.status||'')+'","'+(m.note||'')+'"';
+    return (i+1)+',"'+m.name+'","'+_ptType(m.type).label+'",'+m.lat+','+m.lng+',"'+_ddToDMS(m.lat,true)+'","'+_ddToDMS(m.lng,false)+'","'+(m.status||'')+'","'+(m.note||'')+'"';
   }).join('\n');
   var blob=new Blob(['\ufeff'+header+rows],{type:'text/csv;charset=utf-8'});
   var a=document.createElement('a');
@@ -8055,34 +8365,50 @@ function _load(){
   }catch(e){}
 }
 
-/* ─── Entry point ────────────────────────────────────────────── */
-function petaOnOpen() {
-  if(!_map) _load();
-  if(!_wetarLoaded) petaLoadWetarLayer(function(){}); // muat index di background, belum tampil di peta
-  // Multiple delays to ensure map renders after display:block reflow
-  [80, 200, 500, 900].forEach(function(delay) {
-    setTimeout(function(){
-      var container = document.getElementById('peta-map');
-      if (!container) return;
-      if (!_map) {
-        petaInit();
-        var needRender=(_markers.length||_rivers.length)&&!Object.keys(_layers).length;
-        if(needRender){
-          _markers.forEach(function(m){_addLeafletMarker(m);});
+/* ─── Wizard Pemetaan (2 langkah): Input Lokasi → Lihat Peta ───── */
+function petaWizGoto(step, silent) {
+  for (var i=1;i<=2;i++){
+    var stepEl=document.getElementById('peta-step-'+i);
+    var tabEl=document.getElementById('peta-wt-'+i);
+    if(stepEl) stepEl.classList.toggle('active', i===step);
+    if(tabEl){ tabEl.classList.toggle('active', i===step); tabEl.classList.toggle('done', i<step); }
+  }
+  if (step === 2) {
+    // Peta baru diinisialisasi begitu Langkah 2 dibuka (kontainernya baru terlihat di sini)
+    [50, 150, 350, 700].forEach(function(delay){
+      setTimeout(function(){
+        var container = document.getElementById('peta-map');
+        if (!container) return;
+        if (!_map) petaInit();
+        if (_map) {
+          _map.invalidateSize(true);
+          // Render titik & alur yang ditambahkan saat Langkah 1 (saat itu peta belum ada)
+          _markers.forEach(function(m){ if(!_layers[m.id]) _addLeafletMarker(m); });
           _rivers.forEach(function(r){
+            if(_layers[r.id]) return;
             var clr=r.fromDB?'#00b8d4':'#4488ff';
             var style=r.fromDB?{color:clr,weight:3,opacity:0.8,dashArray:'8,4'}:{color:clr,weight:4,opacity:0.8};
             var line=L.polyline(r.points,style).addTo(_map)
               .bindPopup('<div style="font-family:\'Inter\',sans-serif;font-weight:700;color:'+clr+'">'+_e(r.name)+'</div>');
             _layers[r.id]=line;
           });
+          _renderTable();
         }
-        _renderList(); _renderTable();
-      } else {
-        _map.invalidateSize(true);
-      }
-    }, delay);
-  });
+      }, delay);
+    });
+  }
+  if (!silent) {
+    var page = document.getElementById('page-peta');
+    if (page) page.scrollIntoView({ behavior:'instant', block:'start' });
+  }
+}
+
+/* ─── Entry point ────────────────────────────────────────────── */
+function petaOnOpen() {
+  if(!_map) _load();
+  if(!_wetarLoaded) petaLoadWetarLayer(function(){}); // muat index nama sungai SHP di background
+  petaWizGoto(1, true); // selalu mulai dari Langkah 1 — Input Lokasi
+  _renderList(); _renderTable();
 }
 </script>
 

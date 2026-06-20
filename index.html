@@ -7169,7 +7169,7 @@ function _setProgress(pct, label) {
       <button class="btn btn-outline btn-sm" onclick="petaAddMode('limbah')" style="color:var(--amber);border-color:rgba(245,166,35,.4)">＋ Limbah</button>
       <button class="btn btn-outline btn-sm" onclick="petaAddMode('sungai')" style="color:var(--blue);border-color:rgba(68,136,255,.4)">〰 Alur</button>
       <button class="btn btn-outline btn-sm" onclick="petaToggleDMS()" style="color:#b464ff;border-color:rgba(180,100,255,.4)">📐 DMS</button>
-      <button class="btn btn-outline btn-sm" id="btn-toggle-wetar" onclick="petaToggleWetarLayer()" style="color:#00b8d4;border-color:rgba(0,184,212,.4)">🗺 Sungai Wetar (SHP)</button>
+      <button class="btn btn-outline btn-sm" id="btn-toggle-wetar" onclick="petaToggleWetarLayer()" style="color:#00b8d4;border-color:rgba(0,184,212,.4)">🗺 Sungai MBD (SHP)</button>
       <button class="btn btn-outline btn-sm" onclick="petaClearAll()" style="color:var(--red);border-color:rgba(255,68,68,.3)">🗑 Hapus</button>
     </div>
   </div>
@@ -7276,7 +7276,7 @@ function _setProgress(pct, label) {
           <div style="display:flex;align-items:center;gap:8px"><span style="width:11px;height:11px;border-radius:50%;background:#f5a623;display:inline-block;flex-shrink:0"></span><span style="color:var(--txt2)">Sumber Limbah</span></div>
           <div style="display:flex;align-items:center;gap:8px"><span style="width:14px;height:3px;border-radius:2px;background:#4488ff;display:inline-block;flex-shrink:0"></span><span style="color:var(--txt2)">Alur Manual</span></div>
           <div style="display:flex;align-items:center;gap:8px"><span style="width:14px;height:3px;border-radius:2px;background:#00b8d4;display:inline-block;flex-shrink:0;opacity:0.8"></span><span style="color:var(--txt2)">Sungai Database</span></div>
-          <div style="display:flex;align-items:center;gap:8px"><span style="width:14px;height:3px;border-radius:2px;background:#ff7a45;display:inline-block;flex-shrink:0"></span><span style="color:var(--txt2)">Sungai Wetar (data SHP asli)</span></div>
+          <div style="display:flex;align-items:center;gap:8px"><span style="width:14px;height:3px;border-radius:2px;background:#ff7a45;display:inline-block;flex-shrink:0"></span><span style="color:var(--txt2)">Sungai Maluku Barat Daya (SHP asli)</span></div>
           <div style="margin-top:6px;padding-top:7px;border-top:1px solid var(--brd2);display:flex;flex-direction:column;gap:5px">
             <div style="display:flex;align-items:center;gap:8px"><span style="width:9px;height:9px;border-radius:50%;background:var(--green);display:inline-block;flex-shrink:0"></span><span style="color:var(--mute)">Memenuhi BM</span></div>
             <div style="display:flex;align-items:center;gap:8px"><span style="width:9px;height:9px;border-radius:50%;background:var(--red);display:inline-block;flex-shrink:0"></span><span style="color:var(--mute)">Melebihi BM</span></div>
@@ -7501,7 +7501,7 @@ function petaInit() {
   L.control.layers({'Peta':osm,'Satelit':sat},{},{position:'topright'}).addTo(_map);
 
   _dbRiverLayer = L.layerGroup().addTo(_map);
-  _wetarRiverLayer = L.layerGroup();
+  if (!_wetarRiverLayer) _wetarRiverLayer = L.layerGroup();
 
   _map.on('click', function(e) {
     if (!_mode) return;
@@ -7552,7 +7552,7 @@ function petaToggleWetarLayer() {
   }
   if (btn) { btn.style.background = 'rgba(0,184,212,0.15)'; btn.textContent = '⏳ Memuat...'; }
   petaLoadWetarLayer(function(ok){
-    if (btn) btn.textContent = '🗺 Sungai Wetar (SHP)';
+    if (btn) btn.textContent = '🗺 Sungai MBD (SHP)';
     if (ok) {
       _wetarRiverLayer.addTo(_map);
       if (btn) btn.style.background = 'rgba(0,184,212,0.15)';
@@ -7561,9 +7561,12 @@ function petaToggleWetarLayer() {
   });
 }
 
+var _wetarIndex = []; // [{name, layer}] untuk pencarian nama sungai dari SHP
+
 function petaLoadWetarLayer(cb) {
   if (_wetarLoaded) { cb(true); return; }
-  fetch('data/sungai_wetar.topojson')
+  if (!_wetarRiverLayer) _wetarRiverLayer = L.layerGroup();
+  fetch('sungai_mbd.topojson')
     .then(function(r){ if (!r.ok) throw new Error('not found'); return r.json(); })
     .then(function(topo){
       var key = Object.keys(topo.objects)[0];
@@ -7572,15 +7575,18 @@ function petaLoadWetarLayer(cb) {
         style: { color:'#ff7a45', weight:1.6, opacity:0.85 },
         onEachFeature: function(feature, layer){
           var nm = (feature.properties && feature.properties.NAMOBJ) ? feature.properties.NAMOBJ : 'Sungai (tanpa nama)';
-          layer.bindPopup('<div style="font-family:\'Inter\',sans-serif;font-size:12px"><strong style="color:#ff7a45">'+_e(nm)+'</strong><div style="font-size:10px;color:#8bb8b0;margin-top:3px">Sumber: SHP RBI — Pulau Wetar</div></div>');
+          layer.bindPopup('<div style="font-family:\'Inter\',sans-serif;font-size:12px"><strong style="color:#ff7a45">'+_e(nm)+'</strong><div style="font-size:10px;color:#8bb8b0;margin-top:3px">Sumber: SHP RBI — Maluku Barat Daya</div></div>');
+          if (feature.properties && feature.properties.NAMOBJ) {
+            _wetarIndex.push({ name: feature.properties.NAMOBJ, layer: layer });
+          }
         }
       }).addTo(_wetarRiverLayer);
       _wetarLoaded = true;
       cb(true);
     })
     .catch(function(err){
-      console.error('Gagal load sungai_wetar.topojson:', err);
-      toast('Gagal memuat layer Sungai Wetar — pastikan file data/sungai_wetar.topojson ada di repo', 'err');
+      console.error('Gagal load sungai_mbd.topojson:', err);
+      toast('Gagal memuat layer Sungai Maluku Barat Daya — pastikan file sungai_mbd.topojson ada di root repo (sejajar index.html)', 'err');
       cb(false);
     });
 }
@@ -7804,12 +7810,20 @@ function petaSearchDB(query) {
         || (s.parent && s.parent.toLowerCase().indexOf(query) >= 0);
   }).slice(0, 14);
 
-  if (!results.length) {
-    el.innerHTML = '<div style="padding:12px;font-family:var(--mono);font-size:10px;color:var(--mute);text-align:center">Tidak ditemukan</div>';
+  // Cari juga di layer SHP Wetar, kalau sudah dimuat
+  var shpResults = _wetarIndex.filter(function(r){
+    return r.name.toLowerCase().indexOf(query) >= 0;
+  }).slice(0, 10);
+
+  if (!results.length && !shpResults.length) {
+    var hint = _wetarLoaded
+      ? 'Tidak ditemukan di database nasional maupun layer SHP Maluku Barat Daya yang sudah dimuat.'
+      : 'Tidak ditemukan di database nasional. Coba aktifkan layer "Sungai MBD (SHP)" dulu kalau sungainya ada di wilayah itu.';
+    el.innerHTML = '<div style="padding:12px;font-family:var(--mono);font-size:9.5px;color:var(--mute);text-align:center;line-height:1.6">'+hint+'</div>';
     return;
   }
 
-  el.innerHTML = results.map(function(s) {
+  var html = results.map(function(s) {
     var parentBadge = s.parent
       ? '<div style="font-family:var(--mono);font-size:8.5px;color:#b464ff;margin-top:1px">↳ anak sungai dari '+_e(s.parent)+'</div>'
       : '';
@@ -7821,6 +7835,27 @@ function petaSearchDB(query) {
       + parentBadge
       + '</div>';
   }).join('');
+
+  if (shpResults.length) {
+    html += '<div style="padding:5px 10px;font-family:var(--mono);font-size:8.5px;color:#ff7a45;background:rgba(255,122,69,0.08);text-transform:uppercase;letter-spacing:.5px">SHP Sungai Maluku Barat Daya</div>';
+    html += shpResults.map(function(r, i){
+      return '<div onclick="petaZoomToWetarIndex('+_wetarIndex.indexOf(r)+')" '
+        + 'style="padding:8px 10px;cursor:pointer;border-bottom:1px solid var(--brd2);display:flex;flex-direction:column;gap:2px" '
+        + 'onmouseover="this.style.background=\'rgba(255,122,69,0.06)\'" onmouseout="this.style.background=\'\'">'
+        + '<div style="font-family:var(--mono);font-size:11px;font-weight:600;color:#ff7a45">'+_e(r.name)+'</div>'
+        + '<div style="font-family:var(--mono);font-size:9px;color:var(--mute)">Maluku Barat Daya · data SHP asli</div>'
+        + '</div>';
+    }).join('');
+  }
+  el.innerHTML = html;
+}
+
+function petaZoomToWetarIndex(idx) {
+  var r = _wetarIndex[idx];
+  if (!r || !_map) return;
+  if (!_map.hasLayer(_wetarRiverLayer)) _wetarRiverLayer.addTo(_map);
+  _map.fitBounds(r.layer.getBounds(), { padding:[60,60], maxZoom:14 });
+  r.layer.openPopup();
 }
 
 function petaShowDBRiver(name) {
@@ -8022,6 +8057,7 @@ function _load(){
 /* ─── Entry point ────────────────────────────────────────────── */
 function petaOnOpen() {
   if(!_map) _load();
+  if(!_wetarLoaded) petaLoadWetarLayer(function(){}); // muat index di background, belum tampil di peta
   // Multiple delays to ensure map renders after display:block reflow
   [80, 200, 500, 900].forEach(function(delay) {
     setTimeout(function(){

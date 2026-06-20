@@ -7188,7 +7188,7 @@ function _setProgress(pct, label) {
       <!-- Peta -->
       <div id="peta-map-wrap" style="width:100%;height:520px;border-radius:var(--rs);overflow:hidden;border:1px solid var(--brd);margin-bottom:14px;background:#a8d5e8;position:relative">
         <div id="peta-map" style="width:100%;height:100%"></div>
-        <div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);z-index:500;background:rgba(0,0,0,0.5);color:#fff;font-family:'Inter',sans-serif;font-size:10px;padding:3px 10px;border-radius:10px;pointer-events:none;white-space:nowrap">Gunakan tombol +/− untuk zoom · Drag untuk geser peta</div>
+        <div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);z-index:500;background:rgba(0,0,0,0.5);color:#fff;font-family:'Inter',sans-serif;font-size:10px;padding:3px 10px;border-radius:10px;pointer-events:none;white-space:nowrap">Ctrl/⌘ + scroll atau tombol +/− untuk zoom · Drag untuk geser peta</div>
       </div>
 
       <!-- Tabel ringkasan -->
@@ -7201,10 +7201,10 @@ function _setProgress(pct, label) {
           </div>
         </div>
         <div id="peta-table-empty" style="padding:14px;text-align:center;font-family:var(--mono);font-size:10.5px;color:var(--mute)">Belum ada titik yang ditambahkan</div>
-        <div id="peta-table-wrap" style="display:none;overflow-x:auto">
+        <div id="peta-table-wrap" style="display:none;overflow-x:auto;overflow-y:auto;max-height:360px;border:1px solid var(--brd2);border-radius:var(--rs)">
           <table style="width:100%;border-collapse:collapse;font-size:11.5px">
             <thead>
-              <tr style="border-bottom:1px solid var(--brd)">
+              <tr style="border-bottom:1px solid var(--brd);position:sticky;top:0;background:var(--bg2);z-index:2">
                 <th style="padding:7px 10px;font-family:var(--mono);font-size:9px;color:var(--mute);text-align:center">#</th>
                 <th style="padding:7px 10px;font-family:var(--mono);font-size:9px;color:var(--mute)">Nama</th>
                 <th style="padding:7px 10px;font-family:var(--mono);font-size:9px;color:var(--mute);text-align:center">Tipe</th>
@@ -7480,7 +7480,15 @@ function petaInit() {
     scrollWheelZoom: false,   // scroll mouse selalu untuk scroll halaman, bukan zoom peta
     tap: false
   });
-  // Zoom peta pakai tombol +/- (zoomControl, sudah aktif default) atau pinch di touch screen
+  // Zoom peta pakai tombol +/- , pinch di touch screen, atau Ctrl/Cmd + scroll
+  _map.getContainer().addEventListener('wheel', function(e) {
+    if (!(e.ctrlKey || e.metaKey)) return; // scroll biasa: biarkan lewat, jadi scroll halaman
+    e.preventDefault();
+    var delta = e.deltaY < 0 ? 1 : -1;
+    var targetZoom = _map.getZoom() + delta;
+    var pt = _map.mouseEventToContainerPoint(e);
+    _map.setZoomAround(pt, targetZoom, { animate:true });
+  }, { passive:false });
 
   var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>', maxZoom:19

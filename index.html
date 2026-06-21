@@ -3245,6 +3245,35 @@ async function exportWord() {
   toast('⏳ Membuat dokumen…','');
   await new Promise(r=>setTimeout(r,30));
 
+  // Rasterisasi string SVG jadi PNG (base64) untuk disisipkan sebagai gambar di Word
+  function _svgToPngBase64(svgString, scale){
+    return new Promise((resolve,reject)=>{
+      try{
+        const vbMatch = svgString.match(/viewBox="0 0 ([\d.]+) ([\d.]+)"/);
+        const vbW = vbMatch?parseFloat(vbMatch[1]):800;
+        const vbH = vbMatch?parseFloat(vbMatch[2]):400;
+        const svgBlob = new Blob([svgString], {type:'image/svg+xml;charset=utf-8'});
+        const url = URL.createObjectURL(svgBlob);
+        const img = new Image();
+        img.onload = function(){
+          const sc = scale||2;
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.round(vbW*sc); canvas.height = Math.round(vbH*sc);
+          const ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,canvas.width,canvas.height);
+          ctx.scale(sc,sc);
+          ctx.drawImage(img,0,0,vbW,vbH);
+          URL.revokeObjectURL(url);
+          const dataUrl = canvas.toDataURL('image/png');
+          resolve({ base64: dataUrl.split(',')[1], width: vbW, height: vbH });
+        };
+        img.onerror = function(e){ URL.revokeObjectURL(url); reject(e); };
+        img.src = url;
+      }catch(e){ reject(e); }
+    });
+  }
+  const _twipsToEMU = t => Math.round(t*635);
+
   const rn=document.getElementById('r-name').value.trim()||'—';
   const rc=document.getElementById('r-class').value;
   const qDry=pNum(document.getElementById('q-dry').value);
@@ -3253,17 +3282,37 @@ async function exportWord() {
   const dateStr=new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});
 
   const esc=s=>String(s==null?'—':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  const CW=9026; // Total page width in twips (for A4: 210mm width - 2.5cm margins each side = 160mm = ~9026 twips)
+  // A4 LANDSCAPE: lebar halaman 16838 twips, margin 1134 (2cm) tiap sisi → lebar konten 14570 twips
+  // Seluruh tabel di bawah didesain untuk lebar portrait lama (9026), jadi diskalakan proporsional (SCALE) ke lebar landscape baru
+  const CW=14570; // Total page width in twips (A4 landscape, margin 2cm tiap sisi)
+  const SCALE = CW/9026; // faktor skala dari desain tabel lama (portrait, 9026) ke lebar landscape baru
+  const S = w=>Math.round(w*SCALE);
+  // Regangkan array lebar kolom agar totalnya PAS sama dengan target (misal CW = lebar penuh halaman),
+  // proporsi antar-kolom tetap dipertahankan — dipakai agar tabel selalu melebar penuh ke ujung kertas
+  const fitCols = (arr, target)=>{
+    const sum = arr.reduce((a,b)=>a+b,0);
+    const out = arr.map(w=>Math.round(w/sum*target));
+    const diff = target - out.reduce((a,b)=>a+b,0);
+    out[out.length-1] += diff; // koreksi sisa pembulatan di kolom terakhir
+    return out;
+  };
+  // Sama seperti fitCols, tapi kolom pertama (biasanya "No") dikunci ke lebar kecil tetap (autofit isi),
+  // sisa lebar halaman diregangkan proporsional ke kolom-kolom lainnya
+  const NO_COL_W = 500; // ~0.88cm, cukup untuk angka 1-3 digit
+  const fitColsKeepFirst = (arr, target, firstW=NO_COL_W)=>{
+    const rest = fitCols(arr.slice(1), target-firstW);
+    return [firstW, ...rest];
+  };
   const clr=h=>`<w:color w:val="${h||'000000'}"/>`;
   const sz=p=>`<w:sz w:val="${p}"/><w:szCs w:val="${p}"/>`;
   const fnt=`<w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>`;
   const run=(t,o={})=>`<w:r><w:rPr>${fnt}${sz(o.sz||22)}${o.b?'<w:b/>':''}${o.it?'<w:i/>':''}${clr(o.c||'1e293b')}</w:rPr><w:t xml:space="preserve">${esc(t)}</w:t></w:r>`;
-  const par=(ct,o={})=>`<w:p><w:pPr><w:jc w:val="${o.ctr?'center':'both'}"/><w:spacing w:before="${o.bef||0}" w:after="${o.aft||120}" w:line="280" w:lineRule="auto"/></w:pPr>${ct}</w:p>`;
+  const par=(ct,o={})=>`<w:p><w:pPr><w:spacing w:before="${o.bef||0}" w:after="${o.aft||120}" w:line="280" w:lineRule="auto"/><w:jc w:val="${o.ctr?'center':'both'}"/></w:pPr>${ct}</w:p>`;
   const sp=()=>`<w:p><w:pPr><w:spacing w:after="80"/></w:pPr></w:p>`;
   const pb=()=>`<w:p><w:r><w:br w:type="page"/></w:r></w:p>`;
-  const tc=(t,o={})=>`<w:tc><w:tcPr><w:tcW w:w="${o.w||1000}" w:type="dxa"/><w:tcBorders><w:top w:val="single" w:sz="6" w:color="cbd5e1"/><w:bottom w:val="single" w:sz="6" w:color="cbd5e1"/><w:left w:val="single" w:sz="6" w:color="cbd5e1"/><w:right w:val="single" w:sz="6" w:color="cbd5e1"/></w:tcBorders>${o.bg?`<w:shd w:val="clear" w:color="auto" w:fill="${o.bg}"/>`:''}${o.vm?`<w:vAlign w:val="center"/>`:''}${o.mar||''}</w:tcPr><w:p><w:pPr><w:jc w:val="${o.ctr?'center':'left'}"/><w:spacing w:before="0" w:after="0"/></w:pPr>${run(t,{sz:o.sz||20,b:o.b,c:o.c||'1e293b'})}</w:p></w:tc>`;
-  const tr2=(cells,hdr=false)=>`<w:tr${hdr?' w:tblHeader="true"':''}>${cells}</w:tr>`;
-  const mkTbl=(cws,rows)=>{const tot=cws.reduce((a,b)=>a+b,0);const grid=cws.map(w=>`<w:gridCol w:w="${w}"/>`).join('');return `<w:tbl><w:tblPr><w:tblW w:w="${tot}" w:type="dxa"/><w:tblBorders><w:top w:val="single" w:sz="6" w:color="cbd5e1"/><w:bottom w:val="single" w:sz="6" w:color="cbd5e1"/><w:left w:val="single" w:sz="6" w:color="cbd5e1"/><w:right w:val="single" w:sz="6" w:color="cbd5e1"/><w:insideH w:val="single" w:sz="6" w:color="cbd5e1"/><w:insideV w:val="single" w:sz="6" w:color="cbd5e1"/></w:tblBorders><w:tblCellMar><w:top w:w="60" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="60" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid>${grid}</w:tblGrid>${rows.join('')}</w:tbl>`;};
+  const tc=(t,o={})=>`<w:tc><w:tcPr><w:tcW w:w="${o.w||1000}" w:type="dxa"/>${o.span?`<w:gridSpan w:val="${o.span}"/>`:''}<w:tcBorders><w:top w:val="single" w:sz="6" w:color="cbd5e1"/><w:left w:val="single" w:sz="6" w:color="cbd5e1"/><w:bottom w:val="single" w:sz="6" w:color="cbd5e1"/><w:right w:val="single" w:sz="6" w:color="cbd5e1"/></w:tcBorders>${o.bg?`<w:shd w:val="clear" w:color="auto" w:fill="${o.bg}"/>`:''}${o.vm?`<w:vAlign w:val="center"/>`:''}${o.mar||''}</w:tcPr><w:p><w:pPr><w:spacing w:before="0" w:after="0"/><w:jc w:val="${o.ctr?'center':'left'}"/></w:pPr>${run(t,{sz:o.sz||20,b:o.b,c:o.c||'1e293b'})}</w:p></w:tc>`;
+  const tr2=(cells,hdr=false)=>`<w:tr>${hdr?'<w:trPr><w:tblHeader/></w:trPr>':''}${cells}</w:tr>`;
+  const mkTbl=(cws,rows)=>{const tot=cws.reduce((a,b)=>a+b,0);const grid=cws.map(w=>`<w:gridCol w:w="${w}"/>`).join('');return `<w:tbl><w:tblPr><w:tblW w:w="${tot}" w:type="dxa"/><w:tblBorders><w:top w:val="single" w:sz="6" w:color="cbd5e1"/><w:left w:val="single" w:sz="6" w:color="cbd5e1"/><w:bottom w:val="single" w:sz="6" w:color="cbd5e1"/><w:right w:val="single" w:sz="6" w:color="cbd5e1"/><w:insideH w:val="single" w:sz="6" w:color="cbd5e1"/><w:insideV w:val="single" w:sz="6" w:color="cbd5e1"/></w:tblBorders><w:tblCellMar><w:top w:w="60" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="60" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid>${grid}</w:tblGrid>${rows.join('')}</w:tbl>`;};
   const hc=(t,w)=>tc(t,{w,b:true,ctr:true,bg:'004d45',c:'FFFFFF',sz:20});
 
   let xml='';
@@ -3279,7 +3328,7 @@ async function exportWord() {
 
   // Info sungai
   xml+=par(run('BAB 1  DATA SUNGAI',{sz:28,b:true,c:'004d45'}),{bef:0,aft:160});
-  const iW=[3000,6026];
+  const iW=fitCols([3000,6026],CW);
   xml+=mkTbl(iW,[
     tr2(hc('Parameter',iW[0])+hc('Keterangan',iW[1]),true),
     tr2(tc('Nama Sungai / Badan Air',{w:iW[0]})+tc(rn,{w:iW[1],b:true})),
@@ -3304,7 +3353,7 @@ async function exportWord() {
     s+=sp()+sp();
     s+=par(run(title,{sz:28,b:true,c:'004d45'}),{bef:240,aft:120});
     s+=par(run(`Debit Q = ${fN(Q)} m³/det · ${okP.length} Parameter Memenuhi · ${ngP.length} Parameter Melebihi`,{sz:20,c:'546e7a'}),{aft:120});
-    const cw9=[350,2000,580,750,850,700,850,750];
+    const cw9=fitColsKeepFirst([350,2000,580,750,850,700,850,750],CW);
     s+=mkTbl(cw9,[
       tr2(hc('No',cw9[0])+hc('Parameter',cw9[1])+hc('Satuan',cw9[2])+hc('Baku Mutu',cw9[3])+hc('BPM (kg/jam)',cw9[4])+hc('C Aktual',cw9[5])+hc('BPA (kg/jam)',cw9[6])+hc('Status',cw9[7]),true),
       ...params.map((p,i)=>{
@@ -3323,7 +3372,7 @@ async function exportWord() {
           tc(ket,{w:cw9[7],ctr:true,bg:rowBg,sz:20,b:true,c:ketCol})
         );
       }),
-      tr2(tc(`${params.length} Parameter · ${okP.length} Memenuhi · ${ngP.length} Melebihi`,{w:CW,b:true,sz:20,bg:'e0f2f1',c:'004d45'}))
+      tr2(tc(`${params.length} Parameter · ${okP.length} Memenuhi · ${ngP.length} Melebihi`,{w:CW,span:cw9.length,b:true,sz:20,bg:'e0f2f1',c:'004d45'}))
     ]);
     return s;
   }
@@ -3353,7 +3402,7 @@ async function exportWord() {
 
     // Sumber air limbah table
     xml+=par(run('Tabel Sumber Air Limbah',{sz:22,b:true,c:'1e293b'}),{bef:80,aft:80});
-    const swCols=[380,3000,1400,1200,1046];
+    const swCols=fitColsKeepFirst([380,3000,1400,1200,1046],CW);
     xml+=mkTbl(swCols,[
       tr2(hc('No',swCols[0])+hc('Nama Sumber / Titik Penaatan',swCols[1])+hc('Debit (m³/hari)',swCols[2])+hc('Debit (m³/jam)',swCols[3])+hc('Debit (m³/det)',swCols[4]),true),
       ...ubmSources.map((s,i)=>{
@@ -3361,7 +3410,7 @@ async function exportWord() {
         const rowBg=i%2?'f5f5f5':null;
         return tr2(tc(i+1,{w:swCols[0],ctr:true,bg:rowBg,sz:18})+tc(s.name||'—',{w:swCols[1],bg:rowBg,sz:18})+tc(fmtN(qd,2),{w:swCols[2],ctr:true,bg:rowBg,sz:18})+tc(fmtN(qd/24,3),{w:swCols[3],ctr:true,bg:rowBg,sz:18})+tc(fmtN(qd/86400,6),{w:swCols[4],ctr:true,bg:rowBg,sz:18}));
       }),
-      tr2(tc('TOTAL',{w:swCols[0]+swCols[1],b:true,bg:'e0f2f1',c:'004d45',sz:19})+tc(fmtN(ubmSources.reduce((s,x)=>s+pNum(x.qDay),0),2),{w:swCols[2],ctr:true,b:true,bg:'e0f2f1',c:'004d45',sz:19})+tc('—',{w:swCols[3],ctr:true,bg:'e0f2f1',sz:18})+tc(fmtN(ubmTotalQi,6),{w:swCols[4],ctr:true,b:true,bg:'e0f2f1',c:'004d45',sz:18}))
+      tr2(tc('TOTAL',{w:swCols[0]+swCols[1],span:2,b:true,bg:'e0f2f1',c:'004d45',sz:19})+tc(fmtN(ubmSources.reduce((s,x)=>s+pNum(x.qDay),0),2),{w:swCols[2],ctr:true,b:true,bg:'e0f2f1',c:'004d45',sz:19})+tc('—',{w:swCols[3],ctr:true,bg:'e0f2f1',sz:18})+tc(fmtN(ubmTotalQi,6),{w:swCols[4],ctr:true,b:true,bg:'e0f2f1',c:'004d45',sz:18}))
     ]);
 
     // Helper: build UBM season table
@@ -3444,13 +3493,13 @@ async function exportWord() {
       // Kolom: No|Parameter|Satuan|C Hulu|C Sumber...|CR Hilir|BM Kelas|[BM Jenis...]|Status|C_maks Hitung|Usulan BM|Alokasi
       const nSrc = ubmSources.length;
       const nJenis = _uniqueJenis.length;
-      const srcW = nSrc > 0 ? Math.min(900, Math.floor(1600/Math.max(nSrc,1))) : 0;
-      const jenisW = nJenis > 0 ? Math.min(850, Math.floor(1400/Math.max(nJenis,1))) : 0;
-      const fixedW = [340,1500,500,600];
-      const trailW = [700,700]; // CR, BM Kelas
-      const afterJenisW = [700,700,700,700]; // Status, C_maks Hitung, Usulan BM, Alokasi
+      const srcW = nSrc > 0 ? Math.min(S(900), Math.floor(S(1600)/Math.max(nSrc,1))) : 0;
+      const jenisW = nJenis > 0 ? Math.min(S(850), Math.floor(S(1400)/Math.max(nJenis,1))) : 0;
+      const fixedW = [NO_COL_W, ...[1500,500,600].map(S)];
+      const trailW = [700,700].map(S); // CR, BM Kelas
+      const afterJenisW = [700,700,700,700].map(S); // Status, C_maks Hitung, Usulan BM, Alokasi
       const used = fixedW.reduce((a,b)=>a+b,0)+nSrc*srcW+trailW.reduce((a,b)=>a+b,0)+nJenis*jenisW+afterJenisW.reduce((a,b)=>a+b,0);
-      const alokasiW = Math.max(600, 9026-used+afterJenisW[3]);
+      const alokasiW = Math.max(S(600), CW-used+afterJenisW[3]);
       const allCols=[...fixedW,...ubmSources.map(()=>srcW),...trailW,..._uniqueJenis.map(()=>jenisW),...afterJenisW.slice(0,3),alokasiW];
       const hdrBgHex = hdrBg; const hdrC = hdrTxt;
 
@@ -3527,14 +3576,12 @@ async function exportWord() {
         // Lebar kolom: Parameter | Satuan | C Hulu | [per sumber] | CR Hilir | BM Sungai | Alokasi | Status
         // Hitung lebar dinamis berdasarkan jumlah sumber
         const nSrc = ubmSources.length || 1;
-        const srcColW = Math.max(700, Math.min(950, Math.floor(2800 / nSrc)));
-        const fixedW = 1800 + 600 + 800 + 900 + 950 + 900 + 1076; // kolom tetap
-        const totalSrcW = srcColW * nSrc;
-        const crCols = [
-          1800, 600, 800,
-          ...ubmSources.map(() => srcColW),
-          900, 950, 900, 1076
-        ];
+        const srcColWBase = Math.max(700, Math.min(950, Math.floor(2800 / nSrc))); // proporsi dasar (belum diskala)
+        const crColsBase = [1800, 600, 800]
+          .concat(ubmSources.map(() => srcColWBase))
+          .concat([900, 950, 900, 1076]);
+        const crCols = fitCols(crColsBase, CW); // regangkan proporsional agar pas penuh ke ujung kertas
+        const srcColW = crCols[3]; // lebar kolom per-sumber setelah diregangkan (semua kolom sumber sama lebar)
 
         // Header sumber — satu kolom per sumber
         const srcHdrCells = ubmSources.map(s =>
@@ -3645,6 +3692,53 @@ async function exportWord() {
   xml+=par(run('Metode: BPM = Q × Baku Mutu × 3,6 (kg/jam), BPA = Q × C Aktual × 3,6 (kg/jam). Status Memenuhi jika BPA < BPM.',{sz:19,it:true,c:'546e7a'}),{aft:60});
   xml+=par(run('Referensi: PP No. 22 Tahun 2021 Lampiran VI — Baku Mutu Air Sungai. Dihitung menggunakan RiverLoad v2.0.',{sz:19,it:true,c:'546e7a'}),{aft:60});
 
+  // ─── BAB TAMBAHAN: DIAGRAM FISHBONE ───────────────────────────
+  let fishboneRel = null; // {rId, base64, cx, cy} kalau berhasil dibuat
+  let nextBab = concBab + 1;
+  if (typeof fishboneBuildSVG === 'function') {
+    try {
+      const svgStr = fishboneBuildSVG();
+      const png = await _svgToPngBase64(svgStr, 2);
+      const cx = _twipsToEMU(CW);
+      const cy = Math.round(cx * (png.height/png.width));
+      fishboneRel = { base64: png.base64, cx, cy };
+      xml+=sp()+sp()+pb();
+      xml+=par(run(`BAB ${nextBab}  DIAGRAM FISHBONE`,{sz:28,b:true,c:'004d45'}),{bef:0,aft:140});
+      xml+=par(run('Diagram skematik posisi titik Outfall sepanjang sungai (Hulu → Hilir), beserta debit air limbah tiap titik dan debit sungai di hulu pada musim hujan/kemarau.',{sz:20,c:'546e7a'}),{aft:140});
+      xml+=`<w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/><wp:docPr id="101" name="Fishbone"/><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="0" name="Fishbone"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="rIdFishboneImg" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>`;
+      nextBab++;
+    } catch(e) { console.error('Fishbone export error:', e); }
+  }
+
+  // ─── BAB TAMBAHAN: TABEL KOORDINAT PEMETAAN ───────────────────
+  {
+    const mkrs = (typeof _markers !== 'undefined') ? _markers : [];
+    xml+=sp()+sp()+pb();
+    xml+=par(run(`BAB ${nextBab}  TABEL KOORDINAT PEMETAAN`,{sz:28,b:true,c:'004d45'}),{bef:0,aft:140});
+    if (mkrs.length && typeof _ptType === 'function' && typeof _ddToDMS === 'function') {
+      xml+=par(run(`Daftar ${mkrs.length} titik yang sudah dipetakan di menu Pemetaan — titik sampling, outfall, inlet, outlet, dan pemantauan hulu/hilir.`,{sz:20,c:'546e7a'}),{aft:120});
+      const koorCols=fitColsKeepFirst([2200,1200,1500,1500,2800],CW);
+      xml+=mkTbl(koorCols,[
+        tr2(hc('No',koorCols[0])+hc('Jenis Titik',koorCols[1])+hc('Nama',koorCols[2])+hc('Lat (DD)',koorCols[3])+hc('Lng / DMS',koorCols[4]),true),
+        ...mkrs.map((m,i)=>{
+          const tInfo = _ptType(m.type);
+          const rowBg = i%2 ? 'f5f5f5' : null;
+          const dmsStr = _ddToDMS(m.lat,true)+'  /  '+_ddToDMS(m.lng,false);
+          return tr2(
+            tc(i+1,{w:koorCols[0],ctr:true,bg:rowBg,sz:18})+
+            tc(tInfo.label||'—',{w:koorCols[1],bg:rowBg,sz:18,c:'004d45',b:true})+
+            tc(m.name||'—',{w:koorCols[2],bg:rowBg,sz:18})+
+            tc(fmtN(m.lat,6)+' , '+fmtN(m.lng,6),{w:koorCols[3],ctr:true,bg:rowBg,sz:17})+
+            tc(dmsStr,{w:koorCols[4],ctr:true,bg:rowBg,sz:17})
+          );
+        })
+      ]);
+    } else {
+      xml+=par(run('Belum ada titik yang ditambahkan di menu Pemetaan untuk sungai ini. Buka menu Pemetaan → Input Lokasi, tambahkan titik sampling/outfall/inlet/outlet/pantau hulu-hilir, lalu generate ulang laporan ini.',{sz:21,it:true,c:'b71c1c'}),{aft:100});
+    }
+    nextBab++;
+  }
+
   // Helper: hitung CR untuk word export (season-aware)
   function _ubmCrForWord(p, Qs, denom, seasonKey){
     if(!denom||denom<=0) return null;
@@ -3657,13 +3751,14 @@ async function exportWord() {
     return (Qs*cHulu+sumQiCi)/denom;
   }
 
-  const sectPr='<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134"/></w:sectPr>';
-  const docXml='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>'+xml+sectPr+'</w:body></w:document>';
+  const sectPr='<w:sectPr><w:pgSz w:w="16838" w:h="11906" w:orient="landscape"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr>';
+  let docXml='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><w:body>'+xml+sectPr+'</w:body></w:document>';
   const zip=new JSZip();
-  zip.file('[Content_Types].xml','<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>');
+  zip.file('[Content_Types].xml','<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/>'+(fishboneRel?'<Default Extension="png" ContentType="image/png"/>':'')+'<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>');
   zip.file('_rels/.rels','<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>');
-  zip.file('word/_rels/document.xml.rels','<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>');
+  zip.file('word/_rels/document.xml.rels','<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>'+(fishboneRel?'<Relationship Id="rIdFishboneImg" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/fishbone.png"/>':'')+'</Relationships>');
   zip.file('word/document.xml',docXml);
+  if (fishboneRel) zip.file('word/media/fishbone.png', fishboneRel.base64, {base64:true});
   zip.file('word/styles.xml','<?xml version="1.0" encoding="UTF-8"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/><w:sz w:val="22"/></w:rPr></w:rPrDefault></w:docDefaults></w:styles>');
   const buf=await zip.generateAsync({type:'arraybuffer',compression:'DEFLATE',compressionOptions:{level:6}});
   const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});

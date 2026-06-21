@@ -2683,7 +2683,7 @@ function nav(p) {
   if(p==='ubm') { ubmSyncFromBPM(); ubmRenderSources(); ubmRenderParams(); ubmWizGoto(1, true); }
   if(p==='modeling') { mdlSync(); }
   if(p==='peta') { setTimeout(function(){ petaOnOpen(); }, 50); }
-  if(p==='fishbone') { setTimeout(function(){ fishboneOnOpen(); }, 50); }
+  if(p==='fishbone') { setTimeout(function(){ if(typeof fishboneRefresh==='function') fishboneRefresh(); }, 50); }
 }
 
 // ─── True wizard Beban Pencemar (satu langkah tampil per waktu) ───
@@ -2762,7 +2762,6 @@ function toggleTheme() {
   document.getElementById('tico').textContent=isDark?'○':'●';
   localStorage.setItem('rl_theme',isDark?'light':'dark');
   setTimeout(()=>{ if(document.getElementById('rpt-body').style.display!=='none') buildReport(); },50);
-  setTimeout(()=>{ if(document.getElementById('page-fishbone')?.classList.contains('active') && typeof fishboneRender==='function') fishboneRender(); },50);
 }
 function applyTheme() {
   const t=localStorage.getItem('rl_theme')||'dark';
@@ -7475,6 +7474,201 @@ function _setProgress(pct, label) {
   </div>
 
 </div>
+
+<!-- ═══ PAGE: FISHBONE ═══════════════════════════════════════════ -->
+<div class="page" id="page-fishbone">
+  <div class="ph">
+    <div>
+      <div class="ph-title">FISHBONE</div>
+      <div class="ph-sub">Diagram skematik posisi Outfall sepanjang sungai — debit musim hujan/kemarau di hulu</div>
+    </div>
+    <div class="ph-acts">
+      <button class="btn btn-outline btn-sm" onclick="fishboneRefresh()">🔄 Perbarui dari Data</button>
+      <button class="btn btn-outline btn-sm" onclick="fishboneDownloadPNG()" style="color:var(--accent);border-color:rgba(62,207,178,.4)">⬇ Unduh PNG</button>
+    </div>
+  </div>
+
+  <div style="font-family:var(--mono);font-size:9.5px;color:var(--txt2);margin-bottom:16px;padding:9px 14px;background:rgba(62,207,178,0.05);border:1px solid var(--brd);border-radius:var(--rs)">
+    ℹ &nbsp;Diagram ini hanya gambaran skematik (bukan skala jarak sebenarnya). Posisi tiap Outfall diatur proporsional sepanjang garis sungai berdasarkan jumlah <strong style="color:var(--accent)">Nama Sumber / Titik Penaatan</strong> yang sudah diisi di menu <span style="color:var(--accent);cursor:pointer;text-decoration:underline" onclick="nav('ubm')">Usulan Baku Mutu</span>. Debit hulu (Q_Hujan / Q_Kemarau) diambil dari menu <span style="color:var(--accent);cursor:pointer;text-decoration:underline" onclick="nav('bpm')">Beban Pencemar</span>.
+  </div>
+
+  <!-- Susun urutan outfall -->
+  <div class="card mb18" id="fishbone-order-card">
+    <div class="card-hd">
+      <div>
+        <div class="card-title">🔢 Susun Urutan Outfall</div>
+        <div class="card-help">Khusus kalau sumber air limbah lebih dari satu — atur urutan dari hulu ke hilir pakai tombol ▲▼. Posisi di diagram otomatis menyesuaikan.</div>
+      </div>
+    </div>
+    <div id="fishbone-order-list"></div>
+  </div>
+
+  <div style="background:#ffffff;border-radius:var(--r);padding:24px;overflow-x:auto;box-shadow:var(--shd)">
+    <div id="fishbone-container" style="min-width:880px"></div>
+  </div>
+
+  <div id="fishbone-empty-hint" style="display:none;margin-top:14px;padding:14px;text-align:center;font-family:var(--mono);font-size:10.5px;color:var(--mute);background:var(--card2);border:1px solid var(--brd2);border-radius:var(--rs)">
+    Belum ada "Nama Sumber / Titik Penaatan" di menu Usulan Baku Mutu — diagram di atas hanya menunjukkan garis HULU → HILIR tanpa titik Outfall.
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   RIVERLOAD — Modul Fishbone Diagram
+   Posisi Outfall proporsional sepanjang garis sungai (Hulu→Hilir)
+   ═══════════════════════════════════════════════════════════════ */
+function fishboneRefresh() {
+  fishboneSyncOrder();
+  fishboneRenderOrderList();
+  var container = document.getElementById('fishbone-container');
+  if (!container) return;
+  container.innerHTML = fishboneBuildSVG();
+  var sources = (typeof ubmSources !== 'undefined' ? ubmSources : []).filter(function(s){ return s.name; });
+  var hint = document.getElementById('fishbone-empty-hint');
+  if (hint) hint.style.display = sources.length ? 'none' : 'block';
+}
+
+/* ─── Urutan outfall (bisa diatur manual, terpisah dari urutan UBM) ───── */
+var _fishboneOrder = []; // array nama, urutan tampilan dari hulu→hilir
+
+function fishboneSyncOrder() {
+  var names = (typeof ubmSources !== 'undefined' ? ubmSources : [])
+    .filter(function(s){ return s.name; }).map(function(s){ return s.name; });
+  var newOrder = _fishboneOrder.filter(function(n){ return names.indexOf(n) >= 0; });
+  names.forEach(function(n){ if (newOrder.indexOf(n) < 0) newOrder.push(n); });
+  _fishboneOrder = newOrder;
+}
+
+function fishboneMove(idx, dir) {
+  var j = idx + dir;
+  if (j < 0 || j >= _fishboneOrder.length) return;
+  var tmp = _fishboneOrder[idx]; _fishboneOrder[idx] = _fishboneOrder[j]; _fishboneOrder[j] = tmp;
+  fishboneRenderOrderList();
+  var container = document.getElementById('fishbone-container');
+  if (container) container.innerHTML = fishboneBuildSVG();
+}
+
+function fishboneRenderOrderList() {
+  var el = document.getElementById('fishbone-order-list');
+  if (!el) return;
+  if (!_fishboneOrder.length) {
+    el.innerHTML = '<div style="text-align:center;padding:14px 0;font-family:var(--mono);font-size:10.5px;color:var(--mute)">Belum ada Nama Sumber / Titik Penaatan — isi dulu di menu Usulan Baku Mutu.</div>';
+    return;
+  }
+  el.innerHTML = _fishboneOrder.map(function(name, i){
+    var pos = (i+1)+'/'+(_fishboneOrder.length);
+    return '<div style="display:flex;align-items:center;gap:9px;padding:8px 11px;background:var(--card2);border:1px solid var(--brd2);border-radius:var(--rs);margin-bottom:5px">'
+      + '<span style="font-family:var(--mono);font-size:9px;font-weight:700;color:var(--accent);background:var(--bg2);border-radius:6px;padding:2px 7px;flex-shrink:0">'+(i+1)+'</span>'
+      + '<span style="flex:1;font-size:11.5px;color:var(--txt);font-weight:500">'+_e(name)+'</span>'
+      + '<span style="font-family:var(--mono);font-size:8.5px;color:var(--mute);flex-shrink:0">posisi '+pos+'</span>'
+      + '<button onclick="fishboneMove('+i+',-1)" '+(i===0?'disabled':'')+' style="width:24px;height:24px;border-radius:6px;border:1px solid var(--brd2);background:var(--bg2);color:'+(i===0?'var(--mute)':'var(--txt)')+';cursor:'+(i===0?'not-allowed':'pointer')+';font-size:10px">▲</button>'
+      + '<button onclick="fishboneMove('+i+',1)" '+(i===_fishboneOrder.length-1?'disabled':'')+' style="width:24px;height:24px;border-radius:6px;border:1px solid var(--brd2);background:var(--bg2);color:'+(i===_fishboneOrder.length-1?'var(--mute)':'var(--txt)')+';cursor:'+(i===_fishboneOrder.length-1?'not-allowed':'pointer')+';font-size:10px">▼</button>'
+      + '</div>';
+  }).join('');
+}
+
+function fishboneBuildSVG() {
+  var allSources = (typeof ubmSources !== 'undefined' ? ubmSources : []).filter(function(s){ return s.name; });
+  var byName = {}; allSources.forEach(function(s){ byName[s.name] = s; });
+  var sources = (_fishboneOrder.length ? _fishboneOrder : allSources.map(function(s){return s.name;}))
+    .map(function(nm){ return byName[nm]; }).filter(Boolean);
+  var n = sources.length;
+
+  var qDryRaw = (document.getElementById('q-dry')?.value || '').toString().replace(',', '.');
+  var qWetRaw = (document.getElementById('q-wet')?.value || '').toString().replace(',', '.');
+  var qDry = parseFloat(qDryRaw) || 0; // m3/detik, kemarau
+  var qWet = parseFloat(qWetRaw) || 0; // m3/detik, hujan
+  var qDryDay = qDry * 86400;
+  var qWetDay = qWet * 86400;
+  var fmt = (typeof fmtN === 'function') ? fmtN : function(v,d){ return (v||0).toFixed(d==null?2:d); };
+
+  // Margin kiri-kanan dilebarkan supaya label HULU/HILIR & teks debit tidak terpotong viewBox
+  var leftX = 300, rightMargin = 165;
+  var W = Math.max(980, leftX + rightMargin + (n + 1) * 170);
+  var H = 380;
+  var lineY = H / 2;
+  var rightX = W - rightMargin;
+  var lineLen = rightX - leftX;
+  var ARROW_LEN = 52, GAP = 10;
+
+  function esc(s){ return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  var svg = '<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" '
+    + 'style="width:100%;height:auto;display:block;font-family:Arial,Helvetica,sans-serif;background:#ffffff">';
+  svg += '<defs><marker id="fbArrow" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">'
+       + '<path d="M0,0 L9,4.5 L0,9 Z" fill="#142d6e"/></marker></defs>';
+
+  // Garis sungai (Hulu → Hilir)
+  svg += '<line x1="'+leftX+'" y1="'+lineY+'" x2="'+(rightX+30)+'" y2="'+lineY+'" stroke="#142d6e" stroke-width="4" marker-end="url(#fbArrow)"/>';
+  svg += '<circle cx="'+leftX+'" cy="'+lineY+'" r="6.5" fill="#142d6e"/>';
+
+  // Label HULU + debit — rata kanan, dekat ke garis sungai
+  svg += '<text x="'+(leftX-18)+'" y="'+(lineY-18)+'" text-anchor="end" font-size="20" font-weight="bold" fill="#111">HULU</text>';
+  svg += '<text x="'+(leftX-18)+'" y="'+(lineY+9)+'" text-anchor="end" font-size="13" fill="#222">Q_Hujan = '+fmt(qWetDay,(qWetDay<10?2:1))+' m&#179;/hari</text>';
+  svg += '<text x="'+(leftX-18)+'" y="'+(lineY+26)+'" text-anchor="end" font-size="13" fill="#222">Q_Kemarau = '+fmt(qDryDay,(qDryDay<10?2:1))+' m&#179;/hari</text>';
+
+  // Label HILIR — dipusatkan vertikal pada tinggi garis yang sama
+  svg += '<text x="'+(rightX+45)+'" y="'+(lineY+7)+'" font-size="20" font-weight="bold" fill="#111">HILIR</text>';
+
+  // Titik-titik Outfall, posisi proporsional: i/(n+1), urutan sesuai _fishboneOrder
+  sources.forEach(function(s, idx){
+    var i = idx + 1;
+    var frac = i / (n + 1);
+    var x = leftX + lineLen * frac;
+    var below = (i % 2 === 1); // ganjil = di bawah, genap = di atas (selang-seling)
+    var qVal = (s.qDay !== '' && s.qDay != null && !isNaN(parseFloat(s.qDay))) ? parseFloat(s.qDay) : null;
+    var qTxt = qVal != null ? fmt(qVal, (qVal < 10 ? 2 : 1)) : '—';
+    var name = s.name || ('Outfall ' + i);
+
+    svg += '<circle cx="'+x+'" cy="'+lineY+'" r="6.5" fill="#142d6e"/>';
+
+    if (below) {
+      svg += '<line x1="'+x+'" y1="'+(lineY+ARROW_LEN+GAP)+'" x2="'+x+'" y2="'+(lineY+GAP)+'" stroke="#142d6e" stroke-width="2.3" marker-end="url(#fbArrow)"/>';
+      svg += '<text x="'+x+'" y="'+(lineY+ARROW_LEN+GAP+22)+'" text-anchor="middle" font-size="15.5" font-weight="bold" fill="#111">'+esc(name)+'</text>';
+      svg += '<text x="'+x+'" y="'+(lineY+ARROW_LEN+GAP+42)+'" text-anchor="middle" font-size="13" fill="#222">(Q keluar)</text>';
+      svg += '<text x="'+x+'" y="'+(lineY+ARROW_LEN+GAP+61)+'" text-anchor="middle" font-size="13" fill="#222">Q = '+qTxt+' m&#179;/hari</text>';
+    } else {
+      svg += '<line x1="'+x+'" y1="'+(lineY-ARROW_LEN-GAP)+'" x2="'+x+'" y2="'+(lineY-GAP)+'" stroke="#142d6e" stroke-width="2.3" marker-end="url(#fbArrow)"/>';
+      svg += '<text x="'+x+'" y="'+(lineY-ARROW_LEN-GAP-61)+'" text-anchor="middle" font-size="15.5" font-weight="bold" fill="#111">'+esc(name)+'</text>';
+      svg += '<text x="'+x+'" y="'+(lineY-ARROW_LEN-GAP-42)+'" text-anchor="middle" font-size="13" fill="#222">(Q keluar)</text>';
+      svg += '<text x="'+x+'" y="'+(lineY-ARROW_LEN-GAP-22)+'" text-anchor="middle" font-size="13" fill="#222">Q = '+qTxt+' m&#179;/hari</text>';
+    }
+  });
+
+  svg += '</svg>';
+  return svg;
+}
+
+function fishboneDownloadPNG() {
+  var svgEl = document.querySelector('#fishbone-container svg');
+  if (!svgEl) { if(typeof toast==='function') toast('⚠ Diagram belum tersedia','err'); return; }
+  var vb = svgEl.viewBox.baseVal;
+  var svgData = new XMLSerializer().serializeToString(svgEl);
+  var svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+  var url = URL.createObjectURL(svgBlob);
+  var img = new Image();
+  img.onload = function() {
+    var scale = 2;
+    var canvas = document.createElement('canvas');
+    canvas.width = vb.width * scale;
+    canvas.height = vb.height * scale;
+    var ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.scale(scale, scale);
+    ctx.drawImage(img, 0, 0, vb.width, vb.height);
+    URL.revokeObjectURL(url);
+    canvas.toBlob(function(blob){
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'fishbone-diagram.png';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    });
+  };
+  img.onerror = function(){ if(typeof toast==='function') toast('⚠ Gagal membuat PNG','err'); URL.revokeObjectURL(url); };
+  img.src = url;
+}
+</script>
 <script>
 /* ═══════════════════════════════════════════════════════════════
    RIVERLOAD — Modul Peta Interaktif v3
@@ -8415,367 +8609,6 @@ function petaOnOpen() {
 }
 </script>
 
-
-<!-- ══════════════════════════════════════════════════════════
-     MODUL FISHBONE — Visualisasi sederhana Hulu → Outfall → Hilir
-     Menggunakan data titik dari modul Pemetaan (_markers) dan
-     debit sumber air limbah dari modul Usulan Baku Mutu (ubmSources)
-     ══════════════════════════════════════════════════════════ -->
-<div class="page" id="page-fishbone">
-
-  <div class="ph">
-    <div>
-      <div class="ph-title">FISHBONE</div>
-      <div class="ph-sub">Posisi Hulu · Outfall · Hilir dalam satu alur sederhana</div>
-    </div>
-    <div class="ph-acts">
-      <button class="btn btn-outline btn-sm" onclick="fishboneAutoOrder()">↺ Urutkan Otomatis</button>
-      <button class="btn btn-outline btn-sm" onclick="fishboneDownloadPNG()">⬇ Unduh PNG</button>
-    </div>
-  </div>
-
-  <!-- Glosarium bahasa awam -->
-  <div class="glossary-box mb18">
-    <div class="gi">🐟</div>
-    <div class="gt">
-      <b>Diagram Fishbone</b> menampilkan posisi seluruh <span class="term">Titik Outfall</span> di antara <span class="term">Titik Pantau Hulu</span> dan <span class="term">Titik Pantau Hilir</span> secara sederhana — lengkap dengan debit air limbah tiap outfall serta debit sungai musim hujan &amp; kemarau di hulu.
-      Titik diambil otomatis dari menu <strong style="color:var(--accent)">Pemetaan</strong>; debit tiap outfall disinkronkan dari nama sumber yang sama di menu <strong style="color:var(--accent)">Usulan Baku Mutu → Sumber Air Limbah</strong>.
-    </div>
-  </div>
-
-  <!-- KPI ringkas -->
-  <div class="kpi-grid">
-    <div class="kpi">
-      <div class="kpi-lbl">Sungai</div>
-      <div class="kpi-val" id="fb-kpi-river" style="font-size:14.5px">—</div>
-    </div>
-    <div class="kpi" style="--kc:#4488ff">
-      <div class="kpi-lbl">Q Hujan (Hulu)</div>
-      <div class="kpi-val" id="fb-kpi-wet">—</div>
-      <div class="kpi-unit">m³/hari</div>
-    </div>
-    <div class="kpi" style="--kc:#f5c030">
-      <div class="kpi-lbl">Q Kemarau (Hulu)</div>
-      <div class="kpi-val" id="fb-kpi-dry">—</div>
-      <div class="kpi-unit">m³/hari</div>
-    </div>
-    <div class="kpi" style="--kc:#f5a623">
-      <div class="kpi-lbl">Jumlah Outfall</div>
-      <div class="kpi-val" id="fb-kpi-count">0</div>
-      <div class="kpi-unit">titik</div>
-    </div>
-  </div>
-
-  <!-- State kosong -->
-  <div id="fb-empty" style="display:none;padding:40px 20px;text-align:center;background:var(--card);border:1px dashed var(--brd);border-radius:var(--r)">
-    <div style="font-size:30px;margin-bottom:10px">🐟</div>
-    <div style="font-family:var(--head);font-size:15px;color:var(--txt);margin-bottom:6px">Belum ada titik untuk ditampilkan</div>
-    <div style="font-family:var(--mono);font-size:11px;color:var(--mute);max-width:440px;margin:0 auto 16px;line-height:1.6">Tambahkan minimal satu Titik Pantau Hulu, Titik Pantau Hilir, atau Titik Outfall terlebih dahulu di menu Pemetaan.</div>
-    <button class="btn btn-outline btn-sm" onclick="nav('peta')">🗺 Buka Menu Pemetaan</button>
-  </div>
-
-  <!-- Konten utama -->
-  <div id="fb-content" style="display:none">
-    <div class="card mb18">
-      <div class="card-hd">
-        <div>
-          <div class="card-title">Diagram Fishbone</div>
-          <div class="card-help">Garis utama mewakili alur sungai dari Hulu ke Hilir; tiap titik Outfall menunjukkan posisi &amp; debit air limbah yang masuk ke sungai.</div>
-        </div>
-      </div>
-      <div id="fishbone-svg-wrap" style="overflow-x:auto;border-radius:var(--rs)"></div>
-    </div>
-
-    <div class="card">
-      <div class="card-hd">
-        <div>
-          <div class="card-title">Urutan Titik Outfall (Hulu → Hilir)</div>
-          <div class="card-help">Urutan dihitung otomatis berdasarkan jarak dari Titik Pantau Hulu. Geser dengan tombol ▲▼ bila urutan belum sesuai arah aliran sungai sebenarnya.</div>
-        </div>
-      </div>
-      <div id="fishbone-order-list"></div>
-    </div>
-  </div>
-
-</div>
-<script>
-/* ═══════════════════════════════════════════════════════════════
-   FISHBONE — state & render
-   ═══════════════════════════════════════════════════════════════ */
-var FISHBONE_ORDER_KEY = 'rl_fishbone_order_v1';
-var fishboneOrder = []; // array id marker outfall — urutan manual (kosong = otomatis)
-
-function _fbCv(name){
-  try{ return (getComputedStyle(document.documentElement).getPropertyValue(name)||'').trim(); }
-  catch(e){ return ''; }
-}
-
-function fishboneLoadOrder(){
-  try{
-    var raw = localStorage.getItem(FISHBONE_ORDER_KEY);
-    fishboneOrder = raw ? (JSON.parse(raw)||[]) : [];
-  }catch(e){ fishboneOrder = []; }
-}
-function fishboneSaveOrder(){
-  try{ localStorage.setItem(FISHBONE_ORDER_KEY, JSON.stringify(fishboneOrder)); }catch(e){}
-}
-
-function fishboneDist(a,b){
-  var dl=a.lat-b.lat, dn=a.lng-b.lng;
-  return Math.sqrt(dl*dl+dn*dn);
-}
-
-/* ─── Kumpulkan & urutkan titik dari data Pemetaan ───────────────── */
-function fishboneGetPoints(){
-  var hulu  = _markers.filter(function(m){return m.type==='hulu';})[0]  || null;
-  var hilir = _markers.filter(function(m){return m.type==='hilir';})[0] || null;
-  var outfalls = _markers.filter(function(m){return m.type==='outfall';}).slice();
-
-  var ref = hulu || hilir;
-  if (ref && outfalls.length > 1) {
-    outfalls.sort(function(a,b){
-      var da=fishboneDist(ref,a), db=fishboneDist(ref,b);
-      return hulu ? (da-db) : (db-da);
-    });
-  }
-
-  // Terapkan urutan manual tersimpan, hanya bila persis berisi set id yang sama
-  if (outfalls.length) {
-    var ids = outfalls.map(function(m){return m.id;});
-    var sameSet = fishboneOrder.length === ids.length &&
-      fishboneOrder.every(function(id){return ids.indexOf(id)>=0;});
-    if (sameSet) {
-      outfalls = fishboneOrder.map(function(id){
-        return outfalls.find(function(m){return m.id===id;});
-      });
-    } else {
-      fishboneOrder = ids;
-      fishboneSaveOrder();
-    }
-  } else if (fishboneOrder.length) {
-    fishboneOrder = [];
-    fishboneSaveOrder();
-  }
-
-  return {hulu:hulu, hilir:hilir, outfalls:outfalls};
-}
-
-/* ─── Cocokkan debit outfall dari nama sumber di Usulan Baku Mutu ── */
-function fishboneMatchQ(name){
-  if (!name) return null;
-  var n = String(name).trim().toLowerCase();
-  if (!n) return null;
-  var list = (typeof ubmSources !== 'undefined') ? ubmSources : [];
-  var found = list.find(function(s){ return (s.name||'').trim().toLowerCase() === n; });
-  return found ? pNum(found.qDay) : null;
-}
-
-/* ─── Reorder manual ──────────────────────────────────────────── */
-function fishboneMoveUp(id){
-  var i = fishboneOrder.indexOf(id);
-  if (i > 0) {
-    var t = fishboneOrder[i-1]; fishboneOrder[i-1] = fishboneOrder[i]; fishboneOrder[i] = t;
-    fishboneSaveOrder(); fishboneRender();
-  }
-}
-function fishboneMoveDown(id){
-  var i = fishboneOrder.indexOf(id);
-  if (i >= 0 && i < fishboneOrder.length-1) {
-    var t = fishboneOrder[i+1]; fishboneOrder[i+1] = fishboneOrder[i]; fishboneOrder[i] = t;
-    fishboneSaveOrder(); fishboneRender();
-  }
-}
-function fishboneAutoOrder(){
-  fishboneOrder = [];
-  fishboneSaveOrder();
-  fishboneRender();
-  if (typeof toast === 'function') toast('✅ Urutan direset otomatis berdasarkan jarak dari Hulu','ok');
-}
-
-/* ─── Render utama ────────────────────────────────────────────── */
-function fishboneRender(){
-  var data = fishboneGetPoints();
-  var hulu = data.hulu, hilir = data.hilir, outfalls = data.outfalls;
-
-  var rName   = document.getElementById('r-name')?.value?.trim() || '';
-  var qDryDet = (typeof getQsDry === 'function') ? getQsDry() : 0;
-  var qWetDet = (typeof getQsWet === 'function') ? getQsWet() : 0;
-  var qDryHari = qDryDet * 86400;
-  var qWetHari = qWetDet * 86400;
-
-  var elRiver = document.getElementById('fb-kpi-river'); if (elRiver) elRiver.textContent = rName || '—';
-  var elDry   = document.getElementById('fb-kpi-dry');   if (elDry)   elDry.textContent   = qDryHari>0 ? fmtN(qDryHari,2) : '—';
-  var elWet   = document.getElementById('fb-kpi-wet');   if (elWet)   elWet.textContent   = qWetHari>0 ? fmtN(qWetHari,2) : '—';
-  var elCnt   = document.getElementById('fb-kpi-count'); if (elCnt)   elCnt.textContent   = outfalls.length;
-
-  var empty = document.getElementById('fb-empty');
-  var content = document.getElementById('fb-content');
-  var hasAny = !!(hulu || hilir || outfalls.length);
-  if (!hasAny) {
-    if (empty)   empty.style.display = 'block';
-    if (content) content.style.display = 'none';
-    return;
-  }
-  if (empty)   empty.style.display = 'none';
-  if (content) content.style.display = 'block';
-
-  var wrap = document.getElementById('fishbone-svg-wrap');
-  if (wrap) wrap.innerHTML = fishboneBuildSVG(hulu, hilir, outfalls, qDryHari, qWetHari, rName);
-
-  var listEl = document.getElementById('fishbone-order-list');
-  if (listEl) {
-    if (!outfalls.length) {
-      listEl.innerHTML = '<div style="padding:14px;text-align:center;font-family:var(--mono);font-size:10.5px;color:var(--mute)">Belum ada titik Outfall — tambahkan di menu Pemetaan</div>';
-    } else {
-      listEl.innerHTML = outfalls.map(function(m,i){
-        var q = fishboneMatchQ(m.name);
-        var qLabel = q!=null ? (fmtN(q,2)+' m³/hari') : 'Data debit belum ditemukan';
-        var qColor = q!=null ? 'var(--accent)' : 'var(--mute)';
-        var warn = q==null
-          ? '<div style="font-family:var(--mono);font-size:9px;color:var(--amber);margin-top:2px">⚠ Samakan nama dengan Sumber Air Limbah di menu Usulan Baku Mutu</div>'
-          : '';
-        return '<div style="display:grid;grid-template-columns:26px 1fr auto;gap:10px;align-items:center;padding:9px 12px;background:var(--bg2);border:1px solid var(--brd2);border-radius:var(--rs);margin-bottom:6px">'
-          + '<div style="font-family:var(--mono);font-size:11px;color:var(--mute);text-align:center">'+(i+1)+'</div>'
-          + '<div><div style="font-family:var(--head);font-size:12.5px;color:var(--txt);font-weight:600">'+esc(m.name||'Outfall')+'</div>'
-          + '<div style="font-family:var(--mono);font-size:10px;color:'+qColor+';margin-top:2px">'+qLabel+'</div>'+warn+'</div>'
-          + '<div style="display:flex;gap:4px">'
-          + '<button class="btn btn-outline btn-xs" onclick="fishboneMoveUp(\''+m.id+'\')" '+(i===0?'disabled':'')+' title="Pindah ke arah Hulu">▲</button>'
-          + '<button class="btn btn-outline btn-xs" onclick="fishboneMoveDown(\''+m.id+'\')" '+(i===outfalls.length-1?'disabled':'')+' title="Pindah ke arah Hilir">▼</button>'
-          + '</div></div>';
-      }).join('');
-    }
-  }
-}
-
-/* ─── Bangun SVG diagram ──────────────────────────────────────── */
-function fishboneBuildSVG(hulu, hilir, outfalls, qDryHari, qWetHari, rName){
-  var bg2   = _fbCv('--bg2')   || '#0d1e35';
-  var txt   = _fbCv('--txt')   || '#e8f4f0';
-  var txt2  = _fbCv('--txt2')  || '#9abcb4';
-  var mute  = _fbCv('--mute')  || '#4a7870';
-  var accent= _fbCv('--accent')|| '#4aeacc';
-  var huluColor  = (typeof PETA_PT_TYPES!=='undefined' && PETA_PT_TYPES.hulu)  ? PETA_PT_TYPES.hulu.color  : '#4488ff';
-  var hilirColor = (typeof PETA_PT_TYPES!=='undefined' && PETA_PT_TYPES.hilir) ? PETA_PT_TYPES.hilir.color : '#9b59b6';
-  var outColor   = (typeof PETA_PT_TYPES!=='undefined' && PETA_PT_TYPES.outfall) ? PETA_PT_TYPES.outfall.color : '#f5a623';
-
-  var n = outfalls.length;
-  var spacing  = 200;
-  var infoW    = 280;   // ruang blok teks HULU di kiri
-  var rightPad = 130;   // ruang teks HILIR di kanan
-  var lineStartX = infoW;
-  var hilirX = lineStartX + (n+1)*spacing;
-  var width  = hilirX + rightPad;
-  var height = 460;
-  var spineY = 235;
-
-  function outX(i){ return lineStartX + (i+1)*spacing; }
-
-  var svg = '';
-  svg += '<svg viewBox="0 0 '+width+' '+height+'" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;min-width:560px">';
-  svg += '<defs>'
-       + '<marker id="fbArrowMain" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="'+accent+'"/></marker>'
-       + '<marker id="fbArrowDown" markerWidth="10" markerHeight="10" refX="3" refY="7" orient="auto"><path d="M0,0 L6,0 L3,8 Z" fill="'+outColor+'"/></marker>'
-       + '<marker id="fbArrowUp" markerWidth="10" markerHeight="10" refX="3" refY="1" orient="auto"><path d="M0,8 L6,8 L3,0 Z" fill="'+outColor+'"/></marker>'
-       + '</defs>';
-
-  svg += '<rect x="0" y="0" width="'+width+'" height="'+height+'" rx="14" fill="'+bg2+'"/>';
-
-  if (rName) {
-    svg += '<text x="18" y="26" font-size="11" fill="'+mute+'" font-family="Inter,sans-serif">'+esc(rName)+'</text>';
-  }
-
-  // garis utama
-  svg += '<line x1="'+lineStartX+'" y1="'+spineY+'" x2="'+(hilirX-14)+'" y2="'+spineY+'" stroke="'+accent+'" stroke-width="4" stroke-linecap="round" marker-end="url(#fbArrowMain)"/>';
-
-  // titik Hulu
-  svg += '<circle cx="'+lineStartX+'" cy="'+spineY+'" r="7" fill="'+(hulu?huluColor:mute)+'"'+(hulu?'':' opacity="0.4" stroke="'+mute+'" stroke-dasharray="2,2"')+'/>';
-  svg += '<text x="18" y="'+(spineY-15)+'" font-size="19" font-weight="700" fill="'+huluColor+'" font-family="Sora,Inter,sans-serif">HULU</text>';
-  if (!hulu) {
-    svg += '<text x="18" y="'+(spineY+5)+'" font-size="10" fill="'+mute+'">(titik belum diisi di Pemetaan)</text>';
-  }
-  var qWetLabel = qWetHari>0 ? ('Q_Hujan = '+fmtN(qWetHari,2)+' m³/hari') : 'Q_Hujan = — (belum diisi)';
-  var qDryLabel = qDryHari>0 ? ('Q_Kemarau = '+fmtN(qDryHari,2)+' m³/hari') : 'Q_Kemarau = — (belum diisi)';
-  svg += '<text x="18" y="'+(spineY+28)+'" font-size="12.5" fill="'+txt2+'" font-family="Inter,sans-serif">'+esc(qWetLabel)+'</text>';
-  svg += '<text x="18" y="'+(spineY+46)+'" font-size="12.5" fill="'+txt2+'" font-family="Inter,sans-serif">'+esc(qDryLabel)+'</text>';
-
-  // titik Hilir
-  svg += '<circle cx="'+(hilirX-7)+'" cy="'+spineY+'" r="7" fill="'+(hilir?hilirColor:mute)+'"'+(hilir?'':' opacity="0.4" stroke="'+mute+'" stroke-dasharray="2,2"')+'/>';
-  svg += '<text x="'+(hilirX+10)+'" y="'+(spineY+6)+'" font-size="19" font-weight="700" fill="'+hilirColor+'" font-family="Sora,Inter,sans-serif">HILIR</text>';
-  if (!hilir) {
-    svg += '<text x="'+(hilirX+10)+'" y="'+(spineY+24)+'" font-size="10" fill="'+mute+'">(titik belum diisi)</text>';
-  }
-
-  // titik-titik Outfall
-  outfalls.forEach(function(m, i){
-    var x = outX(i);
-    var top = (i % 2 === 1); // genap=bawah, ganjil=atas (selang-seling)
-    var q = fishboneMatchQ(m.name);
-    var qLabel = q!=null ? ('Q = '+fmtN(q,2)+' m³/hari') : 'Q = — (data belum ada)';
-    var qColor = q!=null ? txt2 : mute;
-
-    svg += '<circle cx="'+x+'" cy="'+spineY+'" r="7" fill="'+outColor+'"/>';
-
-    if (top) {
-      var arrowFar = spineY-95, arrowNear = spineY-14;
-      var yQ = arrowFar-14, ySub = yQ-20, yTitle = ySub-20;
-      svg += '<line x1="'+x+'" y1="'+arrowFar+'" x2="'+x+'" y2="'+arrowNear+'" stroke="'+outColor+'" stroke-width="2.5" marker-end="url(#fbArrowDown)"/>';
-      svg += '<text x="'+x+'" y="'+yTitle+'" text-anchor="middle" font-size="14.5" font-weight="700" fill="'+txt+'" font-family="Sora,Inter,sans-serif">'+esc(m.name||('Outfall '+(i+1)))+'</text>';
-      svg += '<text x="'+x+'" y="'+ySub+'" text-anchor="middle" font-size="11" fill="'+mute+'" font-family="Inter,sans-serif">(Q keluar)</text>';
-      svg += '<text x="'+x+'" y="'+yQ+'" text-anchor="middle" font-size="12.5" fill="'+qColor+'" font-family="Inter,sans-serif">'+esc(qLabel)+'</text>';
-    } else {
-      var arrowFar2 = spineY+95, arrowNear2 = spineY+14;
-      var yQ2 = arrowFar2+14, ySub2 = yQ2+20, yTitle2 = ySub2+20;
-      svg += '<line x1="'+x+'" y1="'+arrowFar2+'" x2="'+x+'" y2="'+arrowNear2+'" stroke="'+outColor+'" stroke-width="2.5" marker-end="url(#fbArrowUp)"/>';
-      svg += '<text x="'+x+'" y="'+yQ2+'" text-anchor="middle" font-size="12.5" fill="'+qColor+'" font-family="Inter,sans-serif">'+esc(qLabel)+'</text>';
-      svg += '<text x="'+x+'" y="'+ySub2+'" text-anchor="middle" font-size="11" fill="'+mute+'" font-family="Inter,sans-serif">(Q keluar)</text>';
-      svg += '<text x="'+x+'" y="'+yTitle2+'" text-anchor="middle" font-size="14.5" font-weight="700" fill="'+txt+'" font-family="Sora,Inter,sans-serif">'+esc(m.name||('Outfall '+(i+1)))+'</text>';
-    }
-  });
-
-  svg += '</svg>';
-  return svg;
-}
-
-/* ─── Unduh diagram sebagai PNG (HD) ──────────────────────────── */
-function fishboneDownloadPNG(){
-  var svgEl = document.querySelector('#fishbone-svg-wrap svg');
-  if (!svgEl) { if (typeof toast==='function') toast('⚠ Diagram belum tersedia','err'); return; }
-  var svgData = new XMLSerializer().serializeToString(svgEl);
-  var svgBlob = new Blob([svgData], {type:'image/svg+xml;charset=utf-8'});
-  var url = URL.createObjectURL(svgBlob);
-  var img = new Image();
-  img.onload = function(){
-    var scale = 2;
-    var vb = svgEl.viewBox && svgEl.viewBox.baseVal;
-    var w = (vb && vb.width)  ? vb.width  : (svgEl.clientWidth  || 1200);
-    var h = (vb && vb.height) ? vb.height : (svgEl.clientHeight || 460);
-    var canvas = document.createElement('canvas');
-    canvas.width = w*scale; canvas.height = h*scale;
-    var ctx = canvas.getContext('2d');
-    ctx.scale(scale, scale);
-    ctx.drawImage(img, 0, 0, w, h);
-    URL.revokeObjectURL(url);
-    canvas.toBlob(function(blob){
-      if (!blob) { if (typeof toast==='function') toast('⚠ Gagal membuat gambar','err'); return; }
-      var rn = (document.getElementById('r-name')?.value || 'sungai').trim().replace(/\s+/g,'_') || 'sungai';
-      var a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'Fishbone_'+rn+'.png';
-      a.click();
-      if (typeof toast==='function') toast('✅ Diagram fishbone diunduh','ok');
-    }, 'image/png');
-  };
-  img.onerror = function(){ URL.revokeObjectURL(url); if (typeof toast==='function') toast('⚠ Gagal membuat gambar','err'); };
-  img.src = url;
-}
-
-/* ─── Entry point ─────────────────────────────────────────────── */
-function fishboneOnOpen(){
-  if (!_map) _load();
-  fishboneLoadOrder();
-  fishboneRender();
-}
-</script>
 
 
 <!-- ══ HISTORY OVERLAY ══════════════════════════════════════ -->

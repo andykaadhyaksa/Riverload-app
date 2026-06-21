@@ -3981,16 +3981,22 @@ function saveAuto(){
 }
 
 function saveProject(){
-  const s   = getState();
-  const rn  = (document.getElementById('r-name')?.value.trim() || 'sungai').replace(/\s+/g,'_');
-  const blob= new Blob([JSON.stringify(s,null,2)],{type:'application/json'});
+  if(typeof sitesSnapshotActive==='function') sitesSnapshotActive();
+  const multiSite = (typeof riverSites!=='undefined' && riverSites.length)
+    ? { __riverloadMultiSite:true, _v:1, sites:riverSites, activeSiteId:activeSiteId }
+    : { __riverloadMultiSite:true, _v:1, sites:[{id:'site_1',name:'Sungai 1',state:getState()}], activeSiteId:'site_1' };
+  const activeName = (riverSites && riverSites.find(s=>s.id===activeSiteId)) ?
+    _siteLabel(riverSites.find(s=>s.id===activeSiteId)) : (document.getElementById('r-name')?.value.trim() || 'sungai');
+  const rn  = activeName.replace(/\s+/g,'_');
+  const blob= new Blob([JSON.stringify(multiSite,null,2)],{type:'application/json'});
   const url = URL.createObjectURL(blob);
   const a   = document.createElement('a');
   const d   = new Date();
   const stamp=d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0');
-  a.href=url; a.download=`RiverLoad_${rn}_${stamp}.riverload`;
+  const nSites = multiSite.sites.length;
+  a.href=url; a.download=`RiverLoad_${rn}${nSites>1?('_+'+(nSites-1)+'sungai'):''}_${stamp}.riverload`;
   a.click(); URL.revokeObjectURL(url);
-  toast('✓ Proyek disimpan — semua data tersimpan','ok');
+  toast(`✓ Proyek disimpan — ${nSites} sungai, semua data tersimpan`,'ok');
 }
 
 function loadProject(input){
@@ -3998,8 +4004,27 @@ function loadProject(input){
   const reader=new FileReader();
   reader.onload=e=>{
     try{
-      restoreState(JSON.parse(e.target.result));
-      toast('✓ Proyek dimuat — semua data berhasil dipulihkan','ok');
+      const parsed = JSON.parse(e.target.result);
+      if(parsed && parsed.__riverloadMultiSite && Array.isArray(parsed.sites) && parsed.sites.length){
+        // Format baru — proyek multi-sungai, muat semuanya
+        riverSites = parsed.sites;
+        activeSiteId = parsed.activeSiteId || riverSites[0].id;
+        const active = riverSites.find(s=>s.id===activeSiteId) || riverSites[0];
+        restoreState(active.state);
+        if(typeof sitesPersist==='function') sitesPersist();
+        if(typeof sitesRenderSwitcher==='function') sitesRenderSwitcher();
+        toast(`✓ Proyek dimuat — ${riverSites.length} sungai berhasil dipulihkan`,'ok');
+      } else {
+        // Format lama (single-site) — bungkus jadi satu sungai, ganti seluruh proyek
+        const id = 'site_'+Date.now();
+        const nm = parsed?.bpm?.name || 'Sungai 1';
+        riverSites = [{ id:id, name:nm, state:parsed }];
+        activeSiteId = id;
+        restoreState(parsed);
+        if(typeof sitesPersist==='function') sitesPersist();
+        if(typeof sitesRenderSwitcher==='function') sitesRenderSwitcher();
+        toast('✓ Proyek lama dimuat (1 sungai) — semua data berhasil dipulihkan','ok');
+      }
     } catch(err){
       toast('⚠ File tidak valid atau rusak','err');
       console.error(err);
@@ -6192,16 +6217,22 @@ function historySave(list) {
 
 // ─── Simpan proyek ke riwayat ─────────────────────────────────
 function historySaveProject(nameOverride) {
-  const state = getState();
+  if(typeof sitesSnapshotActive==='function') sitesSnapshotActive();
+  const sitesData = (typeof riverSites!=='undefined' && riverSites.length)
+    ? riverSites
+    : [{ id:'site_1', name:'Sungai 1', state:getState() }];
+  const aId = (typeof activeSiteId!=='undefined' && activeSiteId) ? activeSiteId : sitesData[0].id;
+  const activeSite = sitesData.find(s=>s.id===aId) || sitesData[0];
   const name  = nameOverride
-    || (document.getElementById('r-name')?.value.trim())
+    || (activeSite.state?.bpm?.name)
+    || activeSite.name
     || 'Proyek Tanpa Nama';
 
   const list = historyLoad();
   const id   = 'rl_' + Date.now();
   const ts   = Date.now();
 
-  list.unshift({ id, name, ts, data: state });
+  list.unshift({ id, name, ts, sites: JSON.parse(JSON.stringify(sitesData)), activeSiteId: aId });
   // Trim ke max
   while (list.length > HISTORY_MAX) list.pop();
   historySave(list);
@@ -6229,13 +6260,17 @@ function historyRender() {
     const d  = new Date(p.ts);
     const ts = d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'})
              + ' ' + d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
-    const riverName = p.data?.bpm?.name || p.name;
-    const cls       = p.data?.bpm?.cls  || '—';
-    const nParam    = (p.data?.bpm?.params || []).length;
+    // Kompatibel dengan format lama (p.data, single-site) dan baru (p.sites, multi-site)
+    const sitesArr  = Array.isArray(p.sites) ? p.sites : (p.data ? [{id:'legacy',name:p.name,state:p.data}] : []);
+    const activeS   = sitesArr.find(s=>s.id===p.activeSiteId) || sitesArr[0] || {};
+    const riverName = activeS.state?.bpm?.name || activeS.name || p.name;
+    const cls       = activeS.state?.bpm?.cls  || '—';
+    const nParam    = (activeS.state?.bpm?.params || []).length;
+    const nSites    = sitesArr.length;
     return `
       <div class="history-item" id="hi-${p.id}">
         <div class="hi-meta">
-          <div class="hi-name">${_esc(riverName)}</div>
+          <div class="hi-name">${_esc(riverName)}${nSites>1?` <span style="color:var(--accent);font-size:9.5px;font-weight:700">+${nSites-1} sungai lain</span>`:''}</div>
           <div class="hi-detail">Kelas ${cls} · ${nParam} parameter · ${ts}</div>
         </div>
         <div class="hi-actions">
@@ -6251,10 +6286,28 @@ function historyOpen(id) {
   const list = historyLoad();
   const entry = list.find(p => p.id === id);
   if (!entry) { toast('⚠ Proyek tidak ditemukan','err'); return; }
-  restoreState(entry.data);
+
+  if (Array.isArray(entry.sites) && entry.sites.length) {
+    // Format baru — multi-sungai
+    riverSites = entry.sites;
+    activeSiteId = entry.activeSiteId || riverSites[0].id;
+    const active = riverSites.find(s=>s.id===activeSiteId) || riverSites[0];
+    restoreState(active.state);
+  } else if (entry.data) {
+    // Format lama — single-site
+    const sid = 'site_'+Date.now();
+    riverSites = [{ id:sid, name:entry.name, state:entry.data }];
+    activeSiteId = sid;
+    restoreState(entry.data);
+  } else {
+    toast('⚠ Data proyek kosong/rusak','err'); return;
+  }
+  if(typeof sitesPersist==='function') sitesPersist();
+  if(typeof sitesRenderSwitcher==='function') sitesRenderSwitcher();
   historyClosePanel();
   nav('bpm');
-  toast(`✅ Proyek "${entry.name}" dibuka`);
+  const nSites = (entry.sites||[]).length;
+  toast(`✅ Proyek "${entry.name}" dibuka${nSites>1?` (${nSites} sungai)`:''}`);
 }
 
 function historyDeleteAndRefresh(id) {
@@ -6268,7 +6321,11 @@ function historyShareFromHistory(id) {
   const list = historyLoad();
   const entry = list.find(p => p.id === id);
   if (!entry) return;
-  shareGenerateLink(entry.data, entry.name);
+  if (Array.isArray(entry.sites) && entry.sites.length) {
+    shareGenerateLink({ __riverloadMultiSite:true, _v:1, sites:entry.sites, activeSiteId:entry.activeSiteId }, entry.name);
+  } else if (entry.data) {
+    shareGenerateLink({ __riverloadMultiSite:true, _v:1, sites:[{id:'legacy',name:entry.name,state:entry.data}], activeSiteId:'legacy' }, entry.name);
+  }
 }
 
 // ─── Open / close panel ──────────────────────────────────────
@@ -6333,8 +6390,9 @@ function shareDecode(b64) {
 }
 
 function shareGenerateLink(stateData, projectName) {
-  // Encode state ke base64
-  const encoded = shareEncode(stateData || getState());
+  // Encode state ke base64 (stateData harus sudah berformat multi-site {sites,activeSiteId})
+  const payload = stateData || _sitesBuildSharePayload();
+  const encoded = shareEncode(payload);
   const url     = location.href.split('#')[0].split('?')[0] + '#share=' + encoded;
 
   // Check URL length (browsers support ~2000 chars safely in most cases,
@@ -6358,8 +6416,15 @@ function shareGenerateLink(stateData, projectName) {
   if (modal) modal.style.display = 'flex';
 }
 
+function _sitesBuildSharePayload(){
+  if(typeof sitesSnapshotActive==='function') sitesSnapshotActive();
+  const sitesData = (typeof riverSites!=='undefined' && riverSites.length) ? riverSites : [{id:'site_1',name:'Sungai 1',state:getState()}];
+  const aId = (typeof activeSiteId!=='undefined' && activeSiteId) ? activeSiteId : sitesData[0].id;
+  return { __riverloadMultiSite:true, _v:1, sites:sitesData, activeSiteId:aId };
+}
+
 window.shareCurrentProject = function() {
-  shareGenerateLink(getState());
+  shareGenerateLink(_sitesBuildSharePayload());
 };
 
 window.shareModalClose = function() {
@@ -6387,14 +6452,32 @@ function shareCheckURL() {
   const encoded = hash.slice(7);
   if (!encoded) return;
   try {
-    const state = shareDecode(encoded);
+    const payload = shareDecode(encoded);
     // Clear hash dari URL tanpa reload
     history.replaceState(null, '', location.pathname + location.search);
     // Delay agar app sudah selesai init
     setTimeout(() => {
-      restoreState(state);
-      const name = state?.bpm?.name || 'Proyek Bersama';
-      toast(`🔗 Proyek "${name}" dimuat dari link berbagi`);
+      let name;
+      if (payload && payload.__riverloadMultiSite && Array.isArray(payload.sites) && payload.sites.length) {
+        riverSites = payload.sites;
+        activeSiteId = payload.activeSiteId || riverSites[0].id;
+        const active = riverSites.find(s=>s.id===activeSiteId) || riverSites[0];
+        restoreState(active.state);
+        name = active.state?.bpm?.name || 'Proyek Bersama';
+        if (typeof sitesPersist==='function') sitesPersist();
+        if (typeof sitesRenderSwitcher==='function') sitesRenderSwitcher();
+      } else {
+        // Format lama — single-site
+        const sid = 'site_'+Date.now();
+        riverSites = [{ id:sid, name:'Sungai 1', state:payload }];
+        activeSiteId = sid;
+        restoreState(payload);
+        name = payload?.bpm?.name || 'Proyek Bersama';
+        if (typeof sitesPersist==='function') sitesPersist();
+        if (typeof sitesRenderSwitcher==='function') sitesRenderSwitcher();
+      }
+      const nSites = (riverSites||[]).length;
+      toast(`🔗 Proyek "${name}" dimuat dari link berbagi${nSites>1?` (${nSites} sungai)`:''}`);
       // Otomatis simpan ke riwayat
       historySaveProject(name + ' (dari link)');
     }, 500);
@@ -6757,8 +6840,8 @@ if (document.readyState === 'loading') {
 function compareSiteSummary(state){
   var b = (state && state.bpm) || {};
   var u = (state && state.ubm) || {};
-  var qDry = parseFloat((b.qDry||'').toString().replace(',','.')) || 0;
-  var qWet = parseFloat((b.qWet||'').toString().replace(',','.')) || 0;
+  var qDry = (typeof pNum === 'function') ? pNum(b.qDry) : (parseFloat((b.qDry||'').toString().replace(/\./g,'').replace(',','.')) || 0);
+  var qWet = (typeof pNum === 'function') ? pNum(b.qWet) : (parseFloat((b.qWet||'').toString().replace(/\./g,'').replace(',','.')) || 0);
   var params = Array.isArray(b.params) ? b.params : [];
   var sBpmDry=0, sBpaDry=0, sBpmWet=0, sBpaWet=0, exceed=0, evaluated=0;
   params.forEach(function(p){
@@ -6912,10 +6995,10 @@ function fishboneBuildSVG() {
     .map(function(nm){ return byName[nm]; }).filter(Boolean);
   var n = sources.length;
 
-  var qDryRaw = (document.getElementById('q-dry')?.value || '').toString().replace(',', '.');
-  var qWetRaw = (document.getElementById('q-wet')?.value || '').toString().replace(',', '.');
-  var qDry = parseFloat(qDryRaw) || 0; // m3/detik, kemarau
-  var qWet = parseFloat(qWetRaw) || 0; // m3/detik, hujan
+  var qDryRaw = document.getElementById('q-dry')?.value || '';
+  var qWetRaw = document.getElementById('q-wet')?.value || '';
+  var qDry = (typeof pNum === 'function') ? pNum(qDryRaw) : (parseFloat(qDryRaw.replace(/\./g,'').replace(',','.')) || 0); // m3/detik, kemarau
+  var qWet = (typeof pNum === 'function') ? pNum(qWetRaw) : (parseFloat(qWetRaw.replace(/\./g,'').replace(',','.')) || 0); // m3/detik, hujan
   var qDryDay = qDry * 86400;
   var qWetDay = qWet * 86400;
   var fmt = (typeof fmtN === 'function') ? fmtN : function(v,d){ return (v||0).toFixed(d==null?2:d); };
@@ -6961,7 +7044,8 @@ function fishboneBuildSVG() {
     var frac = i / (n + 1);
     var x = leftX + lineLen * frac;
     var below = (i % 2 === 1); // ganjil = di bawah, genap = di atas (selang-seling)
-    var qVal = (s.qDay !== '' && s.qDay != null && !isNaN(parseFloat(s.qDay))) ? parseFloat(s.qDay) : null;
+    var qVal = (s.qDay !== '' && s.qDay != null) ? ((typeof pNum === 'function') ? pNum(s.qDay) : parseFloat(String(s.qDay).replace(/\./g,'').replace(',','.'))) : null;
+    if (qVal != null && isNaN(qVal)) qVal = null;
     var qTxt = qVal != null ? fmt(qVal, (qVal < 10 ? 2 : 1)) : '—';
     var name = s.name || ('Outfall ' + i);
 

@@ -1172,6 +1172,23 @@ input.inp-sm::placeholder {
 
     <div class="rl-tb-sep"></div>
 
+    <!-- Site Switcher -->
+    <div class="rl-nav-group" style="height:auto" id="site-switcher">
+      <button class="btn btn-outline btn-sm" id="site-switcher-btn" style="font-size:11.5px;display:flex;align-items:center;gap:6px;max-width:200px">
+        <span style="flex-shrink:0">📍</span>
+        <span id="site-switcher-label" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Sungai 1</span>
+        <span class="rl-nav-arrow" style="font-size:8px;flex-shrink:0">▾</span>
+      </button>
+      <div class="rl-dd" style="min-width:230px" id="site-switcher-dd">
+        <div id="site-switcher-list"></div>
+        <div style="border-top:1px solid var(--brd2);margin-top:4px;padding-top:4px">
+          <div class="rl-dd-item" onclick="sitesAddNew()" style="color:var(--accent)"><span class="rl-dd-icon">＋</span> Tambah Sungai Baru</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="rl-tb-sep"></div>
+
     <!-- Navigasi -->
     <nav class="rl-tb-nav">
       <div class="rl-nav-item active" onclick="nav('home')" id="nav-home">Beranda</div>
@@ -1183,6 +1200,7 @@ input.inp-sm::placeholder {
           <div class="rl-dd-item" onclick="nav('ubm')" id="nav-ubm"><span class="rl-dd-icon">🎯</span> Usulan Baku Mutu</div>
           <div class="rl-dd-item" onclick="nav('peta')" id="nav-peta"><span class="rl-dd-icon">🗺</span> Pemetaan</div>
           <div class="rl-dd-item" onclick="nav('fishbone')" id="nav-fishbone"><span class="rl-dd-icon">🐟</span> Fishbone</div>
+          <div class="rl-dd-item" onclick="nav('compare')" id="nav-compare"><span class="rl-dd-icon">⚖</span> Bandingkan Sungai</div>
         </div>
       </div>
 
@@ -2527,6 +2545,7 @@ function nav(p) {
   if(p==='ubm') { ubmSyncFromBPM(); ubmRenderSources(); ubmRenderParams(); ubmWizGoto(1, true); }
   if(p==='peta') { setTimeout(function(){ petaOnOpen(); }, 50); }
   if(p==='fishbone') { setTimeout(function(){ if(typeof fishboneRefresh==='function') fishboneRefresh(); }, 50); }
+  if(p==='compare') { setTimeout(function(){ if(typeof compareRefresh==='function') compareRefresh(); }, 50); }
 }
 
 // ─── True wizard Beban Pencemar (satu langkah tampil per waktu) ───
@@ -3663,7 +3682,7 @@ const KEY='riverload_v4';
 
 function getState(){
   return {
-    _v: 4,
+    _v: 5,
     // ── BPM page ──────────────────────────────────
     bpm: {
       name:  document.getElementById('r-name')?.value  || '',
@@ -3685,6 +3704,26 @@ function getState(){
       params:    JSON.parse(JSON.stringify(ubmParams)),
       ubmPId,
     },
+    // ── Pemetaan ──────────────────────────────────
+    peta: {
+      markers: JSON.parse(JSON.stringify(typeof _markers !== 'undefined' ? _markers : [])),
+      rivers:  JSON.parse(JSON.stringify(typeof _rivers  !== 'undefined' ? _rivers  : [])),
+      uid:     typeof _uid !== 'undefined' ? _uid : 1,
+    },
+    // ── Fishbone ──────────────────────────────────
+    fishbone: {
+      order: JSON.parse(JSON.stringify(typeof _fishboneOrder !== 'undefined' ? _fishboneOrder : [])),
+    },
+  };
+}
+
+function _blankState(){
+  return {
+    _v: 5,
+    bpm: { name:'', cls:'', qDry:'', qWet:'', params:[], pid:0, wasteSources:[], wsId:0, season:'dry' },
+    ubm: { river:'', cls:'', sources:[], ubmSrcId:0, params:[], ubmPId:0 },
+    peta: { markers:[], rivers:[], uid:1 },
+    fishbone: { order:[] },
   };
 }
 
@@ -3766,7 +3805,166 @@ function restoreState(s){
   ubmRenderSources();
   ubmRenderParams();
   _ubmCalcAndShowResults();
+
+  // ── Pemetaan ──────────────────────────────────
+  if (typeof _markers !== 'undefined') {
+    var pData = s.peta || {};
+    // Bersihkan layer peta lama dari map (kalau sedang terbuka)
+    if (typeof _map !== 'undefined' && _map && typeof _layers !== 'undefined') {
+      (_markers||[]).forEach(function(m){ if(_layers[m.id]){ _map.removeLayer(_layers[m.id]); } });
+      (_rivers||[]).forEach(function(r){ if(_layers[r.id]){ _map.removeLayer(_layers[r.id]); } });
+      _layers = {};
+      if (typeof _dbRiverLayer !== 'undefined' && _dbRiverLayer) _dbRiverLayer.clearLayers();
+    }
+    _markers = Array.isArray(pData.markers) ? pData.markers : [];
+    _rivers  = Array.isArray(pData.rivers)  ? pData.rivers  : [];
+    _uid     = pData.uid || 1;
+    // Render ulang ke map kalau sedang terbuka
+    if (typeof _map !== 'undefined' && _map) {
+      _markers.forEach(function(m){ if(typeof _addLeafletMarker==='function') _addLeafletMarker(m); });
+      _rivers.forEach(function(r){
+        var clr = r.fromDB ? '#00b8d4' : '#4488ff';
+        var style = r.fromDB ? {color:clr,weight:3,opacity:0.8,dashArray:'8,4'} : {color:clr,weight:4,opacity:0.8};
+        var line = L.polyline(r.points, style).addTo(_map)
+          .bindPopup('<div style="font-family:\'Inter\',sans-serif;font-weight:700;color:'+clr+'">'+_e(r.name)+'</div>');
+        _layers[r.id] = line;
+      });
+    }
+    if (typeof _renderList === 'function') _renderList();
+    if (typeof _renderTable === 'function') _renderTable();
+    if (typeof _persist === 'function') _persist();
+  }
+
+  // ── Fishbone ──────────────────────────────────
+  if (typeof _fishboneOrder !== 'undefined') {
+    var fData = s.fishbone || {};
+    _fishboneOrder = Array.isArray(fData.order) ? fData.order : [];
+    if (typeof fishboneRefresh === 'function' && document.getElementById('fishbone-container')) {
+      fishboneRefresh();
+    }
+  }
 }
+
+// ═══════════════════════════════════════════════════════════════
+// SITE SWITCHER — kelola beberapa sungai dalam satu proyek
+// ═══════════════════════════════════════════════════════════════
+const SITES_KEY = 'rl_sites_v1';
+let riverSites = [];
+let activeSiteId = null;
+
+function _siteLabel(site){
+  var nm = (site.state && site.state.bpm && site.state.bpm.name) ? site.state.bpm.name.trim() : '';
+  return nm || site.name || 'Sungai';
+}
+
+function sitesInit(){
+  try{
+    var raw = localStorage.getItem(SITES_KEY);
+    if(raw){
+      var d = JSON.parse(raw);
+      if(Array.isArray(d.sites) && d.sites.length){
+        riverSites = d.sites;
+        activeSiteId = d.activeSiteId || riverSites[0].id;
+      }
+    }
+  }catch(e){}
+
+  if(!riverSites.length){
+    // Migrasi: jadikan data yang sudah ada (localStorage tunggal) sebagai sungai pertama
+    var id = 'site_'+Date.now();
+    var legacy = getState();
+    // _markers/_rivers peta belum aktif saat init() berjalan — baca langsung dari localStorage lama
+    try{
+      var petaRaw = localStorage.getItem('rl_peta_v2');
+      if(petaRaw){
+        var pd = JSON.parse(petaRaw);
+        legacy.peta = { markers: pd.markers||[], rivers: pd.rivers||[], uid: pd.uid||1 };
+      }
+    }catch(e){}
+    riverSites = [{ id:id, name:'Sungai 1', state:legacy }];
+    activeSiteId = id;
+    sitesPersist();
+  }
+  sitesRenderSwitcher();
+}
+
+function sitesPersist(){
+  try{ localStorage.setItem(SITES_KEY, JSON.stringify({ sites:riverSites, activeSiteId:activeSiteId })); }catch(e){}
+}
+
+function sitesSnapshotActive(){
+  var site = riverSites.find(s=>s.id===activeSiteId);
+  if(site) site.state = getState();
+}
+
+function sitesSwitch(id){
+  if(id===activeSiteId) return;
+  sitesSnapshotActive();
+  var target = riverSites.find(s=>s.id===id);
+  if(!target) return;
+  activeSiteId = id;
+  restoreState(target.state);
+  sitesPersist();
+  sitesRenderSwitcher();
+  if(typeof toast==='function') toast('📍 Pindah ke '+_siteLabel(target));
+}
+
+function sitesAddNew(){
+  sitesSnapshotActive();
+  var id = 'site_'+Date.now();
+  var name = 'Sungai '+(riverSites.length+1);
+  var blank = _blankState();
+  riverSites.push({ id:id, name:name, state:blank });
+  activeSiteId = id;
+  restoreState(blank);
+  sitesPersist();
+  sitesRenderSwitcher();
+  if(typeof toast==='function') toast('✅ '+name+' ditambahkan — mulai isi datanya');
+}
+
+function sitesRename(id){
+  var site = riverSites.find(s=>s.id===id);
+  if(!site) return;
+  var nm = prompt('Nama label sungai ini (untuk daftar di Site Switcher):', site.name || '');
+  if(nm===null) return;
+  site.name = nm.trim() || site.name;
+  sitesPersist();
+  sitesRenderSwitcher();
+}
+
+function sitesDelete(id){
+  if(riverSites.length<=1){ if(typeof toast==='function') toast('⚠ Tidak bisa hapus — minimal 1 sungai harus ada','err'); return; }
+  var site = riverSites.find(s=>s.id===id);
+  if(!site) return;
+  if(!confirm('Hapus '+_siteLabel(site)+' beserta seluruh datanya (BPM, UBM, Pemetaan, Fishbone)? Tidak bisa dibatalkan.')) return;
+  riverSites = riverSites.filter(s=>s.id!==id);
+  if(activeSiteId===id){
+    activeSiteId = riverSites[0].id;
+    restoreState(riverSites[0].state);
+  }
+  sitesPersist();
+  sitesRenderSwitcher();
+}
+
+function sitesRenderSwitcher(){
+  var lbl = document.getElementById('site-switcher-label');
+  var list = document.getElementById('site-switcher-list');
+  if(!lbl || !list) return;
+  var active = riverSites.find(s=>s.id===activeSiteId) || riverSites[0];
+  if(active) lbl.textContent = _siteLabel(active);
+
+  list.innerHTML = riverSites.map(function(s){
+    var isActive = s.id===activeSiteId;
+    return '<div style="display:flex;align-items:center;gap:4px">'
+      + '<div class="rl-dd-item" onclick="sitesSwitch(\''+s.id+'\')" style="flex:1;'+(isActive?'color:var(--accent);font-weight:700':'')+'">'
+      + (isActive ? '<span class="rl-dd-icon">●</span>' : '<span class="rl-dd-icon">○</span>') + _e_s(_siteLabel(s))
+      + '</div>'
+      + '<button onclick="event.stopPropagation();sitesRename(\''+s.id+'\')" title="Ubah label" style="background:none;border:none;color:var(--mute);cursor:pointer;font-size:11px;padding:4px 6px">✎</button>'
+      + (riverSites.length>1 ? '<button onclick="event.stopPropagation();sitesDelete(\''+s.id+'\')" title="Hapus" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:11px;padding:4px 6px">✕</button>' : '')
+      + '</div>';
+  }).join('');
+}
+function _e_s(s){ return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 let _st;
 function saveAuto(){
@@ -3774,6 +3972,11 @@ function saveAuto(){
   _st=setTimeout(()=>{
     try{ localStorage.setItem(KEY, JSON.stringify(getState())); }
     catch(e){}
+    if(typeof activeSiteId !== 'undefined' && activeSiteId){
+      sitesSnapshotActive();
+      sitesPersist();
+      sitesRenderSwitcher();
+    }
   }, 600);
 }
 
@@ -5964,6 +6167,7 @@ async function exportExcel(){
   applyTheme();
   renderDB();
   dbFilter('');
+  sitesInit();
 })();
 
 
@@ -6525,6 +6729,126 @@ if (document.readyState === 'loading') {
     Belum ada "Nama Sumber / Titik Penaatan" di menu Usulan Baku Mutu — diagram di atas hanya menunjukkan garis HULU → HILIR tanpa titik Outfall.
   </div>
 </div>
+
+<!-- ═══ PAGE: BANDINGKAN SUNGAI ═══════════════════════════════════ -->
+<div class="page" id="page-compare">
+  <div class="ph">
+    <div>
+      <div class="ph-title">BANDINGKAN SUNGAI</div>
+      <div class="ph-sub">Lihat ringkasan & Fishbone semua sungai dalam proyek ini berdampingan</div>
+    </div>
+    <div class="ph-acts">
+      <button class="btn btn-outline btn-sm" onclick="compareRefresh()">🔄 Perbarui</button>
+      <button class="btn btn-outline btn-sm" onclick="sitesAddNew()" style="color:var(--accent);border-color:rgba(62,207,178,.4)">＋ Tambah Sungai</button>
+    </div>
+  </div>
+
+  <div style="font-family:var(--mono);font-size:9.5px;color:var(--txt2);margin-bottom:16px;padding:9px 14px;background:rgba(62,207,178,0.05);border:1px solid var(--brd);border-radius:var(--rs)">
+    ℹ &nbsp;Tampilan ini read-only — untuk mengubah data, pindah ke sungai yang dimaksud lewat dropdown <strong style="color:var(--accent)">📍 Sungai Aktif</strong> di topbar, lalu edit seperti biasa di menu Beban Pencemar / Usulan Baku Mutu.
+  </div>
+
+  <div id="compare-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px"></div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   RIVERLOAD — Modul Bandingkan Sungai (read-only, dari snapshot site)
+   ═══════════════════════════════════════════════════════════════ */
+function compareSiteSummary(state){
+  var b = (state && state.bpm) || {};
+  var u = (state && state.ubm) || {};
+  var qDry = parseFloat((b.qDry||'').toString().replace(',','.')) || 0;
+  var qWet = parseFloat((b.qWet||'').toString().replace(',','.')) || 0;
+  var params = Array.isArray(b.params) ? b.params : [];
+  var sBpmDry=0, sBpaDry=0, sBpmWet=0, sBpaWet=0, exceed=0, evaluated=0;
+  params.forEach(function(p){
+    if(p.bpmDry!=null) sBpmDry+=p.bpmDry;
+    if(p.bpaDry!=null) sBpaDry+=p.bpaDry;
+    if(p.bpmWet!=null) sBpmWet+=p.bpmWet;
+    if(p.bpaWet!=null) sBpaWet+=p.bpaWet;
+    if(p.statusDry||p.statusWet) evaluated++;
+    if(p.statusDry==='ng'||p.statusWet==='ng') exceed++;
+  });
+  var outfallCount = (u.sources||[]).filter(function(s){return s.name;}).length;
+  return {
+    name: (b.name||'').trim() || '(belum ada nama)',
+    cls: b.cls || '',
+    qDry:qDry, qWet:qWet,
+    outfallCount:outfallCount,
+    sBpmDry:sBpmDry, sBpaDry:sBpaDry, sBpmWet:sBpmWet, sBpaWet:sBpaWet,
+    status: evaluated===0 ? null : (exceed>0 ? 'ng' : 'ok'),
+  };
+}
+
+function compareMiniFishboneSVG(state){
+  var u = (state && state.ubm) || {};
+  var sources = (u.sources||[]).filter(function(s){return s.name;});
+  var n = sources.length;
+  var W = 300, H = 96, lineY = H/2, leftX = 38, rightX = W-58, lineLen = rightX-leftX;
+  function esc(s){ return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  var svg = '<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;font-family:Arial,Helvetica,sans-serif;background:#ffffff">';
+  svg += '<defs><marker id="cmpArrow" markerWidth="7" markerHeight="7" refX="5.5" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#142d6e"/></marker></defs>';
+  svg += '<line x1="'+leftX+'" y1="'+lineY+'" x2="'+(rightX+12)+'" y2="'+lineY+'" stroke="#142d6e" stroke-width="2" marker-end="url(#cmpArrow)"/>';
+  svg += '<text x="'+(leftX-6)+'" y="'+(lineY+4)+'" text-anchor="end" font-size="10" font-weight="bold" fill="#111">HULU</text>';
+  svg += '<text x="'+(rightX+18)+'" y="'+(lineY+4)+'" font-size="10" font-weight="bold" fill="#111">HILIR</text>';
+  if(!n){
+    svg += '<text x="'+(W/2)+'" y="'+(lineY-14)+'" text-anchor="middle" font-size="8.5" fill="#888">Belum ada outfall</text>';
+  }
+  sources.forEach(function(s, idx){
+    var i = idx+1, frac = i/(n+1), x = leftX + lineLen*frac;
+    var below = (i % 2 === 1);
+    svg += '<circle cx="'+x+'" cy="'+lineY+'" r="3.2" fill="#142d6e"/>';
+    if(below){
+      svg += '<line x1="'+x+'" y1="'+(lineY+22)+'" x2="'+x+'" y2="'+(lineY+6)+'" stroke="#142d6e" stroke-width="1.3" marker-end="url(#cmpArrow)"/>';
+      svg += '<text x="'+x+'" y="'+(lineY+32)+'" text-anchor="middle" font-size="8" font-weight="bold" fill="#111">'+esc(s.name)+'</text>';
+    } else {
+      svg += '<line x1="'+x+'" y1="'+(lineY-22)+'" x2="'+x+'" y2="'+(lineY-6)+'" stroke="#142d6e" stroke-width="1.3" marker-end="url(#cmpArrow)"/>';
+      svg += '<text x="'+x+'" y="'+(lineY-26)+'" text-anchor="middle" font-size="8" font-weight="bold" fill="#111">'+esc(s.name)+'</text>';
+    }
+  });
+  svg += '</svg>';
+  return svg;
+}
+
+function compareRefresh(){
+  var grid = document.getElementById('compare-grid');
+  if(!grid) return;
+  if(typeof sitesSnapshotActive==='function') sitesSnapshotActive();
+  var sites = (typeof riverSites!=='undefined') ? riverSites : [];
+  if(!sites.length){
+    grid.innerHTML = '<div style="font-family:var(--mono);font-size:11px;color:var(--mute);text-align:center;padding:30px">Belum ada sungai.</div>';
+    return;
+  }
+  var fmt = (typeof fmtN==='function') ? fmtN : function(v,d){ return (v||0).toFixed(d==null?2:d); };
+  grid.innerHTML = sites.map(function(site){
+    var sum = compareSiteSummary(site.state);
+    var isActive = site.id === activeSiteId;
+    var statusBadge = sum.status==null
+      ? '<span style="font-family:var(--mono);font-size:9.5px;color:var(--mute)">— belum dievaluasi</span>'
+      : (sum.status==='ok'
+        ? '<span style="font-family:var(--mono);font-size:9.5px;font-weight:700;color:var(--green);background:rgba(62,207,178,0.1);padding:2px 9px;border-radius:8px">✓ Memenuhi BM</span>'
+        : '<span style="font-family:var(--mono);font-size:9.5px;font-weight:700;color:var(--red);background:rgba(255,68,68,0.1);padding:2px 9px;border-radius:8px">✗ Melebihi BM</span>');
+    return '<div class="card" style="padding:16px">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
+      + '<div style="display:flex;align-items:center;gap:7px">'
+      + '<span style="font-size:15px">📍</span>'
+      + '<span style="font-family:\'Inter\',sans-serif;font-size:14px;font-weight:700;color:var(--txt)">'+sum.name+(isActive?' <span style="font-size:9px;color:var(--accent);font-weight:600">· AKTIF</span>':'')+'</span>'
+      + '</div>'
+      + '</div>'
+      + '<div style="background:#ffffff;border-radius:var(--rs);padding:10px;margin-bottom:12px">'+compareMiniFishboneSVG(site.state)+'</div>'
+      + '<table style="width:100%;font-size:11.5px">'
+      + '<tr><td style="color:var(--mute);padding:3px 0">Q kemarau / hujan</td><td style="text-align:right;font-family:var(--mono)">'+fmt(sum.qDry,2)+' / '+fmt(sum.qWet,2)+' m&sup3;/s</td></tr>'
+      + '<tr><td style="color:var(--mute);padding:3px 0">Kelas sungai</td><td style="text-align:right;font-family:var(--mono)">'+(sum.cls?('Kelas '+sum.cls):'—')+'</td></tr>'
+      + '<tr><td style="color:var(--mute);padding:3px 0">Jumlah outfall</td><td style="text-align:right;font-family:var(--mono)">'+sum.outfallCount+'</td></tr>'
+      + '<tr><td style="color:var(--mute);padding:3px 0">Total BPM (kemarau)</td><td style="text-align:right;font-family:var(--mono)">'+fmt(sum.sBpmDry,1)+' kg/jam</td></tr>'
+      + '<tr><td style="color:var(--mute);padding:3px 0">Total BPA (kemarau)</td><td style="text-align:right;font-family:var(--mono)">'+fmt(sum.sBpaDry,1)+' kg/jam</td></tr>'
+      + '<tr><td style="color:var(--mute);padding:3px 0">Status</td><td style="text-align:right">'+statusBadge+'</td></tr>'
+      + '</table>'
+      + (isActive ? '' : '<button class="btn btn-outline btn-sm" onclick="sitesSwitch(\''+site.id+'\');nav(\'compare\')" style="width:100%;margin-top:10px;font-size:10px">Pindah ke sungai ini</button>')
+      + '</div>';
+  }).join('');
+}
+</script>
 
 <script>
 /* ═══════════════════════════════════════════════════════════════
@@ -7576,6 +7900,16 @@ function _persist(){
 }
 function _load(){
   try{
+    if(typeof riverSites !== 'undefined' && riverSites.length){
+      var site = riverSites.find(function(s){ return s.id===activeSiteId; }) || riverSites[0];
+      if(site && site.state && site.state.peta){
+        _markers = site.state.peta.markers || [];
+        _rivers  = site.state.peta.rivers  || [];
+        _uid     = site.state.peta.uid     || _uid;
+        return;
+      }
+    }
+    // fallback lama (jaga-jaga kalau riverSites belum siap)
     var raw=localStorage.getItem(PETA_STORE);
     if(!raw) return;
     var d=JSON.parse(raw);

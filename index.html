@@ -965,6 +965,9 @@ tr:hover td { background: rgba(26,176,166,0.02); }
 <script src="https://cdn.jsdelivr.net/npm/geotiff@2.1.3/dist-browser/geotiff.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/georaster@1.6.0/dist/georaster.browser.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/georaster-layer-for-leaflet@3.10.0/dist/georaster-layer-for-leaflet.min.js"></script>
+<!-- Three.js untuk rendering Peta 3D dari data DEM (GeoTIFF) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <style>
 /* Fix Leaflet inside RiverLoad dark theme */
 #riverload-map,
@@ -7214,6 +7217,7 @@ if (document.readyState === 'loading') {
         <button class="btn btn-outline btn-sm" onclick="petaAddMode('ruler')" style="color:#f5c030;border-color:rgba(245,192,48,.4)" title="Ukur jarak/panjang di peta">📏 Ukur</button>
         <button class="btn btn-outline btn-sm" onclick="petaToggleShpPanel()" style="color:#f5c030;border-color:rgba(245,192,48,.4)" title="Upload file SHP sungai kamu sendiri">📂 Upload SHP</button>
         <button class="btn btn-outline btn-sm" onclick="petaToggleTifPanel()" style="color:#60aef0;border-color:rgba(96,174,240,.4)" title="Upload file GeoTIFF (mis. DEMNAS) sebagai layer elevasi">🏔️ Upload TIF</button>
+        <button class="btn btn-outline btn-sm" id="peta-btn-3d" onclick="open3DMap()" style="color:#7c5cff;border-color:rgba(124,92,255,.4)" title="Lihat medan sebagai peta 3D dari data DEM/TIF yang sudah diupload">🧊 Peta 3D</button>
       </div>
     </div>
 
@@ -7772,6 +7776,55 @@ if (document.readyState === 'loading') {
     <div class="peta-wiz-nav">
       <button class="peta-wiz-btn-back" onclick="petaWizGoto(2)">← Kembali: Lihat Peta</button>
       <span></span>
+    </div>
+  </div>
+
+  <!-- ══════════ MODAL — PETA 3D (dari data DEM/TIF) ══════════ -->
+  <div id="map3d-modal" style="display:none;position:fixed;inset:0;z-index:100000;background:rgba(6,10,18,0.92);backdrop-filter:blur(3px)">
+    <div style="position:absolute;inset:0;display:flex;flex-direction:column">
+
+      <!-- Header -->
+      <div style="flex-shrink:0;display:flex;align-items:center;gap:12px;padding:12px 18px;background:rgba(13,18,30,0.9);border-bottom:1px solid rgba(124,92,255,.25)">
+        <div style="font-family:var(--mono);font-weight:700;font-size:12px;color:#b39dff;letter-spacing:.5px">🧊 PETA 3D — MODEL ELEVASI</div>
+        <select class="finput" id="map3d-layer-select" onchange="map3dOnLayerChange()" style="font-size:10.5px;padding:5px 8px;max-width:220px"></select>
+
+        <div style="display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:9px;color:var(--mute)">
+          <span>Eksagerasi Vertikal</span>
+          <input type="range" id="map3d-exag" min="0.5" max="6" step="0.1" value="2" oninput="map3dUpdateExaggeration()" style="width:90px">
+          <span id="map3d-exag-val" style="width:26px;color:#b39dff">2.0×</span>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:9px;color:var(--mute)">
+          <span>Skema Warna</span>
+          <select class="finput" id="map3d-colorscheme" onchange="map3dUpdateColorScheme()" style="font-size:9.5px;padding:4px 6px">
+            <option value="terrain">Terrain</option>
+            <option value="spectral">Spectral</option>
+            <option value="gray">Grayscale</option>
+            <option value="viridis">Viridis</option>
+          </select>
+        </div>
+
+        <label style="display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:9px;color:var(--mute);cursor:pointer">
+          <input type="checkbox" id="map3d-wireframe" onchange="map3dToggleWireframe()"> Wireframe
+        </label>
+
+        <button class="btn btn-outline btn-sm" onclick="map3dResetView()" style="color:#b39dff;border-color:rgba(124,92,255,.4)">↺ Reset View</button>
+
+        <span style="margin-left:auto"></span>
+        <div id="map3d-status" style="font-family:var(--mono);font-size:9.5px;color:var(--mute)"></div>
+        <button onclick="close3DMap()" style="background:none;border:1px solid var(--brd);border-radius:var(--rs);color:var(--mute);cursor:pointer;font-family:var(--mono);font-size:11px;padding:5px 12px">✕ Tutup</button>
+      </div>
+
+      <!-- Canvas area -->
+      <div id="map3d-canvas-wrap" style="flex:1;position:relative;overflow:hidden">
+        <div id="map3d-empty" style="display:none;position:absolute;inset:0;align-items:center;justify-content:center;flex-direction:column;gap:10px;color:var(--mute);font-family:var(--mono)">
+          <div style="font-size:34px">🏔️</div>
+          <div style="font-size:12px;font-weight:700">Belum ada data DEM (TIF)</div>
+          <div style="font-size:10px;max-width:340px;text-align:center;line-height:1.6">Upload file GeoTIFF (mis. DEMNAS) lewat tombol "🏔️ Upload TIF" terlebih dulu, lalu buka Peta 3D lagi.</div>
+          <button class="btn btn-sm" onclick="close3DMap();petaToggleTifPanel();" style="margin-top:4px;color:#60aef0">🏔️ Upload TIF Sekarang</button>
+        </div>
+        <div style="position:absolute;bottom:10px;left:50%;transform:translateX(-50%);z-index:5;background:rgba(0,0,0,0.5);color:#fff;font-family:'Inter',sans-serif;font-size:10px;padding:4px 12px;border-radius:10px;pointer-events:none;white-space:nowrap">Drag = putar · Scroll = zoom · Klik-kanan drag = geser</div>
+      </div>
     </div>
   </div>
 
@@ -11241,6 +11294,265 @@ function tifUpdateLayerList() {
       '</div>' +
     '</div>';
   }).join('');
+}
+
+/* ══════════════════════════════════════════════════════════════
+   PETA 3D — render medan (mesh) dari georaster (data DEM/TIF)
+   menggunakan Three.js. Georaster sudah tersedia di _tifLayers
+   (array 2D nilai elevasi + bbox), tinggal dikonversi jadi mesh.
+   ══════════════════════════════════════════════════════════════ */
+var _map3d = {
+  renderer: null, scene: null, camera: null, controls: null,
+  mesh: null, animId: null, activeLayerId: null,
+  exaggeration: 2.0, colorScheme: 'terrain', wireframe: false,
+  resizeObserver: null
+};
+
+function open3DMap() {
+  var modal = document.getElementById('map3d-modal');
+  if (!modal) return;
+
+  if (typeof THREE === 'undefined') {
+    toast('Library Three.js gagal dimuat — cek koneksi internet, lalu muat ulang halaman.', 'err');
+    return;
+  }
+
+  if (!_tifLayers.length) {
+    modal.style.display = 'block';
+    document.getElementById('map3d-empty').style.display = 'flex';
+    document.getElementById('map3d-layer-select').style.display = 'none';
+    return;
+  }
+  document.getElementById('map3d-empty').style.display = 'none';
+  document.getElementById('map3d-layer-select').style.display = 'inline-block';
+
+  modal.style.display = 'block';
+  map3dPopulateLayerSelect();
+  document.getElementById('map3d-colorscheme').value = _map3d.colorScheme;
+  document.getElementById('map3d-exag').value = _map3d.exaggeration;
+  document.getElementById('map3d-exag-val').textContent = _map3d.exaggeration.toFixed(1) + '×';
+
+  setTimeout(function() {
+    map3dInitScene();
+    var sel = document.getElementById('map3d-layer-select');
+    map3dBuildTerrain(sel.value || _tifLayers[0].id);
+  }, 30);
+}
+
+function close3DMap() {
+  var modal = document.getElementById('map3d-modal');
+  if (modal) modal.style.display = 'none';
+  if (_map3d.animId) { cancelAnimationFrame(_map3d.animId); _map3d.animId = null; }
+  if (_map3d.resizeObserver) { try { _map3d.resizeObserver.disconnect(); } catch(e){} _map3d.resizeObserver = null; }
+  if (_map3d.renderer) {
+    try {
+      var wrap = document.getElementById('map3d-canvas-wrap');
+      if (wrap && _map3d.renderer.domElement && wrap.contains(_map3d.renderer.domElement)) {
+        wrap.removeChild(_map3d.renderer.domElement);
+      }
+      _map3d.renderer.dispose();
+    } catch(e) {}
+  }
+  _map3d.renderer = null; _map3d.scene = null; _map3d.camera = null; _map3d.controls = null; _map3d.mesh = null;
+}
+
+function map3dPopulateLayerSelect() {
+  var sel = document.getElementById('map3d-layer-select');
+  if (!sel) return;
+  sel.innerHTML = _tifLayers.map(function(l) {
+    return '<option value="'+l.id+'">'+_e(l.name)+' ('+Math.round(l.min)+'–'+Math.round(l.max)+' m)</option>';
+  }).join('');
+  if (_map3d.activeLayerId && _tifLayers.find(function(l){return l.id===_map3d.activeLayerId;})) {
+    sel.value = _map3d.activeLayerId;
+  }
+}
+
+function map3dOnLayerChange() {
+  var sel = document.getElementById('map3d-layer-select');
+  if (sel && sel.value) map3dBuildTerrain(sel.value);
+}
+
+function map3dInitScene() {
+  var wrap = document.getElementById('map3d-canvas-wrap');
+  if (!wrap) return;
+
+  // Kalau sudah ada renderer dari sesi sebelumnya, bersihkan dulu
+  if (_map3d.renderer) {
+    if (_map3d.animId) cancelAnimationFrame(_map3d.animId);
+    try { wrap.removeChild(_map3d.renderer.domElement); } catch(e){}
+  }
+
+  var w = wrap.clientWidth, h = wrap.clientHeight;
+
+  var scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0a0e18);
+  scene.fog = new THREE.Fog(0x0a0e18, 400, 1600);
+
+  var camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 5000);
+  camera.position.set(0, 260, 340);
+
+  var renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setSize(w, h);
+  wrap.appendChild(renderer.domElement);
+
+  var controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.08;
+  controls.maxPolarAngle = Math.PI * 0.49;
+  controls.minDistance = 20;
+  controls.maxDistance = 2000;
+
+  scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+  var sun = new THREE.DirectionalLight(0xffffff, 0.85);
+  sun.position.set(300, 500, 200);
+  scene.add(sun);
+  var fill = new THREE.DirectionalLight(0x88aaff, 0.25);
+  fill.position.set(-300, 200, -200);
+  scene.add(fill);
+
+  _map3d.renderer = renderer;
+  _map3d.scene = scene;
+  _map3d.camera = camera;
+  _map3d.controls = controls;
+
+  function animate() {
+    _map3d.animId = requestAnimationFrame(animate);
+    controls.update();
+    renderer.render(scene, camera);
+  }
+  animate();
+
+  // Responsif terhadap resize modal/browser
+  if (_map3d.resizeObserver) { try { _map3d.resizeObserver.disconnect(); } catch(e){} }
+  _map3d.resizeObserver = new ResizeObserver(function() {
+    if (!_map3d.renderer || !_map3d.camera) return;
+    var nw = wrap.clientWidth, nh = wrap.clientHeight;
+    if (nw < 5 || nh < 5) return;
+    _map3d.camera.aspect = nw / nh;
+    _map3d.camera.updateProjectionMatrix();
+    _map3d.renderer.setSize(nw, nh);
+  });
+  _map3d.resizeObserver.observe(wrap);
+}
+
+function map3dBuildTerrain(layerId) {
+  var l = _tifLayers.find(function(x){ return x.id === layerId; });
+  if (!l || !_map3d.scene) return;
+  _map3d.activeLayerId = layerId;
+
+  var statusEl = document.getElementById('map3d-status');
+  if (statusEl) statusEl.textContent = 'Membangun mesh...';
+
+  // Buang mesh lama
+  if (_map3d.mesh) {
+    _map3d.scene.remove(_map3d.mesh);
+    _map3d.mesh.geometry.dispose();
+    _map3d.mesh.material.dispose();
+    _map3d.mesh = null;
+  }
+
+  var g = l.georaster;
+  var values2D = g.values[0]; // [row][col], row 0 = utara (ymax)
+  var srcH = values2D.length;
+  var srcW = values2D[0].length;
+  var noData = g.noDataValue;
+
+  // Downsample supaya jumlah vertex tetap ringan di browser (maks ~200x200 grid)
+  var maxGrid = 200;
+  var stepX = Math.max(1, Math.ceil(srcW / maxGrid));
+  var stepY = Math.max(1, Math.ceil(srcH / maxGrid));
+  var gridW = Math.ceil(srcW / stepX);
+  var gridH = Math.ceil(srcH / stepY);
+
+  var min = l.min, max = l.max;
+  var range = (max > min) ? (max - min) : 1;
+
+  // Skala dunia: lebar model tetap 300 unit, tinggi proporsional terhadap aspek rasio geografis asli
+  var geoAspect = (g.xmax - g.xmin) / (g.ymax - g.ymin || 1);
+  var worldW = 300;
+  var worldD = worldW / (geoAspect || 1);
+
+  var geometry = new THREE.PlaneGeometry(worldW, worldD, gridW - 1, gridH - 1);
+  geometry.rotateX(-Math.PI / 2); // jadikan horizontal (Y = atas)
+
+  var pos = geometry.attributes.position;
+  var colors = new Float32Array(pos.count * 3);
+  var exag = _map3d.exaggeration;
+  var heightScale = (worldW / 3) * exag; // skala tinggi relatif thd lebar model
+
+  var vi = 0;
+  for (var ry = 0; ry < gridH; ry++) {
+    var srcRow = Math.min(ry * stepY, srcH - 1);
+    var row = values2D[srcRow];
+    for (var rx = 0; rx < gridW; rx++) {
+      var srcCol = Math.min(rx * stepX, srcW - 1);
+      var v = row[srcCol];
+      var valid = !(v === null || v === undefined || isNaN(v) || v === noData);
+      var vClamped = valid ? Math.max(min, Math.min(max, v)) : min;
+      var t = (vClamped - min) / range;
+      var yPos = t * heightScale;
+
+      pos.setY(vi, yPos);
+
+      var rgb = _tifColorAt(_map3d.colorScheme, valid ? t : 0);
+      colors[vi*3]   = rgb[0] / 255;
+      colors[vi*3+1] = rgb[1] / 255;
+      colors[vi*3+2] = rgb[2] / 255;
+      vi++;
+    }
+  }
+  geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  geometry.computeVertexNormals();
+
+  var material = new THREE.MeshStandardMaterial({
+    vertexColors: true,
+    side: THREE.DoubleSide,
+    flatShading: false,
+    wireframe: _map3d.wireframe,
+    roughness: 0.85,
+    metalness: 0.02
+  });
+
+  var mesh = new THREE.Mesh(geometry, material);
+  mesh.castShadow = false;
+  _map3d.scene.add(mesh);
+  _map3d.mesh = mesh;
+
+  // Posisikan kamera menghadap model dari sudut miring, jarak menyesuaikan ukuran model
+  var maxDim = Math.max(worldW, worldD, heightScale);
+  _map3d.camera.position.set(maxDim * 0.55, maxDim * 0.65, maxDim * 0.85);
+  _map3d.controls.target.set(0, heightScale * 0.15, 0);
+  _map3d.controls.update();
+
+  if (statusEl) {
+    statusEl.textContent = l.name + ' — grid ' + gridW + '×' + gridH + ' (dari ' + srcW + '×' + srcH + ' px) · ' +
+      Math.round(l.min) + '–' + Math.round(l.max) + ' m dpl';
+  }
+}
+
+function map3dUpdateExaggeration() {
+  var slider = document.getElementById('map3d-exag');
+  var val = parseFloat(slider.value);
+  _map3d.exaggeration = val;
+  document.getElementById('map3d-exag-val').textContent = val.toFixed(1) + '×';
+  if (_map3d.activeLayerId) map3dBuildTerrain(_map3d.activeLayerId);
+}
+
+function map3dUpdateColorScheme() {
+  var sel = document.getElementById('map3d-colorscheme');
+  _map3d.colorScheme = sel.value;
+  if (_map3d.activeLayerId) map3dBuildTerrain(_map3d.activeLayerId);
+}
+
+function map3dToggleWireframe() {
+  var chk = document.getElementById('map3d-wireframe');
+  _map3d.wireframe = !!chk.checked;
+  if (_map3d.mesh) _map3d.mesh.material.wireframe = _map3d.wireframe;
+}
+
+function map3dResetView() {
+  if (_map3d.activeLayerId) map3dBuildTerrain(_map3d.activeLayerId);
 }
 
 /* ══════════════════════════════════════════════════════════════

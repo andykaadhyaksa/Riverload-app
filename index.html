@@ -825,6 +825,12 @@ tr:hover td { background: rgba(26,176,166,0.02); }
 .shp-layer-meta { font-family: var(--mono); font-size: 9px; color: var(--mute); margin-top: 2px; }
 .shp-color-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
 
+/* ── TIF/DEMNAS Upload Panel (reuses .shp-* base styles) ── */
+.tif-gradient-bar { height: 12px; border-radius: 4px; margin: 6px 0 3px; }
+.tif-gradient-labels { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 8px; color: var(--mute); }
+.tif-opacity-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.tif-opacity-row input[type="range"] { flex: 1; accent-color: #60aef0; }
+
 /* ── Accordion jenis titik (Input Koordinat DMS) ── */
 #dms-acc-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 4px; }
 .dms-acc-item { border: 1px solid var(--brd2); border-radius: var(--rs); overflow: hidden; }
@@ -956,6 +962,9 @@ tr:hover td { background: rgba(26,176,166,0.02); }
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
 <script src="https://cdn.jsdelivr.net/npm/shpjs@4/dist/shp.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/geotiff@2.1.3/dist-browser/geotiff.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/georaster@1.6.0/dist/georaster.browser.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/georaster-layer-for-leaflet@3.10.0/dist/georaster-layer-for-leaflet.min.js"></script>
 <style>
 /* Fix Leaflet inside RiverLoad dark theme */
 #riverload-map,
@@ -7200,8 +7209,11 @@ if (document.readyState === 'loading') {
         </div>
         <button class="btn btn-outline btn-sm" onclick="petaAddMode('garis')" style="color:#4488ff;border-color:rgba(68,136,255,.4)" title="Gambar garis manual di peta">／ Garis</button>
         <button class="btn btn-outline btn-sm" onclick="petaAddMode('polygon')" style="color:#9b59b6;border-color:rgba(155,89,182,.4)" title="Gambar area/poligon &amp; hitung luas">▱ Poligon</button>
+        <button class="btn btn-outline btn-sm" onclick="petaAddMode('rectangle')" style="color:#e07b54;border-color:rgba(224,123,84,.4)" title="Gambar persegi/rectangle — klik sudut, lalu sudut berlawanan">▭ Persegi</button>
+        <button class="btn btn-outline btn-sm" onclick="petaAddMode('circle')" style="color:#38bdf8;border-color:rgba(56,189,248,.4)" title="Gambar lingkaran — klik pusat, lalu tepi utk menentukan radius">◯ Lingkaran</button>
         <button class="btn btn-outline btn-sm" onclick="petaAddMode('ruler')" style="color:#f5c030;border-color:rgba(245,192,48,.4)" title="Ukur jarak/panjang di peta">📏 Ukur</button>
         <button class="btn btn-outline btn-sm" onclick="petaToggleShpPanel()" style="color:#f5c030;border-color:rgba(245,192,48,.4)" title="Upload file SHP sungai kamu sendiri">📂 Upload SHP</button>
+        <button class="btn btn-outline btn-sm" onclick="petaToggleTifPanel()" style="color:#60aef0;border-color:rgba(96,174,240,.4)" title="Upload file GeoTIFF (mis. DEMNAS) sebagai layer elevasi">🏔️ Upload TIF</button>
       </div>
     </div>
 
@@ -7364,6 +7376,62 @@ if (document.readyState === 'loading') {
             <div style="font-family:var(--mono);font-size:9px;font-weight:700;color:var(--mute);text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px">Layer Aktif</div>
             <div id="shp-layers-items"></div>
             <button onclick="shpClearAll()" style="width:100%;margin-top:8px;font-family:var(--mono);font-size:10px;padding:6px;border-radius:var(--rs);background:transparent;border:1px solid rgba(255,68,68,0.3);color:var(--red);cursor:pointer">🗑 Hapus Semua Layer SHP</button>
+          </div>
+        </div>
+
+        <!-- Upload TIF/DEMNAS Panel -->
+        <div class="card" id="tif-upload-panel" style="padding:14px 15px;flex-shrink:0;display:none">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <div style="font-family:var(--mono);font-size:9.5px;font-weight:700;color:#60aef0;text-transform:uppercase;letter-spacing:.8px">🏔️ Upload TIF (DEMNAS)</div>
+            <button onclick="petaToggleTifPanel()" style="background:none;border:none;color:var(--mute);cursor:pointer;font-size:14px;line-height:1;padding:0">✕</button>
+          </div>
+          <div style="font-family:var(--mono);font-size:8.5px;color:var(--mute);line-height:1.5;margin-bottom:10px">Unggah file <b>.tif / .tiff</b> GeoTIFF — misalnya DEM dari BIG DEMNAS (tanhair.big.go.id) — untuk ditampilkan sebagai layer elevasi di peta. Proyeksi WGS84 (EPSG:4326) paling kompatibel; file besar mungkin butuh waktu lebih lama. <span style="color:#f5c030">Catatan: layer TIF tidak ikut tersimpan di file project (.riverload) karena ukurannya besar — perlu diunggah ulang tiap sesi.</span></div>
+
+          <!-- Drop Zone -->
+          <div class="shp-upload-zone" id="tif-drop-zone" ondragover="tifDragOver(event)" ondragleave="tifDragLeave(event)" ondrop="tifDrop(event)">
+            <input type="file" class="shp-upload-input" id="tif-file-input" accept=".tif,.tiff" onchange="tifFilePicked(event)">
+            <div class="shp-upload-icon">🗺️</div>
+            <div class="shp-upload-title">Drag & drop file .tif di sini</div>
+            <div class="shp-upload-sub">atau klik untuk pilih file<br>Data DEM / DEMNAS (GeoTIFF)</div>
+          </div>
+
+          <!-- Slot file terpilih -->
+          <div style="margin-top:10px" id="tif-slot-list">
+            <div class="shp-file-slot" id="tif-slot-tif">
+              <span class="slot-ext" style="background:rgba(96,174,240,0.15);color:#60aef0">.TIF</span>
+              <span class="slot-name" id="tif-name-tif">Belum dipilih</span>
+              <span class="slot-miss" id="tif-icon-tif">○</span>
+            </div>
+          </div>
+
+          <!-- Progress bar -->
+          <div class="shp-progress-bar" id="tif-progress-wrap" style="display:none">
+            <div class="shp-progress-fill" id="tif-progress-fill" style="background:#60aef0"></div>
+          </div>
+          <div id="tif-status-txt" style="font-family:var(--mono);font-size:9.5px;color:var(--mute);text-align:center;margin-bottom:8px;min-height:14px"></div>
+
+          <!-- Opsi skema warna -->
+          <div style="margin-bottom:8px">
+            <div style="font-family:var(--mono);font-size:8.5px;color:var(--mute);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Skema Warna Elevasi</div>
+            <select class="finput" id="tif-colorscheme" style="font-size:10.5px;padding:6px 8px;width:100%">
+              <option value="terrain">Terrain (hijau → coklat → putih)</option>
+              <option value="spectral">Spectral (biru → kuning → merah)</option>
+              <option value="gray">Grayscale (hitam → putih)</option>
+              <option value="viridis">Viridis (ungu → hijau → kuning)</option>
+            </select>
+          </div>
+
+          <!-- Tombol load -->
+          <button id="tif-load-btn" onclick="tifLoadFile()" disabled
+            style="width:100%;font-family:var(--mono);font-size:11px;font-weight:700;padding:9px;border-radius:var(--rs);border:none;cursor:pointer;background:rgba(96,174,240,0.12);color:#60aef0;border:1px solid rgba(96,174,240,0.3);transition:all .2s;opacity:0.4">
+            ⚡ Tampilkan di Peta
+          </button>
+
+          <!-- Daftar layer TIF yang sudah di-load -->
+          <div id="tif-layers-list" style="margin-top:12px;display:none">
+            <div style="font-family:var(--mono);font-size:9px;font-weight:700;color:var(--mute);text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px">Layer Elevasi Aktif</div>
+            <div id="tif-layers-items"></div>
+            <button onclick="tifClearAll()" style="width:100%;margin-top:8px;font-family:var(--mono);font-size:10px;padding:6px;border-radius:var(--rs);background:transparent;border:1px solid rgba(255,68,68,0.3);color:var(--red);cursor:pointer">🗑 Hapus Semua Layer TIF</button>
           </div>
         </div>
 
@@ -8663,10 +8731,23 @@ function petaInit() {
     } else if (_mode === 'polygon') {
       _shapePts.push([lat, lng]);
       _drawTempShape('polygon');
+    } else if (_mode === 'rectangle') {
+      _shapePts.push([lat, lng]);
+      if (_shapePts.length >= 2) { _saveRectangleDirect(); }
+    } else if (_mode === 'circle') {
+      _shapePts.push([lat, lng]);
+      if (_shapePts.length >= 2) { _saveCircleDirect(); }
     } else if (_mode === 'ruler') {
       _rulerAddPoint(lat, lng);
     } else {
       _addPopup(latlng, _mode);
+    }
+  });
+
+  /* Preview live persegi/lingkaran mengikuti pergerakan kursor setelah titik pertama diklik */
+  _map.on('mousemove', function(e) {
+    if ((_mode === 'rectangle' || _mode === 'circle') && _shapePts.length === 1) {
+      _drawTempRectCircle(_mode, _shapePts[0], [e.latlng.lat, e.latlng.lng]);
     }
   });
 
@@ -8686,9 +8767,9 @@ function petaAddMode(mode) {
   var finishBtn = document.getElementById('peta-mode-finish-btn');
   var undoBtn = document.getElementById('peta-mode-undo-btn');
   if (!bar || !txt) return;
-  var icons = { sampling:'📍', inlet:'⬅', outfall:'🏭', outlet:'🚿', hulu:'⬆', hilir:'⬇', sungai:'〰', garis:'／', polygon:'▱', ruler:'📏' };
-  var customLabel = { sungai:'Alur Sungai', garis:'Garis', polygon:'Poligon', ruler:'Ukur Jarak' };
-  var customColor = { sungai:'#4488ff', garis:'#4488ff', polygon:'#9b59b6', ruler:'#f5c030' };
+  var icons = { sampling:'📍', inlet:'⬅', outfall:'🏭', outlet:'🚿', hulu:'⬆', hilir:'⬇', sungai:'〰', garis:'／', polygon:'▱', rectangle:'▭', circle:'◯', ruler:'📏' };
+  var customLabel = { sungai:'Alur Sungai', garis:'Garis', polygon:'Poligon', rectangle:'Persegi', circle:'Lingkaran', ruler:'Ukur Jarak' };
+  var customColor = { sungai:'#4488ff', garis:'#4488ff', polygon:'#9b59b6', rectangle:'#e07b54', circle:'#38bdf8', ruler:'#f5c030' };
   var label = customLabel[mode] || _ptType(mode).label;
   var bg = customColor[mode] ? _hexToRgba(customColor[mode], 0.12) : _hexToRgba(_ptType(mode).color, 0.12);
   bar.style.cssText = 'display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:9px 16px;border-radius:var(--rs);font-family:var(--mono);font-size:10.5px;font-weight:600;background:'+bg+';border:1px solid var(--brd)';
@@ -8696,6 +8777,8 @@ function petaAddMode(mode) {
     sungai:   'klik titik-titik alur, lalu konfirmasi',
     garis:    'klik titik-titik garis (min. 2), lalu klik "Selesai" (Enter)',
     polygon:  'klik titik-titik area (min. 3), lalu klik "Selesai" (Enter)',
+    rectangle:'klik sudut pertama, lalu klik sudut berlawanan (2 titik) — selesai otomatis',
+    circle:   'klik titik pusat, lalu klik tepi utk menentukan radius (2 titik) — selesai otomatis',
     ruler:    'klik titik-titik utk mengukur, jarak terlihat live, lalu "Selesai" (Enter)'
   };
   txt.textContent = (icons[mode]||'📍')+' Mode '+label+' — '+(hint[mode] || 'klik lokasi di peta');
@@ -10106,6 +10189,107 @@ function _fmtArea(m2) {
   return m2Txt + ' m² ('+haTxt+' ha)';
 }
 
+/* ─── Preview live utk Persegi & Lingkaran (mengikuti kursor stlh titik pertama) ─── */
+function _drawTempRectCircle(kind, start, cur) {
+  if (_tempShape) { _map.removeLayer(_tempShape); _tempShape = null; }
+  if (_tempVertices) { _map.removeLayer(_tempVertices); _tempVertices = null; }
+  var col = (kind === 'rectangle') ? '#e07b54' : '#38bdf8';
+  _tempVertices = L.layerGroup().addTo(_map);
+  L.circleMarker(start, { radius:7, color:'#fff', weight:2.5, fillColor:'#ffeb3b', fillOpacity:1 }).addTo(_tempVertices);
+
+  var liveTxt = '';
+  if (kind === 'rectangle') {
+    var bounds = L.latLngBounds(start, cur);
+    _tempShape = L.rectangle(bounds, { color:col, weight:2.5, opacity:0.85, fillColor:col, fillOpacity:0.18, dashArray:'6,4' }).addTo(_map);
+    var pts = [
+      [bounds.getSouth(), bounds.getWest()],
+      [bounds.getSouth(), bounds.getEast()],
+      [bounds.getNorth(), bounds.getEast()],
+      [bounds.getNorth(), bounds.getWest()]
+    ];
+    liveTxt = _fmtArea(_polygonAreaM2(pts));
+  } else {
+    var r = L.latLng(start).distanceTo(L.latLng(cur));
+    _tempShape = L.circle(start, { radius:r, color:col, weight:2.5, opacity:0.85, fillColor:col, fillOpacity:0.18, dashArray:'6,4' }).addTo(_map);
+    liveTxt = 'r=' + _fmtDistance(r) + ' · ' + _fmtArea(Math.PI * r * r);
+  }
+  L.marker(cur, {
+    icon: L.divIcon({
+      className:'', iconSize:[1,1], iconAnchor:[-10,-10],
+      html: '<div style="background:'+col+';color:#fff;font-family:\'Inter\',sans-serif;font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:4px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.3)">'+_e(liveTxt)+'</div>'
+    }),
+    interactive:false
+  }).addTo(_tempVertices);
+}
+
+/* Hitung titik-titik poligon pendekatan lingkaran (great-circle) dari pusat + radius (meter) */
+function _circlePolygonPoints(center, radiusM, n) {
+  var R = 6378137;
+  var lat0 = center[0]*Math.PI/180, lng0 = center[1]*Math.PI/180;
+  var pts = [];
+  for (var i=0;i<n;i++) {
+    var brng = (i/n)*2*Math.PI;
+    var latR = Math.asin(Math.sin(lat0)*Math.cos(radiusM/R) + Math.cos(lat0)*Math.sin(radiusM/R)*Math.cos(brng));
+    var lngR = lng0 + Math.atan2(Math.sin(brng)*Math.sin(radiusM/R)*Math.cos(lat0), Math.cos(radiusM/R)-Math.sin(lat0)*Math.sin(latR));
+    pts.push([latR*180/Math.PI, lngR*180/Math.PI]);
+  }
+  return pts;
+}
+
+/* ─── Simpan PERSEGI/RECTANGLE langsung (2 klik: sudut A & sudut berlawanan) — disimpan sbg poligon 4 titik ─── */
+function _saveRectangleDirect() {
+  var defColor = _shapeColorPalette[_shapeColorIdx % _shapeColorPalette.length];
+  _shapeColorIdx++;
+  var start = _shapePts[0], end = _shapePts[1];
+  if (_tempShape) { _map.removeLayer(_tempShape); _tempShape = null; }
+  if (_tempVertices) { _map.removeLayer(_tempVertices); _tempVertices = null; }
+  var bounds = L.latLngBounds(start, end);
+  var pts = [
+    [bounds.getSouth(), bounds.getWest()],
+    [bounds.getSouth(), bounds.getEast()],
+    [bounds.getNorth(), bounds.getEast()],
+    [bounds.getNorth(), bounds.getWest()]
+  ];
+  var areaM2 = _polygonAreaM2(pts);
+  var pid = 'poly_'+(_uid++);
+  var nm = 'Persegi ' + (_polygons.length + 1);
+  var item = { id:pid, name:nm, color:defColor, points:pts, areaM2:areaM2, layer:null,
+    fillColor:defColor, fillStyle:'solid', fillOpacity:22,
+    outlineColor:defColor, outlineWeight:2.5, shapeKind:'rectangle' };
+  var layer = _buildPolygonLayer(item).addTo(_map);
+  item.layer = layer;
+  _polygons.push(item);
+  if (typeof _layerOrderSync === 'function') _layerOrderSync();
+  petaCancelMode();
+  petaRenderShapesList(); _persist();
+  toast('✓ "'+nm+'" disimpan ('+_fmtArea(areaM2)+') — atur warna/gaya di panel 📐 Garis & Poligon', 'ok');
+}
+
+/* ─── Simpan LINGKARAN langsung (2 klik: pusat & tepi/radius) — disimpan sbg poligon pendekatan 64 titik ─── */
+function _saveCircleDirect() {
+  var defColor = _shapeColorPalette[_shapeColorIdx % _shapeColorPalette.length];
+  _shapeColorIdx++;
+  var start = _shapePts[0], end = _shapePts[1];
+  if (_tempShape) { _map.removeLayer(_tempShape); _tempShape = null; }
+  if (_tempVertices) { _map.removeLayer(_tempVertices); _tempVertices = null; }
+  var r = L.latLng(start).distanceTo(L.latLng(end));
+  if (r < 1) { toast('⚠ Radius terlalu kecil, coba lagi', 'err'); petaCancelMode(); return; }
+  var pts = _circlePolygonPoints(start, r, 64);
+  var areaM2 = Math.PI * r * r;
+  var pid = 'poly_'+(_uid++);
+  var nm = 'Lingkaran ' + (_polygons.length + 1);
+  var item = { id:pid, name:nm, color:defColor, points:pts, areaM2:areaM2, layer:null,
+    fillColor:defColor, fillStyle:'solid', fillOpacity:22,
+    outlineColor:defColor, outlineWeight:2.5, shapeKind:'circle', circleCenter:start, circleRadius:r };
+  var layer = _buildPolygonLayer(item).addTo(_map);
+  item.layer = layer;
+  _polygons.push(item);
+  if (typeof _layerOrderSync === 'function') _layerOrderSync();
+  petaCancelMode();
+  petaRenderShapesList(); _persist();
+  toast('✓ "'+nm+'" disimpan (r='+_fmtDistance(r)+', '+_fmtArea(areaM2)+') — atur warna/gaya di panel 📐 Garis & Poligon', 'ok');
+}
+
 /* ─── Konfirmasi & simpan GARIS ──────────────────────────────── */
 /* ─── Simpan GARIS langsung (tanpa popup) — gaya diatur lagi nanti di panel 📐 Garis & Poligon ─── */
 function _saveLineDirect() {
@@ -10549,6 +10733,7 @@ function _shapeRowHtml(kind, item, sub) {
       '</div>' +
       '<button onclick="petaToggleShapeCoords(\''+uid+'\')" title="Lihat koordinat" style="background:none;border:none;color:var(--mute);cursor:pointer;font-size:10px;padding:2px 4px;flex-shrink:0" id="shape-toggle-'+uid+'">▾</button>' +
       '<button onclick="petaToggleFillPanel(\'shape-fill-'+uid+'\')" title="Gaya & properti tampilan" style="background:none;border:none;color:var(--mute);cursor:pointer;font-size:12px;padding:2px 4px;flex-shrink:0">🎨</button>' +
+      (kind === 'line' ? '<button onclick="elevOpenModal(\''+id+'\')" title="Cek profil elevasi sepanjang garis (butuh layer TIF aktif)" style="background:none;border:none;color:#60aef0;cursor:pointer;font-size:12px;padding:2px 4px;flex-shrink:0">📈</button>' : '') +
       '<button onclick="petaDeleteShape(\''+kind+'\',\''+id+'\')" title="Hapus" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:11px;padding:2px 4px;flex-shrink:0">✕</button>' +
     '</div>' +
     '<div id="shape-coords-'+uid+'" style="display:none;padding:0 0 7px 20px">' +
@@ -10570,15 +10755,729 @@ function petaToggleShapeCoords(uid) {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   URUTAN LAYER (Z-ORDER) — SHP, Garis, Poligon digabung 1 daftar.
-   Index 0 = paling ATAS (tergambar terakhir, menutup yang di bawahnya).
+   TIF/GeoTIFF UPLOAD — baca file .tif (mis. DEMNAS) sbg layer elevasi raster
+   Menggunakan georaster + georaster-layer-for-leaflet (dimuat via CDN).
    ══════════════════════════════════════════════════════════════ */
-var _layerOrder = []; // [{type:'shp'|'line'|'polygon', id:'...'}]
+var _tifFile   = null;
+var _tifLayers = []; // [{id, name, layer, georaster, min, max, colorScheme, opacity}]
+var _tifColorIdx = 0;
+
+var _tifColorSchemes = {
+  terrain: { name:'Terrain', stops: [
+    [0.00,[40,120,60]], [0.25,[120,170,70]], [0.50,[210,190,110]],
+    [0.75,[170,120,80]], [1.00,[255,255,255]]
+  ]},
+  spectral: { name:'Spectral', stops: [
+    [0.00,[50,90,200]], [0.25,[80,180,190]], [0.50,[240,230,120]],
+    [0.75,[230,140,60]], [1.00,[200,40,40]]
+  ]},
+  gray: { name:'Grayscale', stops: [
+    [0.00,[20,20,20]], [1.00,[245,245,245]]
+  ]},
+  viridis: { name:'Viridis', stops: [
+    [0.00,[68,1,84]], [0.33,[59,82,139]], [0.66,[33,145,140]],
+    [0.85,[94,201,98]], [1.00,[253,231,37]]
+  ]}
+};
+
+function petaToggleTifPanel() {
+  var panel = document.getElementById('tif-upload-panel');
+  if (!panel) return;
+  var isVisible = panel.style.display !== 'none';
+  panel.style.display = isVisible ? 'none' : 'block';
+  if (!isVisible) {
+    // Panel baru dibuka — cek dini apakah library GeoTIFF berhasil dimuat dari CDN,
+    // supaya user tahu masalahnya sebelum sempat upload & menunggu lama.
+    setTimeout(function() {
+      if (typeof GeoTIFF === 'undefined' || typeof GeoRasterLayer === 'undefined') {
+        tifSetStatus('⚠ Library GeoTIFF belum termuat — cek koneksi internet / buka Console (F12) untuk detail', 'var(--red)');
+        console.warn('[TIF] Saat panel dibuka: GeoTIFF=', typeof GeoTIFF, 'GeoRasterLayer=', typeof GeoRasterLayer, '— kemungkinan request script ke CDN gagal, cek tab Network di DevTools.');
+      }
+    }, 300);
+  }
+}
+
+/* ── Drag & Drop handlers ── */
+function tifDragOver(e) {
+  e.preventDefault();
+  document.getElementById('tif-drop-zone').classList.add('drag-over');
+}
+function tifDragLeave(e) {
+  document.getElementById('tif-drop-zone').classList.remove('drag-over');
+}
+function tifDrop(e) {
+  e.preventDefault();
+  document.getElementById('tif-drop-zone').classList.remove('drag-over');
+  tifProcessFiles(Array.from(e.dataTransfer.files));
+}
+function tifFilePicked(e) {
+  tifProcessFiles(Array.from(e.target.files));
+  e.target.value = '';
+}
+
+function tifProcessFiles(files) {
+  var f = files.find(function(x){
+    var ext = x.name.split('.').pop().toLowerCase();
+    return ext === 'tif' || ext === 'tiff';
+  });
+  if (!f) {
+    tifSetStatus('Pilih file dengan ekstensi .tif atau .tiff', 'var(--red)');
+    return;
+  }
+  _tifFile = f;
+  var nameEl = document.getElementById('tif-name-tif');
+  var iconEl = document.getElementById('tif-icon-tif');
+  var slotEl = document.getElementById('tif-slot-tif');
+  if (nameEl) nameEl.textContent = f.name;
+  if (iconEl) { iconEl.textContent = '✓'; iconEl.className = 'slot-ok'; }
+  if (slotEl) slotEl.classList.add('has-file');
+  tifCheckReady();
+}
+
+function tifCheckReady() {
+  var btn = document.getElementById('tif-load-btn');
+  if (!btn) return;
+  var ready = !!_tifFile;
+  btn.disabled = !ready;
+  btn.style.opacity = ready ? '1' : '0.4';
+  btn.style.cursor = ready ? 'pointer' : 'default';
+  tifSetStatus(ready ? 'File siap — klik "Tampilkan di Peta"' : '', ready ? '#1ab0a6' : '');
+}
+
+function tifSetStatus(msg, color) {
+  var el = document.getElementById('tif-status-txt');
+  if (el) { el.textContent = msg; el.style.color = color || 'var(--mute)'; }
+}
+function tifSetProgress(pct) {
+  var wrap = document.getElementById('tif-progress-wrap');
+  var fill = document.getElementById('tif-progress-fill');
+  if (!wrap || !fill) return;
+  wrap.style.display = pct > 0 && pct < 100 ? 'block' : 'none';
+  fill.style.width = pct + '%';
+}
+
+/* ── Load & render ke peta ── */
+function tifLoadFile() {
+  if (!_tifFile) return;
+  if (!_map) { toast('Peta belum terbuka — buka tab Pemetaan dulu', 'err'); return; }
+
+  console.log('[TIF] Mulai proses. GeoTIFF (lib) tersedia?', typeof GeoTIFF, '| GeoRasterLayer tersedia?', typeof GeoRasterLayer);
+
+  if (typeof GeoTIFF === 'undefined' || typeof GeoRasterLayer === 'undefined') {
+    tifSetStatus('❌ Library GeoTIFF gagal dimuat — cek koneksi internet', 'var(--red)');
+    toast('Library GeoTIFF tidak tersedia. Buka Console (F12) untuk detail, cek koneksi internet, lalu muat ulang halaman.', 'err');
+    console.error('[TIF] Library tidak termuat. Cek tab Network di DevTools untuk request yang gagal (geotiff.js / georaster-layer-for-leaflet).');
+    return;
+  }
+
+  var colorScheme = document.getElementById('tif-colorscheme').value || 'terrain';
+  var fileName = _tifFile.name;
+  var fileSizeMB = _tifFile.size / (1024*1024);
+  console.log('[TIF] File:', fileName, fileSizeMB.toFixed(2)+' MB');
+
+  if (fileSizeMB > 150) {
+    var proceed = confirm(
+      'File berukuran ' + fileSizeMB.toFixed(0) + ' MB — ini cukup besar untuk diproses langsung di browser dan bisa memakan waktu beberapa menit atau membuat tab terasa berat/macet sementara.\n\n' +
+      'Disarankan: potong area (clip) ke lokasi kajian saja menggunakan QGIS, atau convert ke Cloud-Optimized GeoTIFF (COG) terlebih dulu.\n\n' +
+      'Tetap lanjutkan dengan file ini?'
+    );
+    if (!proceed) return;
+  }
+
+  var btn = document.getElementById('tif-load-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Memproses...'; }
+  tifSetStatus('Membaca file GeoTIFF...', 'var(--mute)');
+  tifSetProgress(15);
+
+  function tifFail(msg) {
+    console.error('[TIF] GAGAL:', msg);
+    tifSetStatus('❌ ' + msg, 'var(--red)');
+    tifSetProgress(0);
+    var btn = document.getElementById('tif-load-btn');
+    if (btn) { btn.disabled = false; btn.textContent = '⚡ Tampilkan di Peta'; btn.style.opacity = '1'; }
+    toast('Gagal memuat GeoTIFF: ' + msg, 'err');
+  }
+
+  var timeoutMs = Math.max(45000, Math.min(fileSizeMB * 1500, 240000)); // 45s min, 4 menit maks
+  var watchdogDone = false;
+  var watchdog = setTimeout(function() {
+    watchdogDone = true;
+    tifFail('Proses terlalu lama (sudah menunggu ' + Math.round(timeoutMs/1000) + ' detik untuk file ' + fileSizeMB.toFixed(0) + ' MB). Buka Console (F12) untuk lihat di tahap mana macetnya (cek log [TIF]). Kemungkinan: file terlalu besar untuk diproses di browser, formatnya tidak didukung penuh, atau tab sedang membeku.');
+  }, timeoutMs);
+
+  var reader = new FileReader();
+  console.log('[TIF] Membaca file ke ArrayBuffer...');
+  reader.onload = function(e) {
+    console.log('[TIF] FileReader selesai, ukuran buffer:', e.target.result.byteLength, 'bytes.');
+    tifSetProgress(30);
+    tifSetStatus('Membuka struktur GeoTIFF...', 'var(--mute)');
+
+    var arrayBuffer = e.target.result;
+
+    GeoTIFF.fromArrayBuffer(arrayBuffer).then(function(tiff) {
+      console.log('[TIF] GeoTIFF.fromArrayBuffer selesai. Mengambil image pertama...');
+      if (watchdogDone) return;
+      tifSetProgress(45);
+      return tiff.getImage();
+    }).then(function(image) {
+      if (!image || watchdogDone) return;
+      console.log('[TIF] getImage() selesai:', image.getWidth()+'x'+image.getHeight());
+      tifSetProgress(55);
+      tifSetStatus('Membaca nilai piksel (' + image.getWidth() + '×' + image.getHeight() + ')...', 'var(--mute)');
+
+      var width = image.getWidth();
+      var height = image.getHeight();
+      var bbox = image.getBoundingBox(); // [xmin, ymin, xmax, ymax]
+      var noData = image.getGDALNoData();
+
+      return image.readRasters({ interleave: false }).then(function(rasters) {
+        if (watchdogDone) return null;
+        console.log('[TIF] readRasters() selesai. Band count:', rasters.length);
+        return { rasters: rasters, width: width, height: height, bbox: bbox, noData: noData };
+      });
+    }).then(function(result) {
+      if (!result || watchdogDone) return;
+      tifSetProgress(75);
+      tifSetStatus('Menyusun raster & menghitung rentang nilai...', 'var(--mute)');
+      // Beri browser satu frame supaya progress bar sempat ter-render sebelum kerja berat berikutnya
+      setTimeout(function() {
+        if (watchdogDone) return;
+        try {
+          var georaster = _tifBuildGeoraster(result);
+          console.log('[TIF] Georaster manual berhasil dibangun:', georaster);
+          tifSetProgress(90);
+          tifSetStatus('Merender ke peta...', 'var(--mute)');
+          setTimeout(function() {
+            if (watchdogDone) return;
+            try {
+              tifRenderLayer(georaster, fileName, colorScheme);
+              clearTimeout(watchdog);
+              console.log('[TIF] Render selesai.');
+            } catch (renderErr) {
+              clearTimeout(watchdog);
+              console.error('[TIF] Error saat render:', renderErr);
+              tifFail('Gagal merender raster ke peta (' + renderErr.message + ').');
+            }
+          }, 30);
+        } catch (buildErr) {
+          clearTimeout(watchdog);
+          console.error('[TIF] Error membangun georaster:', buildErr);
+          tifFail('Gagal menyusun data raster (' + buildErr.message + ').');
+        }
+      }, 30);
+    }).catch(function(err) {
+      clearTimeout(watchdog);
+      console.error('[TIF] Error di pipeline GeoTIFF:', err);
+      tifFail('Gagal mengurai file (' + err.message + '). Pastikan file adalah GeoTIFF valid dengan georeferensi (EPSG:4326 disarankan). Jika file terkompresi dengan format tak lazim (mis. LZW/JPEG khusus), coba re-export dari QGIS/GDAL dengan kompresi DEFLATE atau tanpa kompresi.');
+    });
+  };
+  reader.onerror = function() {
+    clearTimeout(watchdog);
+    console.error('[TIF] FileReader error:', reader.error);
+    tifFail('Gagal membaca file dari disk.');
+  };
+  reader.readAsArrayBuffer(_tifFile);
+}
+
+/* Bangun objek "georaster" minimal yang kompatibel dengan GeoRasterLayer,
+   langsung dari hasil geotiff.js (image.readRasters + bbox), tanpa lewat
+   wrapper parseGeoraster yang kadang macet untuk struktur TIFF tertentu. */
+function _tifBuildGeoraster(result) {
+  var rasters = result.rasters; // array per band, tiap band = TypedArray flat (panjang width*height)
+  var width = result.width, height = result.height;
+  var bbox = result.bbox; // [xmin, ymin, xmax, ymax]
+  var noData = result.noData;
+
+  var band0 = rasters[0]; // TypedArray flat, band pertama (elevasi utk DEM)
+
+  // Susun ke array 2D [row][col] sesuai format yang diharapkan georaster-layer-for-leaflet
+  var values2D = new Array(height);
+  var min = Infinity, max = -Infinity;
+  for (var r = 0; r < height; r++) {
+    var row = new Array(width);
+    var base = r * width;
+    for (var c = 0; c < width; c++) {
+      var v = band0[base + c];
+      row[c] = v;
+      if (v !== null && v !== undefined && !isNaN(v) && v !== noData) {
+        if (v < min) min = v;
+        if (v > max) max = v;
+      }
+    }
+    values2D[r] = row;
+  }
+  if (!isFinite(min) || !isFinite(max)) { min = 0; max = 1; }
+
+  var xmin = bbox[0], ymin = bbox[1], xmax = bbox[2], ymax = bbox[3];
+  var pixelWidth = (xmax - xmin) / width;
+  var pixelHeight = (ymax - ymin) / height;
+
+  return {
+    width: width,
+    height: height,
+    xmin: xmin, xmax: xmax, ymin: ymin, ymax: ymax,
+    pixelWidth: pixelWidth, pixelHeight: pixelHeight,
+    projection: 4326, // asumsi WGS84 — GeoTIFF non-4326 disarankan direproject dulu di QGIS/GDAL
+    noDataValue: noData,
+    numberOfRasters: 1,
+    mins: [min], maxs: [max],
+    values: [values2D]
+  };
+}
+
+function _tifColorAt(scheme, t) {
+  var stops = (_tifColorSchemes[scheme] || _tifColorSchemes.terrain).stops;
+  t = Math.max(0, Math.min(1, t));
+  for (var i = 0; i < stops.length - 1; i++) {
+    var a = stops[i], b = stops[i+1];
+    if (t >= a[0] && t <= b[0]) {
+      var span = (b[0] - a[0]) || 1;
+      var f = (t - a[0]) / span;
+      var r = Math.round(a[1][0] + (b[1][0]-a[1][0])*f);
+      var g = Math.round(a[1][1] + (b[1][1]-a[1][1])*f);
+      var bl = Math.round(a[1][2] + (b[1][2]-a[1][2])*f);
+      return [r,g,bl];
+    }
+  }
+  var last = stops[stops.length-1][1];
+  return last;
+}
+
+function _tifComputeMinMax(georaster, noData) {
+  var min = Infinity, max = -Infinity;
+  try {
+    var values = georaster.values && georaster.values[0]; // array 2D [row][col]
+    if (values) {
+      for (var r = 0; r < values.length; r++) {
+        var row = values[r];
+        for (var c = 0; c < row.length; c++) {
+          var v = row[c];
+          if (v === null || v === undefined || isNaN(v) || v === noData) continue;
+          if (v < min) min = v;
+          if (v > max) max = v;
+        }
+      }
+    }
+  } catch (e) { /* abaikan, pakai fallback di bawah */ }
+  if (!isFinite(min) || !isFinite(max)) { min = 0; max = 1; }
+  return { min: min, max: max };
+}
+
+function tifRenderLayer(georaster, fileName, colorScheme) {
+  var min = georaster.mins ? georaster.mins[0] : georaster.minValue;
+  var max = georaster.maxs ? georaster.maxs[0] : georaster.maxValue;
+  var noData = georaster.noDataValue;
+
+  // Fallback: kalau georaster tidak mengisi mins/maxs (kadang terjadi tergantung versi/file),
+  // hitung manual dari data pixel supaya render tidak error/diam saja.
+  if (min === undefined || min === null || max === undefined || max === null || isNaN(min) || isNaN(max)) {
+    var calc = _tifComputeMinMax(georaster, noData);
+    min = calc.min; max = calc.max;
+  }
+  if (min === max) { max = min + 1; } // hindari divide-by-zero di pixelValuesToColorFn
+
+  var layerId = 'tif_' + Date.now();
+  var opacity = 75;
+
+  // Resolusi lebih rendah untuk raster besar (piksel banyak) supaya rendering tidak macet
+  var totalPixels = (georaster.width || 0) * (georaster.height || 0);
+  var res = totalPixels > 4000000 ? 128 : (totalPixels > 1000000 ? 192 : 256);
+
+  var geoLayer = new GeoRasterLayer({
+    georaster: georaster,
+    opacity: opacity / 100,
+    resolution: res,
+    pixelValuesToColorFn: function(values) {
+      var v = values[0];
+      if (v === null || v === undefined || isNaN(v) || v === noData) return null;
+      var t = (max > min) ? (v - min) / (max - min) : 0.5;
+      var rgb = _tifColorAt(colorScheme, t);
+      return 'rgb(' + rgb[0] + ',' + rgb[1] + ',' + rgb[2] + ')';
+    }
+  });
+  geoLayer.addTo(_map);
+
+  try {
+    var b = geoLayer.getBounds();
+    if (b && b.isValid && b.isValid()) _map.fitBounds(b, { padding: [30, 30] });
+  } catch(e) {}
+
+  var layerObj = {
+    id: layerId,
+    name: fileName.replace(/\.(tif|tiff)$/i, ''),
+    layer: geoLayer,
+    georaster: georaster,
+    min: min, max: max,
+    colorScheme: colorScheme,
+    opacity: opacity,
+    color: '#60aef0' // dipakai oleh tampilan urutan layer (z-order)
+  };
+  _tifLayers.push(layerObj);
+  if (typeof _layerOrderSync === 'function') _layerOrderSync();
+  tifUpdateLayerList();
+
+  tifSetProgress(100);
+  tifSetStatus('✓ Layer elevasi berhasil ditampilkan', '#1ab0a6');
+
+  // Reset slot
+  _tifFile = null;
+  var nameEl = document.getElementById('tif-name-tif');
+  var iconEl = document.getElementById('tif-icon-tif');
+  var slotEl = document.getElementById('tif-slot-tif');
+  if (nameEl) nameEl.textContent = 'Belum dipilih';
+  if (iconEl) { iconEl.textContent = '○'; iconEl.className = 'slot-miss'; }
+  if (slotEl) slotEl.classList.remove('has-file');
+
+  var btn = document.getElementById('tif-load-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⚡ Tampilkan di Peta'; btn.style.opacity = '0.4'; }
+
+  toast('✓ ' + layerObj.name + ' — layer elevasi dimuat (min ' + Math.round(min) + 'm, maks ' + Math.round(max) + 'm)', 'ok');
+}
+
+function tifToggleVisibility(id) {
+  var l = _tifLayers.find(function(x){ return x.id === id; });
+  if (!l || !l.layer) return;
+  if (_map.hasLayer(l.layer)) { _map.removeLayer(l.layer); }
+  else { l.layer.addTo(_map); if (typeof _layerOrderApply === 'function') _layerOrderApply(); }
+  tifUpdateLayerList();
+  _persist();
+}
+
+function tifChangeOpacity(id, val) {
+  var l = _tifLayers.find(function(x){ return x.id === id; });
+  if (!l || !l.layer) return;
+  l.opacity = +val;
+  if (l.layer.setOpacity) l.layer.setOpacity(l.opacity / 100);
+  else if (l.layer.updateOptions) l.layer.updateOptions({ opacity: l.opacity / 100 });
+  _persist();
+}
+
+function tifChangeColorScheme(id, scheme) {
+  var l = _tifLayers.find(function(x){ return x.id === id; });
+  if (!l) return;
+  l.colorScheme = scheme;
+  // Rebuild layer karena pixelValuesToColorFn di-bake saat konstruksi
+  var wasVisible = _map && l.layer && _map.hasLayer(l.layer);
+  if (l.layer && _map && _map.hasLayer(l.layer)) _map.removeLayer(l.layer);
+  var min = l.min, max = l.max, noData = l.georaster.noDataValue;
+  var newLayer = new GeoRasterLayer({
+    georaster: l.georaster,
+    opacity: l.opacity / 100,
+    resolution: 256,
+    pixelValuesToColorFn: function(values) {
+      var v = values[0];
+      if (v === null || v === undefined || isNaN(v) || v === noData) return null;
+      var t = (max > min) ? (v - min) / (max - min) : 0.5;
+      var rgb = _tifColorAt(scheme, t);
+      return 'rgb(' + rgb[0] + ',' + rgb[1] + ',' + rgb[2] + ')';
+    }
+  });
+  l.layer = newLayer;
+  if (wasVisible) { newLayer.addTo(_map); if (typeof _layerOrderApply === 'function') _layerOrderApply(); }
+  tifUpdateLayerList();
+  _persist();
+}
+
+function tifRemoveLayer(id) {
+  var idx = _tifLayers.findIndex(function(x){ return x.id === id; });
+  if (idx < 0) return;
+  var l = _tifLayers[idx];
+  if (l.layer && _map && _map.hasLayer(l.layer)) _map.removeLayer(l.layer);
+  _tifLayers.splice(idx, 1);
+  if (typeof _layerOrderSync === 'function') _layerOrderSync();
+  tifUpdateLayerList();
+  _persist();
+}
+
+function tifClearAll() {
+  if (!_tifLayers.length) return;
+  if (!confirm('Hapus semua layer GeoTIFF dari peta?')) return;
+  _tifLayers.forEach(function(l){ if (l.layer && _map && _map.hasLayer(l.layer)) _map.removeLayer(l.layer); });
+  _tifLayers = [];
+  if (typeof _layerOrderSync === 'function') _layerOrderSync();
+  tifUpdateLayerList();
+  _persist();
+  toast('Semua layer TIF dihapus', 'ok');
+}
+
+function tifUpdateLayerList() {
+  var listWrap = document.getElementById('tif-layers-list');
+  var listEl   = document.getElementById('tif-layers-items');
+  if (!listEl) return;
+
+  if (!_tifLayers.length) {
+    if (listWrap) listWrap.style.display = 'none';
+    return;
+  }
+  if (listWrap) listWrap.style.display = 'block';
+
+  listEl.innerHTML = _tifLayers.map(function(l) {
+    var isVisible = !!(_map && l.layer && _map.hasLayer(l.layer));
+    var scheme = _tifColorSchemes[l.colorScheme] || _tifColorSchemes.terrain;
+    var gradCss = 'linear-gradient(90deg,' + scheme.stops.map(function(s){
+      return 'rgb(' + s[1][0] + ',' + s[1][1] + ',' + s[1][2] + ') ' + (s[0]*100) + '%';
+    }).join(',') + ')';
+    return '<div class="shp-layer-item" style="flex-wrap:wrap;flex-direction:column;align-items:stretch">' +
+      '<div style="display:flex;align-items:center;gap:8px;width:100%">' +
+        '<span class="shp-color-dot" style="background:#60aef0"></span>' +
+        '<div class="shp-layer-info">' +
+          '<div class="shp-layer-name" title="'+_e(l.name)+'">'+_e(l.name)+'</div>' +
+          '<div class="shp-layer-meta">'+Math.round(l.min)+' – '+Math.round(l.max)+' m dpl</div>' +
+        '</div>' +
+        '<span class="shp-layer-badge '+(isVisible?'visible':'hidden')+'" onclick="tifToggleVisibility(\''+l.id+'\')">'+(isVisible?'👁 Tampil':'🚫 Sembunyi')+'</span>' +
+        '<button onclick="tifRemoveLayer(\''+l.id+'\')" title="Hapus layer ini" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:13px;padding:0;flex-shrink:0">🗑</button>' +
+      '</div>' +
+      '<div class="tif-gradient-bar" style="background:'+gradCss+'"></div>' +
+      '<div class="tif-gradient-labels"><span>'+Math.round(l.min)+' m</span><span>'+Math.round(l.max)+' m</span></div>' +
+      '<select class="finput" onchange="tifChangeColorScheme(\''+l.id+'\',this.value)" style="font-size:9.5px;padding:4px 6px;margin-top:6px;width:100%">' +
+        Object.keys(_tifColorSchemes).map(function(k){
+          return '<option value="'+k+'"'+(l.colorScheme===k?' selected':'')+'>'+_tifColorSchemes[k].name+'</option>';
+        }).join('') +
+      '</select>' +
+      '<div class="tif-opacity-row">' +
+        '<span style="font-family:var(--mono);font-size:8px;color:var(--mute);flex-shrink:0">Opasitas</span>' +
+        '<input type="range" min="10" max="100" value="'+l.opacity+'" oninput="tifChangeOpacity(\''+l.id+'\',this.value)">' +
+        '<span style="font-family:var(--mono);font-size:8px;color:var(--mute);flex-shrink:0;width:28px;text-align:right">'+l.opacity+'%</span>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+/* ══════════════════════════════════════════════════════════════
+   PROFIL ELEVASI SEPANJANG GARIS — sampling nilai piksel dari
+   layer GeoTIFF (TIF) aktif berdasarkan titik-titik interpolasi
+   di sepanjang garis yang digambar user.
+   ══════════════════════════════════════════════════════════════ */
+var _elevChart = null;
+var _elevCurrentLineId = null;
+var _elevCurrentSamples = null; // cache hasil terakhir utk export CSV
+
+/* Hitung jarak Haversine antar 2 titik [lat,lng] dalam meter */
+function _elevHaversine(p1, p2) {
+  var R = 6371000;
+  var dLat = (p2[0]-p1[0]) * Math.PI/180;
+  var dLng = (p2[1]-p1[1]) * Math.PI/180;
+  var a = Math.sin(dLat/2)*Math.sin(dLat/2) +
+    Math.cos(p1[0]*Math.PI/180)*Math.cos(p2[0]*Math.PI/180)*
+    Math.sin(dLng/2)*Math.sin(dLng/2);
+  return R * 2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+/* Interpolasi titik-titik sepanjang polyline dengan jarak antar-sample tetap (meter) */
+function _elevInterpolateLine(points, intervalM) {
+  if (!points || points.length < 2) return [];
+  var samples = [{ lat: points[0][0], lng: points[0][1], dist: 0 }];
+  var cumDist = 0;
+  for (var i = 0; i < points.length - 1; i++) {
+    var a = points[i], b = points[i+1];
+    var segLen = _elevHaversine(a, b);
+    if (segLen <= 0) continue;
+    var nSteps = Math.max(1, Math.floor(segLen / intervalM));
+    for (var s = 1; s <= nSteps; s++) {
+      var f = s / nSteps;
+      if (cumDist + segLen*f - samples[samples.length-1].dist < intervalM*0.5 && !(i===points.length-2 && s===nSteps)) continue;
+      var lat = a[0] + (b[0]-a[0])*f;
+      var lng = a[1] + (b[1]-a[1])*f;
+      samples.push({ lat: lat, lng: lng, dist: cumDist + segLen*f });
+    }
+    cumDist += segLen;
+  }
+  // Pastikan titik akhir persis termasuk
+  var last = points[points.length-1];
+  if (samples[samples.length-1].lat !== last[0] || samples[samples.length-1].lng !== last[1]) {
+    samples.push({ lat: last[0], lng: last[1], dist: cumDist });
+  }
+  return samples;
+}
+
+/* Ambil nilai elevasi dari georaster pada koordinat lat/lng tertentu (nearest-neighbor) */
+function _elevSampleGeoraster(georaster, lat, lng) {
+  if (!georaster) return null;
+  if (lng < georaster.xmin || lng > georaster.xmax || lat < georaster.ymin || lat > georaster.ymax) return null;
+  var col = Math.floor((lng - georaster.xmin) / georaster.pixelWidth);
+  var row = Math.floor((georaster.ymax - lat) / georaster.pixelHeight);
+  if (row < 0 || row >= georaster.height || col < 0 || col >= georaster.width) return null;
+  var v = georaster.values[0][row][col];
+  if (v === null || v === undefined || isNaN(v) || v === georaster.noDataValue) return null;
+  return v;
+}
+
+function elevOpenModal(lineId) {
+  var line = _lines.find(function(l){ return l.id === lineId; });
+  if (!line) { toast('Garis tidak ditemukan', 'err'); return; }
+  if (!_tifLayers.length) {
+    toast('Belum ada layer TIF (elevasi) — upload GeoTIFF dulu lewat tombol 🏔️ Upload TIF', 'err');
+    return;
+  }
+
+  _elevCurrentLineId = lineId;
+
+  // Isi dropdown pemilihan layer TIF
+  var sel = document.getElementById('elev-tif-select');
+  sel.innerHTML = _tifLayers.map(function(l){ return '<option value="'+l.id+'">'+_e(l.name)+'</option>'; }).join('');
+
+  document.getElementById('elev-title').textContent = '📈 Profil Elevasi — ' + line.name;
+  document.getElementById('elev-overlay').style.display = 'block';
+  document.getElementById('elev-modal').style.display = 'flex';
+
+  // Beri browser waktu reflow layout modal dulu, supaya canvas Chart.js
+  // dibuat dengan ukuran yang benar (kalau langsung, kadang lebar terbaca 0/salah → blur).
+  requestAnimationFrame(function() {
+    requestAnimationFrame(function() {
+      elevRecompute();
+    });
+  });
+}
+
+function elevCloseModal() {
+  document.getElementById('elev-overlay').style.display = 'none';
+  document.getElementById('elev-modal').style.display = 'none';
+  _elevCurrentLineId = null;
+  if (_elevChart) { _elevChart.destroy(); _elevChart = null; }
+}
+
+function elevRecompute() {
+  var line = _lines.find(function(l){ return l.id === _elevCurrentLineId; });
+  var tifId = document.getElementById('elev-tif-select').value;
+  var tifObj = _tifLayers.find(function(l){ return l.id === tifId; });
+  var emptyMsg = document.getElementById('elev-empty-msg');
+  var chartWrap = document.getElementById('elev-chart-wrap');
+  var statGrid = document.getElementById('elev-stat-grid');
+
+  if (!line || !tifObj) {
+    emptyMsg.style.display = 'block';
+    emptyMsg.textContent = 'Data tidak tersedia.';
+    chartWrap.style.display = 'none';
+    statGrid.innerHTML = '';
+    return;
+  }
+
+  var totalLenM = _totalLengthKm(line.points) * 1000;
+  // Interval sampling: ~100 titik sepanjang garis, minimal tiap 5m, maksimal tiap 200m
+  var intervalM = Math.max(5, Math.min(200, totalLenM / 100));
+  var samplePts = _elevInterpolateLine(line.points, intervalM);
+
+  var samples = samplePts.map(function(p) {
+    var elev = _elevSampleGeoraster(tifObj.georaster, p.lat, p.lng);
+    return { lat: p.lat, lng: p.lng, dist: p.dist, elev: elev };
+  });
+
+  var validSamples = samples.filter(function(s){ return s.elev !== null; });
+
+  if (!validSamples.length) {
+    emptyMsg.style.display = 'block';
+    emptyMsg.textContent = '⚠ Garis ini tidak bersinggungan dengan area cakupan layer TIF "' + tifObj.name + '". Pastikan garis berada di dalam wilayah data DEM, atau pilih layer TIF lain.';
+    chartWrap.style.display = 'none';
+    statGrid.innerHTML = '';
+    _elevCurrentSamples = null;
+    return;
+  }
+
+  emptyMsg.style.display = 'none';
+  chartWrap.style.display = 'block';
+  _elevCurrentSamples = samples;
+
+  // Statistik
+  var elevs = validSamples.map(function(s){ return s.elev; });
+  var minElev = Math.min.apply(null, elevs);
+  var maxElev = Math.max.apply(null, elevs);
+  var startElev = samples[0].elev;
+  var endElev = samples[samples.length-1].elev;
+  var naCount = samples.length - validSamples.length;
+
+  var elevDiff = (startElev !== null && endElev !== null) ? (endElev - startElev) : null;
+  var avgSlopePct = (elevDiff !== null && totalLenM > 0) ? (elevDiff / totalLenM * 100) : null;
+
+  statGrid.innerHTML =
+    '<div class="elev-stat-card"><div class="elev-stat-label">Panjang Garis</div><div class="elev-stat-value">'+_fmtDistance(totalLenM)+'</div></div>' +
+    '<div class="elev-stat-card"><div class="elev-stat-label">Elevasi Min</div><div class="elev-stat-value">'+minElev.toFixed(1)+' m</div></div>' +
+    '<div class="elev-stat-card"><div class="elev-stat-label">Elevasi Maks</div><div class="elev-stat-value">'+maxElev.toFixed(1)+' m</div></div>' +
+    '<div class="elev-stat-card"><div class="elev-stat-label">Beda Tinggi</div><div class="elev-stat-value">'+(maxElev-minElev).toFixed(1)+' m</div></div>' +
+    (elevDiff !== null ? '<div class="elev-stat-card"><div class="elev-stat-label">Awal → Akhir</div><div class="elev-stat-value" style="font-size:12px">'+startElev.toFixed(1)+' → '+endElev.toFixed(1)+' m</div></div>' : '') +
+    (avgSlopePct !== null ? '<div class="elev-stat-card"><div class="elev-stat-label">Kemiringan Rata²</div><div class="elev-stat-value">'+avgSlopePct.toFixed(2)+' %</div></div>' : '');
+
+  // Chart
+  var labels = samples.map(function(s){ return (s.dist).toFixed(0); });
+  var dataElev = samples.map(function(s){ return s.elev; }); // null akan otomatis jadi gap di Chart.js
+
+  if (_elevChart) { _elevChart.destroy(); }
+  var ctx = document.getElementById('elev-chart').getContext('2d');
+  _elevChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Elevasi (m)',
+        data: dataElev,
+        borderColor: '#60aef0',
+        backgroundColor: 'rgba(96,174,240,0.15)',
+        fill: true,
+        pointRadius: 0,
+        borderWidth: 2,
+        tension: 0.15,
+        spanGaps: false
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      devicePixelRatio: Math.max(2, window.devicePixelRatio || 1),
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: function(items) { return 'Jarak: ' + (+items[0].label).toLocaleString('id-ID') + ' m'; },
+            label: function(item) { return item.parsed.y === null ? 'Elevasi: tidak ada data' : 'Elevasi: ' + item.parsed.y.toFixed(1) + ' m'; }
+          }
+        }
+      },
+      scales: {
+        x: { title: { display: true, text: 'Jarak sepanjang garis (m)', color: 'var(--mute)', font:{size:9,family:'monospace'} },
+             ticks: { color: 'var(--mute)', font:{size:8,family:'monospace'}, maxTicksLimit: 10 },
+             grid: { color: 'rgba(255,255,255,0.05)' } },
+        y: { title: { display: true, text: 'Elevasi (m dpl)', color: 'var(--mute)', font:{size:9,family:'monospace'} },
+             ticks: { color: 'var(--mute)', font:{size:8,family:'monospace'} },
+             grid: { color: 'rgba(255,255,255,0.05)' } }
+      }
+    }
+  });
+
+  document.getElementById('elev-footer-txt').textContent =
+    validSamples.length + ' titik sample (interval ~' + Math.round(intervalM) + ' m)' + (naCount > 0 ? ' · ' + naCount + ' titik di luar cakupan raster' : '');
+}
+
+function elevExportCSV() {
+  if (!_elevCurrentSamples || !_elevCurrentSamples.length) { toast('Tidak ada data untuk diekspor', 'err'); return; }
+  var line = _lines.find(function(l){ return l.id === _elevCurrentLineId; });
+  var rows = ['Jarak_m,Lat,Lng,Elevasi_m'];
+  _elevCurrentSamples.forEach(function(s) {
+    rows.push([
+      s.dist.toFixed(1), s.lat.toFixed(6), s.lng.toFixed(6),
+      s.elev !== null ? s.elev.toFixed(2) : ''
+    ].join(','));
+  });
+  var blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'profil_elevasi_' + (line ? line.name.replace(/[^a-z0-9]+/gi,'_') : 'garis') + '.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   URUTAN LAYER (Z-ORDER) — SHP, Garis, Poligon, TIF digabung 1 daftar.
+   Index 0 = paling ATAS (tergambar terakhir, menutup yang di bawahnya).
+
+   ══════════════════════════════════════════════════════════════ */
+var _layerOrder = []; // [{type:'shp'|'line'|'polygon'|'tif', id:'...'}]
 
 function _layerOrderKey(type, id) { return type+':'+id; }
 
 function _layerOrderAllItems() {
   var items = [];
+  _tifLayers.forEach(function(l){ items.push({type:'tif', id:l.id}); });
   _shpLayers.forEach(function(l){ items.push({type:'shp', id:l.id}); });
   _lines.forEach(function(l){ items.push({type:'line', id:l.id}); });
   _polygons.forEach(function(p){ items.push({type:'polygon', id:p.id}); });
@@ -10613,6 +11512,7 @@ function _layerOrderGetItem(type, id) {
   if (type === 'shp') return _shpLayers.find(function(x){ return x.id===id; });
   if (type === 'line') return _lines.find(function(x){ return x.id===id; });
   if (type === 'polygon') return _polygons.find(function(x){ return x.id===id; });
+  if (type === 'tif') return _tifLayers.find(function(x){ return x.id===id; });
   return null;
 }
 
@@ -10623,7 +11523,9 @@ function _layerOrderApply() {
   for (var i = _layerOrder.length - 1; i >= 0; i--) {
     var it = _layerOrder[i];
     var layer = _layerOrderGetLayer(it.type, it.id);
-    if (layer && layer.bringToFront) layer.bringToFront();
+    if (!layer) continue;
+    if (layer.bringToFront) layer.bringToFront();
+    else if (layer.setZIndex) layer.setZIndex(400 + (_layerOrder.length - i));
   }
 }
 
@@ -10634,6 +11536,7 @@ function petaLayerMoveUp(type, id) {
   _layerOrderApply();
   petaRenderLayerOrderList(); petaRenderShapesList();
   if (typeof shpUpdateLayerList === 'function') shpUpdateLayerList();
+  if (typeof tifUpdateLayerList === 'function') tifUpdateLayerList();
   _persist();
 }
 function petaLayerMoveDown(type, id) {
@@ -10643,10 +11546,15 @@ function petaLayerMoveDown(type, id) {
   _layerOrderApply();
   petaRenderLayerOrderList(); petaRenderShapesList();
   if (typeof shpUpdateLayerList === 'function') shpUpdateLayerList();
+  if (typeof tifUpdateLayerList === 'function') tifUpdateLayerList();
   _persist();
 }
 function _layerOrderLabel(type) {
-  return type==='shp' ? '📁 SHP' : (type==='line' ? '／ Garis' : '▱ Poligon');
+  if (type==='shp') return '📁 SHP';
+  if (type==='line') return '／ Garis';
+  if (type==='polygon') return '▱ Poligon';
+  if (type==='tif') return '🏔️ TIF';
+  return type;
 }
 
 function petaRenderLayerOrderList() {
@@ -13184,6 +14092,51 @@ setTimeout(initHome, 800);
   70%  { transform:scale(1.6); opacity:0.15; }
   100% { transform:scale(0.4); opacity:0; }
 }
+
+/* ── Modal Profil Elevasi ── */
+#elev-overlay {
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9000;
+  backdrop-filter:blur(3px);
+}
+#elev-modal {
+  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:min(92vw,780px);max-height:85vh;
+  background:var(--bg2,#111827);border:1px solid var(--brd,rgba(255,255,255,0.08));
+  border-radius:10px;z-index:9001;display:flex;flex-direction:column;
+  box-shadow:0 24px 60px rgba(0,0,0,0.6);overflow:hidden;
+}
+#elev-header {
+  display:flex;align-items:center;gap:10px;
+  padding:13px 16px;border-bottom:1px solid var(--brd,rgba(255,255,255,0.08));
+  flex-shrink:0;
+}
+#elev-title {
+  font-family:var(--mono,'monospace');font-size:11px;font-weight:700;
+  color:#60aef0;text-transform:uppercase;letter-spacing:.7px;flex:1;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+#elev-close {
+  background:none;border:none;color:var(--mute,#64748b);cursor:pointer;font-size:18px;
+  line-height:1;padding:0 2px;transition:color .15s;flex-shrink:0;
+}
+#elev-close:hover { color:var(--txt,#e2e8f0); }
+#elev-body { overflow-y:auto;flex:1;padding:16px; }
+.elev-stat-grid {
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-bottom:14px;
+}
+.elev-stat-card {
+  background:var(--card2,rgba(255,255,255,0.03));border:1px solid var(--brd2,rgba(255,255,255,0.08));
+  border-radius:8px;padding:9px 10px;
+}
+.elev-stat-label { font-family:var(--mono,'monospace');font-size:8px;color:var(--mute,#64748b);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px; }
+.elev-stat-value { font-family:var(--mono,'monospace');font-size:14px;font-weight:700;color:var(--txt,#e2e8f0); }
+#elev-chart-wrap { position:relative;height:260px;margin-bottom:6px; }
+#elev-select-wrap { padding:0 16px 14px; }
+#elev-footer {
+  padding:8px 16px;border-top:1px solid var(--brd,rgba(255,255,255,0.08));
+  font-family:var(--mono,'monospace');font-size:9px;color:var(--mute,#64748b);
+  flex-shrink:0;display:flex;align-items:center;justify-content:space-between;gap:10px;
+}
 </style>
 
 <div id="shp-attr-overlay" onclick="shpCloseAttr()"></div>
@@ -13202,6 +14155,27 @@ setTimeout(initHome, 800);
   <div id="shp-attr-footer">
     <span id="shp-attr-footer-txt"></span>
     <span>Klik baris → zoom &amp; tandai · klik lagi / ✕ pada tanda · klik area kosong peta untuk hapus tanda</span>
+  </div>
+</div>
+
+<div id="elev-overlay" onclick="elevCloseModal()"></div>
+<div id="elev-modal" style="display:none">
+  <div id="elev-header">
+    <div id="elev-title">📈 Profil Elevasi</div>
+    <button id="elev-close" onclick="elevCloseModal()" title="Tutup">✕</button>
+  </div>
+  <div id="elev-select-wrap">
+    <div style="font-family:var(--mono);font-size:8.5px;color:var(--mute);margin:12px 0 5px">Layer elevasi (TIF) yang dipakai untuk sampling</div>
+    <select class="finput" id="elev-tif-select" onchange="elevRecompute()" style="font-size:11px;padding:6px 8px;width:100%"></select>
+  </div>
+  <div id="elev-body">
+    <div class="elev-stat-grid" id="elev-stat-grid"></div>
+    <div id="elev-chart-wrap"><canvas id="elev-chart"></canvas></div>
+    <div id="elev-empty-msg" style="display:none;text-align:center;padding:30px 10px;font-family:var(--mono);font-size:10.5px;color:var(--mute)"></div>
+  </div>
+  <div id="elev-footer">
+    <span id="elev-footer-txt"></span>
+    <button class="btn btn-outline btn-sm" onclick="elevExportCSV()" style="font-size:9px">⬇ CSV</button>
   </div>
 </div>
 

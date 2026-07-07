@@ -2488,21 +2488,18 @@ input.inp-sm::placeholder {
   <div id="ubm-final-card" style="display:none">
     <div class="card">
       <div class="card-hd">
-        <div class="card-title">Usulan Baku Mutu Akhir &amp; Alokasi Beban Pencemar</div>
-        <div style="font-family:var(--mono);font-size:9px;color:var(--mute)">Alokasi (kg/hari) = Usulan BM × ΣQ<sub>limbah</sub> (m³/det) × 86.400 / 10⁶</div>
+        <div class="card-title">Alokasi Beban Pencemar Sungai</div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--mute)">Alokasi (kg/hari) = Σ per sumber [C<sub>sumber</sub> (mg/L) × Q<sub>sumber</sub> (m³/det)] × 86.400 / 10³</div>
       </div>
       <div style="font-size:11.5px;color:var(--txt2);margin-bottom:12px;padding:8px 12px;background:rgba(26,176,166,0.04);border:1px solid var(--brd);border-radius:var(--rs);line-height:1.7">
-        Kolom <strong style="color:var(--amber)">Usulan BM</strong> diisi langsung pada form di tabel Parameter Kualitas Air di atas (kolom paling kanan sebelum tombol hapus).
-        Alokasi beban pencemar dihitung dari <strong style="color:var(--amber)">Usulan BM</strong> × total debit seluruh sumber air limbah.
+        Alokasi beban pencemar dihitung per sumber air limbah: untuk sumber yang <strong style="color:var(--amber)">diusulkan</strong> BM-nya, konsentrasi memakai nilai <strong style="color:var(--amber)">Usulan BM</strong> (diisi di tabel Parameter Kualitas Air di atas); sumber lain memakai konsentrasi aktualnya masing-masing — lalu semua kontribusi (C × Q tiap sumber) dijumlahkan menjadi Alokasi Total.
       </div>
       <div class="tbl-wrap">
         <table>
           <thead><tr>
             <th class="th">Parameter</th>
             <th class="th" style="text-align:center">Satuan</th>
-            <th class="th" style="text-align:right;color:var(--accent)">C<sub>maks</sub> Hitung<br><span style="font-weight:400;font-size:8px">(ambang batas agar CR ≤ BM)</span></th>
-            <th class="th" style="text-align:center;color:var(--amber)">Usulan BM<br><span style="font-weight:400;font-size:8px">(dari input parameter)</span></th>
-            <th class="th" style="text-align:right;color:var(--amber)">Alokasi Beban (kg/hari)</th>
+            <th class="th" style="text-align:right;color:var(--amber);border-left:2px solid var(--brd)">Alokasi Total<br><span style="font-weight:400;font-size:8px">(kg/hari)</span></th>
           </tr></thead>
           <tbody id="ubm-final-tbody"></tbody>
         </table>
@@ -2890,11 +2887,21 @@ function toast(msg,type) {
 // ═══════════════════════════════════════════════════════════════
 // FORMAT
 // ═══════════════════════════════════════════════════════════════
+// Trim trailing zeros from the decimal part of an id-ID formatted number string
+// while keeping leading zeros before the first significant decimal digit
+// (e.g. "0,05000" -> "0,05"). Never rounds; only reformats an already-rounded value.
+function _trimTrailingZerosID(s) {
+  var parts = s.split(',');
+  if (parts.length!==2) return s;
+  var dec = parts[1].replace(/0+$/,'');
+  return dec.length ? parts[0]+','+dec : parts[0];
+}
 function fN(v,d=4) {
   if(v==null||isNaN(v)) return '—';
   if(v===0) return '0';
   if(Math.abs(v)<0.0001 && v!==0) return v.toExponential(3);
-  return parseFloat(v.toFixed(d)).toLocaleString('id-ID',{minimumFractionDigits:d,maximumFractionDigits:d});
+  var s = parseFloat(v.toFixed(d)).toLocaleString('id-ID',{minimumFractionDigits:d,maximumFractionDigits:d});
+  return _trimTrailingZerosID(s);
 }
 function pNum(s) {
   if(typeof s==='number') return s;
@@ -4086,7 +4093,7 @@ async function exportWord() {
 
     // Formula box
     xml+=par(run('Formula: CR Hilir = (Qs × C_hulu + ΣQi × Ci) / (Qs + ΣQi)  |  C_maks = [BM × (Qs + ΣQi) − Qs × C_hulu] / ΣQi',{sz:19,it:true,c:'546e7a'}),{aft:80});
-    xml+=par(run('Alokasi Beban (kg/hari) = Usulan BM (mg/L) × ΣQ_limbah (m³/det) × 86.400 (det/hari) ÷ 1.000 (L→kg)',{sz:19,it:true,c:'546e7a'}),{aft:120});
+    xml+=par(run('Alokasi Beban (kg/hari) = Σ per sumber [C_sumber (mg/L) × Q_sumber (m³/det)] × 86.400 (det/hari) ÷ 1.000 (L→kg). Untuk sumber yang diusulkan BM-nya, C_sumber menggunakan nilai Usulan BM; sumber lain menggunakan konsentrasi aktual.',{sz:19,it:true,c:'546e7a'}),{aft:120});
 
     // Sumber air limbah table
     xml+=par(run('Tabel Sumber Air Limbah',{sz:22,b:true,c:'1e293b'}),{bef:80,aft:80});
@@ -4116,17 +4123,31 @@ async function exportWord() {
           : (p.cHuluDry ?? p.cHulu ?? '');
         const cHulu = pNum(cHuluRaw);
         let sumQiCi = 0;
-        ubmSources.forEach(s=>{ sumQiCi += (pNum(s.qDay)/86400)*pNum(p.cSrc[s.id]); });
+        ubmSources.forEach(s=>{
+          const Qi = pNum(s.qDay)/86400;
+          const isProposed = ubmProposedSrcIds.has(s.id);
+          const ubmSrcRaw = isProposed ? (p.usulanBMPerSrc?.[s.id] ?? '') : '';
+          const ubmSrcVal = ubmSrcRaw !== '' ? pNum(ubmSrcRaw) : null;
+          const Ci = isProposed && ubmSrcVal!=null ? ubmSrcVal : pNum(p.cSrc[s.id]);
+          sumQiCi += Qi*Ci;
+        });
+        // Usulan BM representatif (untuk display kolom tunggal): ambil dari sumber diusulkan pertama yang ada isinya
+        const usulanBMVal = (() => {
+          for(const s of ubmSources){
+            if(ubmProposedSrcIds.has(s.id)){
+              const raw = p.usulanBMPerSrc?.[s.id] ?? '';
+              if(raw !== '') return pNum(raw);
+            }
+          }
+          return null;
+        })();
         const cr = denomQs>0 ? (Qs*cHulu+sumQiCi)/denomQs : null;
         const bm = p.bmVal;
         const status = cr!=null&&bm!=null ? (cr<=bm?'ok':'ng') : null;
         const cmRaw = bm!=null&&ubmTotalQi>0 ? (bm*denomQs-Qs*cHulu)/ubmTotalQi : null;
         const cMax  = cmRaw!=null ? Math.max(0, cmRaw) : null;
-        // Usulan BM: dari input form pengguna
-        const usulanBMRaw = p.usulanBM ?? '';
-        const usulanBMVal = usulanBMRaw !== '' ? pNum(usulanBMRaw) : null;
         const pQi = ubmParamQi(p);
-        const alokasi = usulanBMVal!=null&&pQi>0 ? usulanBMVal*pQi*86400/1000 : null;
+        const alokasi = ubmParamAlokasi(p);
         return {p, cr, bm, status, cmRaw, cMax, usulanBMVal, alokasi};
       });
 
@@ -4207,7 +4228,7 @@ async function exportWord() {
         }).join('')+
         tc('Status Mutu',{w:allCols[6+nSrc+nJenis],b:true,ctr:true,bg:hdrBgHex,c:hdrC,sz:18})+
         tc('C_maks Hitung (mg/L)',{w:allCols[7+nSrc+nJenis],b:true,ctr:true,bg:hdrBgHex,c:hdrC,sz:17})+
-        tc('Usulan BM (mg/L)',{w:allCols[8+nSrc+nJenis],b:true,ctr:true,bg:'fef3c7',c:'78350f',sz:17})+
+        tc('Usulan BM (mg/L)\n[Sumber Diusulkan Pertama]',{w:allCols[8+nSrc+nJenis],b:true,ctr:true,bg:'fef3c7',c:'78350f',sz:17})+
         tc('Alokasi Beban (kg/hari)',{w:alokasiW,b:true,ctr:true,bg:'fef3c7',c:'78350f',sz:17}),
         true
       );
@@ -4230,7 +4251,13 @@ async function exportWord() {
           tc(p.name||'—',  {w:allCols[1],bg:rowBg,sz:18,b:true})+
           tc(p.unit||'—',  {w:allCols[2],ctr:true,bg:rowBg,sz:17})+
           tc(cHuluDisp||'—',{w:allCols[3],ctr:true,bg:rowBg,sz:18})+
-          ubmSources.map((s,si)=>tc(p.cSrc[s.id]||'—',{w:allCols[4+si],ctr:true,bg:rowBg,sz:17})).join('')+
+          ubmSources.map((s,si)=>{
+            const isP = ubmProposedSrcIds.has(s.id);
+            const ubmSrcRaw = isP ? (p.usulanBMPerSrc?.[s.id] ?? '') : '';
+            const ubmSrcVal = ubmSrcRaw !== '' ? pNum(ubmSrcRaw) : null;
+            const disp = isP && ubmSrcVal!=null ? fmtN(ubmSrcVal,4) : (p.cSrc[s.id]||'—');
+            return tc(disp,{w:allCols[4+si],ctr:true,bg:isP&&ubmSrcVal!=null?'fffbe6':rowBg,sz:17,b:isP&&ubmSrcVal!=null,c:isP&&ubmSrcVal!=null?'e65100':undefined});
+          }).join('')+
           tc(cr!=null?fmtN(cr,4):'—',{w:allCols[4+nSrc],ctr:true,bg:rowBg,sz:18,b:true,c:cr!=null&&bm!=null&&cr>bm?'b71c1c':'004d45'})+
           tc(bm!=null?fmtN(bm,4):'—',{w:allCols[5+nSrc],ctr:true,bg:rowBg,sz:18})+
           _uniqueJenis.map((j,ji)=>tc(_getBMJenis(p.name,j.typeId),{w:allCols[6+nSrc+ji],ctr:true,bg:'fffbe6',c:'92400e',sz:17})).join('')+
@@ -4249,7 +4276,7 @@ async function exportWord() {
     xml += ubmSeasonSection('MUSIM KEMARAU ☀', ubmQsDry, ubmDenomDry, 'fef3c7', '78350f');
 
     // ─── CR HILIR SUNGAI DARI USULAN BAKU MUTU ────────────────
-    const hasUsulanBM = ubmParams.filter(p=>(p.usulanBM??'')!=='').length;
+    const hasUsulanBM = ubmParams.filter(p=>Object.values(p.usulanBMPerSrc||{}).some(v=>v!=='')).length;
     if(hasUsulanBM > 0) {
       xml += sp() + sp() + pb();
       xml += par(run(`BAB ${babNum}.1  CR HILIR SUNGAI — HASIL USULAN BAKU MUTU`,{sz:26,b:true,c:'004d45'}),{bef:0,aft:140});
@@ -4272,10 +4299,12 @@ async function exportWord() {
         const crCols = fitCols(crColsBase, CW); // regangkan proporsional agar pas penuh ke ujung kertas
         const srcColW = crCols[3]; // lebar kolom per-sumber setelah diregangkan (semua kolom sumber sama lebar)
 
-        // Header sumber — satu kolom per sumber
-        const srcHdrCells = ubmSources.map(s =>
-          tc(`${s.name||`Sumber ${s.id}`}\n(mg/L) = Usulan BM`,{w:srcColW,b:true,ctr:true,bg:'78350f',c:'fef3c7',sz:15})
-        ).join('');
+        // Header sumber — diusulkan → label "Usulan BM", lainnya → label "C Aktual"
+        const srcHdrCells = ubmSources.map(s => {
+          const isP = ubmProposedSrcIds.has(s.id);
+          return tc(`${s.name||`Sumber ${s.id}`}\n(mg/L) = ${isP?'Usulan BM':'C Aktual'}`,
+            {w:srcColW,b:true,ctr:true,bg:isP?'78350f':'546e7a',c:'fef3c7',sz:15});
+        }).join('');
 
         const hdrRow = tr2(
           tc('Parameter',{w:crCols[0],b:true,ctr:true,bg:hdrBgHex,c:'FFFFFF',sz:18})+
@@ -4293,13 +4322,15 @@ async function exportWord() {
         const dataRows = ubmParams.map((p,i) => {
           const cHuluRaw = seasonKey==='dry' ? (p.cHuluDry ?? p.cHulu ?? '') : (p.cHuluWet ?? p.cHulu ?? '');
           const cHulu = pNum(cHuluRaw);
-          const usulanBMVal = (p.usulanBM ?? '') !== '' ? pNum(p.usulanBM) : null;
 
-          // Hitung CR menggunakan Usulan BM sebagai C_i untuk semua sumber
+          // Hitung CR: setiap sumber diusulkan pakai Usulan BM miliknya sendiri
           let sumQiCi = 0;
           ubmSources.forEach(s => {
             const Qi = pNum(s.qDay) / 86400;
-            const Ci = usulanBMVal != null ? usulanBMVal : 0;
+            const isP = ubmProposedSrcIds.has(s.id);
+            const ubmSrcRaw = isP ? (p.usulanBMPerSrc?.[s.id] ?? '') : '';
+            const ubmSrcVal = ubmSrcRaw !== '' ? pNum(ubmSrcRaw) : null;
+            const Ci = isP && ubmSrcVal!=null ? ubmSrcVal : pNum(p.cSrc[s.id]);
             sumQiCi += Qi * Ci;
           });
           const cr = denom > 0 ? (Qs * cHulu + sumQiCi) / denom : null;
@@ -4312,21 +4343,22 @@ async function exportWord() {
             status = cr!=null&&bm!=null ? (cr<=bm?'ok':'ng') : null;
           }
 
-          // Alokasi Beban = Usulan BM × ΣQi (khusus sumber yang punya nilai parameter ini) × 86400 / 1000
-          const pQi2 = ubmParamQi(p);
-          const alokasi = (!p.isPH && usulanBMVal!=null && pQi2>0)
-            ? usulanBMVal * pQi2 * 86400 / 1000 : null;
-
+          const alokasi = ubmParamAlokasi(p);
           const rowBg = i % 2 ? 'f5f5f5' : null;
           const ket = status==='ok' ? 'Memenuhi' : status==='ng' ? 'Melebihi' : '—';
           const ketC = status==='ok' ? '1b5e20' : status==='ng' ? 'b71c1c' : '546e7a';
           const bmDisp = p.isPH ? '6–9' : (bm!=null ? fmtN(bm,4) : '—');
-          const usulanDisp = usulanBMVal!=null ? fmtN(usulanBMVal,4) : '— (belum diisi)';
 
-          // Satu kolom per sumber — semua menampilkan usulan BM
-          const srcDataCells = ubmSources.map(() =>
-            tc(usulanDisp,{w:srcColW,ctr:true,bg:usulanBMVal!=null?'fffbe6':rowBg,sz:18,b:usulanBMVal!=null,c:usulanBMVal!=null?'e65100':'546e7a'})
-          ).join('');
+          // Satu kolom per sumber: sumber diusulkan → Usulan BM miliknya, lainnya → C aktual
+          const srcDataCells = ubmSources.map(s => {
+            const isP = ubmProposedSrcIds.has(s.id);
+            const ubmSrcRaw = isP ? (p.usulanBMPerSrc?.[s.id] ?? '') : '';
+            const ubmSrcVal = ubmSrcRaw !== '' ? pNum(ubmSrcRaw) : null;
+            const cellVal = isP && ubmSrcVal!=null
+              ? fmtN(ubmSrcVal,4)
+              : ((p.cSrc[s.id]!=null && p.cSrc[s.id]!=='') ? fmtN(pNum(p.cSrc[s.id]),4) : '—');
+            return tc(cellVal,{w:srcColW,ctr:true,bg:isP&&ubmSrcVal!=null?'fffbe6':rowBg,sz:18,b:isP&&ubmSrcVal!=null,c:isP&&ubmSrcVal!=null?'e65100':'546e7a'});
+          }).join('');
 
           return tr2(
             tc(p.name||'—',{w:crCols[0],bg:rowBg,sz:18,b:true})+
@@ -4348,10 +4380,8 @@ async function exportWord() {
       xml += crUsulanSeasonSection('MUSIM KEMARAU ☀', ubmQsDry, ubmDenomDry, 'f57c00', '78350f');
 
       xml += sp();
-      const srcNamesKet = ubmSources.length > 0
-        ? ubmSources.map(s => s.name || `Sumber ${s.id}`).join(', ')
-        : 'sumber air limbah';
-      xml += par(run(`Keterangan: CR Hilir Sungai dihitung berdasarkan nilai Usulan Baku Mutu yang diinput sebagai konsentrasi air limbah dari seluruh sumber (${srcNamesKet}). ${hasUsulanBM} dari ${ubmParams.length} parameter telah diisi nilai Usulan BM.`,{sz:19,it:true,c:'546e7a'}),{aft:100});
+      const proposedNames = ubmSources.filter(s=>ubmProposedSrcIds.has(s.id)).map(s=>s.name||`Sumber ${s.id}`);
+      xml += par(run(`Keterangan: CR Hilir Sungai dihitung berdasarkan nilai Usulan Baku Mutu yang diinput sebagai konsentrasi air limbah dari sumber diusulkan (${proposedNames.join(', ')||'—'}). Sumber lain menggunakan konsentrasi aktual. ${hasUsulanBM} dari ${ubmParams.length} parameter telah diisi nilai Usulan BM.`,{sz:19,it:true,c:'546e7a'}),{aft:100});
     }
 
     // Conclusion UBM
@@ -4359,8 +4389,8 @@ async function exportWord() {
     const okUbmD=ubmParams.filter(p=>{ const cr=_ubmCrForWord(p,ubmQsDry,ubmDenomDry,'dry'); return cr!=null&&p.bmVal!=null&&cr<=p.bmVal; }).length;
     const okUbmW=ubmParams.filter(p=>{ const cr=_ubmCrForWord(p,ubmQsWet,ubmDenomWet,'wet');  return cr!=null&&p.bmVal!=null&&cr<=p.bmVal; }).length;
     xml+=par(run(`Dari ${ubmParams.length} parameter yang dianalisis, musim kemarau: ${okUbmD} parameter memenuhi BM, musim hujan: ${okUbmW} parameter memenuhi BM.`,{sz:21}),{aft:80});
-    xml+=par(run(`Nilai C_maks Hitung merupakan ambang batas teoritis konsentrasi air limbah agar CR hilir sungai tepat sama dengan baku mutu kelas ${ubmClsRom}. Kolom Usulan BM diisi oleh pengguna berdasarkan pertimbangan teknis dan regulasi yang berlaku (${hasUsulanBM} dari ${ubmParams.length} parameter telah diisi Usulan BM).`,{sz:21}),{aft:80});
-    xml+=par(run(`Alokasi Beban Pencemar (kg/hari) = Usulan BM (mg/L) × ΣQ limbah (m³/det) × 86.400 (det/hari) ÷ 1.000 (L→kg). Nilai alokasi beban hanya dihitung untuk parameter yang telah diisi nilai Usulan BM.`,{sz:21}),{aft:100});
+    xml+=par(run(`Nilai C_maks Hitung merupakan ambang batas teoritis konsentrasi air limbah agar CR hilir sungai tepat sama dengan baku mutu kelas ${ubmClsRom}. Kolom Usulan BM per sumber diisikan oleh pengguna berdasarkan pertimbangan teknis dan regulasi yang berlaku (${hasUsulanBM} dari ${ubmParams.length} parameter telah diisi nilai Usulan BM).`,{sz:21}),{aft:80});
+    xml+=par(run(`Alokasi Beban Pencemar (kg/hari) = Σ per sumber [C_sumber (mg/L) × Q_sumber (m³/det)] × 86.400 (det/hari) ÷ 1.000 (L→kg). Untuk sumber yang diusulkan BM-nya, C_sumber menggunakan nilai Usulan BM masing-masing; sumber lain menggunakan konsentrasi aktual.`,{sz:21}),{aft:100});
   }
 
   // Conclusion (BAB terakhir)
@@ -4488,6 +4518,7 @@ function getState(){
       ubmSrcId,
       params:    JSON.parse(JSON.stringify(ubmParams)),
       ubmPId,
+      ubmProposedSrcIds: Array.from(ubmProposedSrcIds),
     },
     // ── Pemetaan ──────────────────────────────────
     peta: {
@@ -4527,7 +4558,7 @@ function _blankState(){
   return {
     _v: 5,
     bpm: { name:'', cls:'', qDry:'', qWet:'', params:[], pid:0, wasteSources:[], wsId:0, season:'dry' },
-    ubm: { river:'', cls:'', sources:[], ubmSrcId:0, params:[], ubmPId:0 },
+    ubm: { river:'', cls:'', sources:[], ubmSrcId:0, params:[], ubmPId:0, ubmProposedSrcIds:[] },
     peta: { markers:[], rivers:[], uid:1, lines:[], polygons:[], shp:[], shpColorIdx:0, layerOrder:[] },
     fishbone: { order:[] },
     gen: { logoDataUrl:null, judul:'PETA PEMANTAUAN KUALITAS AIR SUNGAI', perusahaan:'', lokasi:'', direktur:'', tenagaAhli:'', direkturJabatan:'Direktur', tenagaAhliJabatan:'Tenaga Ahli', paperSize:'A4', paperOrient:'landscape', paperCustomW:420, paperCustomH:297 },
@@ -4567,6 +4598,10 @@ function restoreState(s){
   document.getElementById('ubm-class').value = u.cls   || '';
   ubmSources = Array.isArray(u.sources) ? u.sources : [];
   ubmSrcId   = u.ubmSrcId || 0;
+  // Load ubmProposedSrcIds (array → Set), dengan fallback dari legacy ubmProposedSrcId (single)
+  const _savedIds = Array.isArray(u.ubmProposedSrcIds) ? u.ubmProposedSrcIds
+    : (u.ubmProposedSrcId != null ? [u.ubmProposedSrcId] : []);
+  ubmProposedSrcIds = new Set(_savedIds);
   ubmParams  = Array.isArray(u.params)  ? u.params.map(p=>{
     // Migrate legacy single cHulu → cHuluDry + cHuluWet
     if(p.cHulu !== undefined && p.cHuluDry === undefined){
@@ -4575,7 +4610,15 @@ function restoreState(s){
     }
     if(p.cHuluDry === undefined) p.cHuluDry = '';
     if(p.cHuluWet === undefined) p.cHuluWet = '';
-    if(p.usulanBM === undefined) p.usulanBM = '';
+    // Migrate legacy usulanBM (single string) → usulanBMPerSrc (per-src object)
+    if(p.usulanBMPerSrc === undefined){
+      p.usulanBMPerSrc = {};
+      // Jika ada nilai lama dan ada 1 sumber diusulkan → assign ke sumber itu
+      if((p.usulanBM ?? '') !== '' && _savedIds.length === 1){
+        p.usulanBMPerSrc[_savedIds[0]] = p.usulanBM;
+      }
+    }
+    delete p.usulanBM; // bersihkan field lama
     return p;
   }) : [];
   ubmPId     = u.ubmPId   || 0;
@@ -5598,16 +5641,63 @@ function importParamsFromGabungan() {
 // ═══════════════════════════════════════════════════════════════
 let ubmSources=[], ubmSrcId=0;  // sumber air limbah untuk CR
 let ubmParams=[], ubmPId=0;     // parameter CR
+let ubmProposedSrcIds=new Set(); // set id sumber yang diusulkan (checkbox multi-pilih)
 
 // Alokasi beban pencemar per parameter hanya menghitung debit dari sumber yang
 // benar-benar punya nilai konsentrasi (C > 0) untuk parameter tersebut.
 // Jika C = 0 / kosong, dianggap sumber itu tidak mengandung parameter itu,
 // sehingga debitnya TIDAK diikutkan ke total Q untuk alokasi parameter ini.
+// Ci untuk sumber diusulkan (ubmProposedSrcIds) = nilai Usulan BM per-sumber (p.usulanBMPerSrc[srcId]).
 function ubmParamQi(p){
   return ubmSources.reduce((sum,s)=>{
     const ci = pNum(p.cSrc ? p.cSrc[s.id] : 0);
     return ci>0 ? sum + pNum(s.qDay)/86400 : sum;
   },0);
+}
+// Alokasi Beban Pencemar (kg/hari) = Σ (Ci_sumber × Qi_sumber) × 86.400 ÷ 1.000
+// Ci untuk sumber yang diusulkan BM-nya (ubmProposedSrcId) = nilai Usulan BM.
+// Ci untuk sumber lain = nilai C aktual sumber tersebut (p.cSrc[s.id]).
+// Hanya sumber dengan C > 0 (atau sumber yang diusulkan dengan Usulan BM terisi) yang dihitung.
+function ubmParamAlokasi(p){
+  if(p.isPH) return null;
+  let sumQiCi = 0, hasAny = false;
+  ubmSources.forEach(s=>{
+    const Qi = pNum(s.qDay)/86400;
+    const isProposed = ubmProposedSrcIds.has(s.id);
+    const ubmSrc = isProposed ? (p.usulanBMPerSrc?.[s.id] ?? '') : '';
+    const ubmVal = ubmSrc !== '' ? pNum(ubmSrc) : null;
+    const Ci = isProposed && ubmVal != null ? ubmVal : pNum(p.cSrc ? p.cSrc[s.id] : 0);
+    if(Ci > 0){
+      sumQiCi += Qi * Ci;
+      hasAny = true;
+    }
+  });
+  if(!hasAny) return null;
+  return sumQiCi * 86400 / 1000;
+}
+// Breakdown Alokasi Beban per sumber air limbah (kg/hari), untuk ditampilkan per kolom sumber.
+// Sumber yang diusulkan BM-nya memakai nilai Usulan BM sebagai Ci; sumber lain memakai C aktual.
+// Mengembalikan { perSrc: {srcId: alokasiKgHari|null}, total: number|null }
+function ubmParamAlokasiPerSrc(p){
+  if(p.isPH) return {perSrc:{}, total:null};
+  const perSrc = {};
+  let total = 0, hasAny = false;
+  ubmSources.forEach(s=>{
+    const Qi = pNum(s.qDay)/86400;
+    const isProposed = ubmProposedSrcIds.has(s.id);
+    const ubmSrc = isProposed ? (p.usulanBMPerSrc?.[s.id] ?? '') : '';
+    const ubmVal = ubmSrc !== '' ? pNum(ubmSrc) : null;
+    const Ci = isProposed && ubmVal != null ? ubmVal : pNum(p.cSrc ? p.cSrc[s.id] : 0);
+    if(Ci > 0){
+      const val = Ci * Qi * 86400 / 1000;
+      perSrc[s.id] = val;
+      total += val;
+      hasAny = true;
+    } else {
+      perSrc[s.id] = null;
+    }
+  });
+  return {perSrc, total: hasAny ? total : null};
 }
 const CL_DESC={
   '1':'Air Baku Minum — baku mutu paling ketat',
@@ -5621,11 +5711,123 @@ function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').
 function fmtN(v,dec){
   if(v==null||isNaN(v)) return '—';
   dec=dec??2;
-  return parseFloat(v.toFixed(dec)).toLocaleString('id-ID',{minimumFractionDigits:dec,maximumFractionDigits:dec});
+  var s = parseFloat(v.toFixed(dec)).toLocaleString('id-ID',{minimumFractionDigits:dec,maximumFractionDigits:dec});
+  return (typeof _trimTrailingZerosID==='function') ? _trimTrailingZerosID(s) : s;
 }
 
 function ubmSave(){ saveAuto(); }
 
+// ─── Helper: ambil nilai BM Jenis Limbah untuk parameter tertentu ───
+// Mencari nilai num dari BMALLDB[typeId].params yang cocok dengan paramName
+// Menggunakan alias yang sama dengan _JALIAS di Word export
+const _UBM_JALIAS = {
+  'padatan tersuspensi total (tss)': ['residu tersuspensi (tss)','residu tersuspensi','tss'],
+  'besi (fe) terlarut':  ['besi (fe) total','fe'],
+  'mangan (mn) terlarut':['mangan (mn) total','mn'],
+  'derajat keasaman (ph)':['ph (tingkat keasaman)','ph'],
+  'bod₅': ['bod'],
+  'amoniak (sebagai n)': ['amoniak (nh₃-n)','amoniak'],
+  'deterjen total':      ['deterjen total (mbas)'],
+  'minyak dan lemak':    ['minyak & lemak','minyak dan lemak'],
+  'klorin bebas':        ['sisa klorin (cl₂)','residual klorin','klorin bebas'],
+  'fecal coliform':      ['fecal coliform'],
+  'tembaga (cu) terlarut':['cu'],
+  'kadmium (cd) terlarut':['cd'],
+  'seng (zn) terlarut':  ['zn'],
+  'timbal (pb) terlarut':['pb'],
+  'arsen (as) terlarut': ['as'],
+  'nikel (ni) terlarut': ['ni'],
+  'kromium heksavalen (cr-vi)':['cr'],
+  'sianida (cn⁻)':       ['cn'],
+  'merkuri (hg) terlarut':['hg'],
+  'nitrat (sebagai n)':  ['nitrat (sebagai n)'],
+};
+const _ubmNorm = s => s.toLowerCase().replace(/[^a-z0-9]/g,'');
+function ubmGetBMJenisVal(paramName, typeId){
+  if(!typeId) return null;
+  const t = BMALLDB.find(x=>x.id===typeId);
+  if(!t) return null;
+  const tgtNorm = _ubmNorm(paramName||'');
+  const acceptNorms = new Set([tgtNorm]);
+  Object.entries(_UBM_JALIAS).forEach(([key, aliases])=>{
+    if(_ubmNorm(key)===tgtNorm || aliases.some(a=>_ubmNorm(a)===tgtNorm)){
+      acceptNorms.add(_ubmNorm(key));
+      aliases.forEach(a=>acceptNorms.add(_ubmNorm(a)));
+    }
+  });
+  const matches = t.params.filter(px=>{
+    const pnorm=_ubmNorm(px.param);
+    if(acceptNorms.has(pnorm)) return true;
+    if(pnorm.length>=4&&tgtNorm.length>=4&&(pnorm.includes(tgtNorm)||tgtNorm.includes(pnorm))) return true;
+    return false;
+  });
+  if(!matches.length) return null;
+  // Ambil num (numerik)
+  // null = rentang (pH), 0 = tidak ada/kosong → keduanya dianggap null
+  const m = matches[0];
+  return (m.num != null && m.num > 0) ? m.num : null;
+}
+// Isi C_sumber dari BM jenis limbah sumber tersebut
+function ubmFillCsrcFromBMJenis(paramId, srcId){
+  const p = ubmParams.find(x=>x.id===paramId);
+  const s = ubmSources.find(x=>x.id===srcId);
+  if(!p||!s||!s.typeId) return;
+  const val = ubmGetBMJenisVal(p.name, s.typeId);
+  if(val==null){ toast('Parameter ini tidak ada di BM jenis limbah sumber ini','err'); return; }
+  const strVal = String(val).replace('.',',');
+  p.cSrc[s.id] = strVal;
+  // Update input tanpa re-render (hindari cursor patah)
+  const inp = document.getElementById(`ubm-csrc-${paramId}-${srcId}`);
+  if(inp) inp.value = strVal;
+  _ubmCalcAndShowResults();
+  ubmSave();
+  toast(`✓ C ${s.name||'Sumber'} = ${strVal} mg/L (dari BM ${s.typeLabel||'jenis limbah'})`,'ok');
+}
+
+// ─── Toggle sumber yang diusulkan (checkbox multi-pilih) ──────────────
+function ubmToggleProposed(srcId, checked){
+  if(checked){
+    ubmProposedSrcIds.add(srcId);
+  } else {
+    ubmProposedSrcIds.delete(srcId);
+    // Bersihkan usulanBMPerSrc untuk sumber yang di-uncheck
+    ubmParams.forEach(p=>{
+      if(p.usulanBMPerSrc) delete p.usulanBMPerSrc[srcId];
+    });
+  }
+  ubmRenderParams();
+  _ubmCalcAndShowResults();
+  ubmSave();
+}
+
+// ─── Hitung Cmaks untuk satu sumber yang diusulkan, per musim ────────
+// Formula: Cmaks_i = [BM×(Qs+ΣQj) - Qs×Chulu - Σ(Qj×Cj, j≠i)] / Qi
+// Sumber diusulkan lainnya (j≠i) tetap pakai Usulan BM mereka sendiri sebagai Cj
+function ubmCalcCmaksProposed(p, Qs, seasonKey, proposedSrcId){
+  if(!proposedSrcId) return null;
+  const sp = ubmSources.find(s=>s.id===proposedSrcId);
+  if(!sp || !pNum(sp.qDay)) return null;
+  const Qp = pNum(sp.qDay)/86400;
+  const totalQi = ubmSources.reduce((sum,s)=>sum+pNum(s.qDay)/86400, 0);
+  const denom = Qs + totalQi;
+  const cHuluRaw = seasonKey==='dry' ? (p.cHuluDry??p.cHulu??'') : (p.cHuluWet??p.cHulu??'');
+  const cHulu = pNum(cHuluRaw);
+  const bm = p.bmVal;
+  if(bm==null || denom<=0) return null;
+  // Kontribusi sumber lain (bukan sumber yang dihitung Cmax-nya)
+  // Sumber diusulkan lain pakai Usulan BM mereka; sumber tidak diusulkan pakai C aktual
+  let sumOther = 0;
+  ubmSources.forEach(s=>{
+    if(s.id===proposedSrcId) return;
+    const isOtherProposed = ubmProposedSrcIds.has(s.id);
+    const ubmOtherRaw = isOtherProposed ? (p.usulanBMPerSrc?.[s.id] ?? '') : '';
+    const ubmOtherVal = ubmOtherRaw !== '' ? pNum(ubmOtherRaw) : null;
+    const Cj = isOtherProposed && ubmOtherVal!=null ? ubmOtherVal : pNum(p.cSrc[s.id]);
+    sumOther += (pNum(s.qDay)/86400) * Cj;
+  });
+  const cMax = (bm*denom - Qs*cHulu - sumOther) / Qp;
+  return cMax < 0 ? 0 : cMax;
+}
 
 // ─── Sync data sungai dari Beban Pencemar ke UBM ────────────────
 function ubmSyncFromBPM() {
@@ -5696,6 +5898,7 @@ function ubmDelSource(id){
   ubmCalc();
   ubmSave();
 }
+let _ubmNameDebounce=null;
 function ubmSrcChange(id,field,val){
   const s=ubmSources.find(x=>x.id===id);
   if(!s) return;
@@ -5712,6 +5915,11 @@ function ubmSrcChange(id,field,val){
     }
     _ubmUpdateSrcTotals();
     _ubmCalcAndShowResults();
+  }
+  if(field==='name'){
+    // Re-render header Step 3 saat nama sumber berubah (debounce 400ms)
+    clearTimeout(_ubmNameDebounce);
+    _ubmNameDebounce=setTimeout(()=>{ ubmRenderParams(); }, 400);
   }
   ubmSave();
 }
@@ -5781,6 +5989,7 @@ function ubmSrcTypeChange(id, typeId){
   s.typeId = typeId || null;
   const t = typeId ? BMALLDB.find(x=>x.id===typeId) : null;
   s.typeLabel = t ? t.label : null;
+  ubmRenderParams();
   _ubmCalcAndShowResults();
   ubmSave();
 }
@@ -5907,6 +6116,13 @@ function ubmDoImport(season){
       const cellW=document.querySelector(`#ubm-param-list [data-chuluW="${existing.id}"]`);
       if(cellD) cellD.value=existing.cHuluDry;
       if(cellW) cellW.value=existing.cHuluWet;
+      // Isi juga C Sumber tiap sumber air limbah dengan nilai yang sama (dari Beban Pencemar)
+      if(!existing.cSrc) existing.cSrc={};
+      ubmSources.forEach(s=>{
+        existing.cSrc[s.id]=cVal;
+        const cellSrc=document.getElementById(`ubm-csrc-${existing.id}-${s.id}`);
+        if(cellSrc) cellSrc.value=cVal;
+      });
       updated++;
       return;
     }
@@ -5924,10 +6140,10 @@ function ubmDoImport(season){
       bmVal:bm,
       bmStr:bm!=null?fmtN(bm,4):'—',
       finalBM:'',
-      usulanBM:''
+      usulanBMPerSrc:{}
     });
-    // Inisialisasi slot untuk sumber yang sudah ada
-    ubmSources.forEach(s=>{ ubmParams[ubmParams.length-1].cSrc[s.id]=''; });
+    // Inisialisasi slot untuk sumber yang sudah ada, isi dengan nilai C dari Beban Pencemar
+    ubmSources.forEach(s=>{ ubmParams[ubmParams.length-1].cSrc[s.id]=cVal; });
     added++;
   });
 
@@ -5972,7 +6188,7 @@ function ubmAddParamFromDB(dbId){
   const cls=document.getElementById('r-class')?.value||document.getElementById('ubm-class')?.value||'';
   const bm=cls?numVal(getKVal(row,parseInt(cls))):null;
   const p={id:ubmPId,dbId,name:row.name,unit:row.unit,
-    cHuluDry:'',cHuluWet:'',cSrc:{},bmVal:bm, bmStr:cls&&bm!=null?fmtN(bm,4):'—', finalBM:'',usulanBM:''};
+    cHuluDry:'',cHuluWet:'',cSrc:{},bmVal:bm, bmStr:cls&&bm!=null?fmtN(bm,4):'—', finalBM:'',usulanBMPerSrc:{}};
   ubmSources.forEach(s=>{p.cSrc[s.id]='';});
   ubmParams.push(p);
   document.getElementById('ubm-db-picker').style.display='none';
@@ -5982,7 +6198,7 @@ function ubmAddParamFromDB(dbId){
 function ubmAddParamManual(){
   ubmPId++;
   const cls=document.getElementById('r-class')?.value||document.getElementById('ubm-class')?.value||'';
-  const p={id:ubmPId,dbId:null,name:'',unit:'mg/L',cHuluDry:'',cHuluWet:'',cSrc:{},bmVal:null,bmStr:'',finalBM:'',usulanBM:''};
+  const p={id:ubmPId,dbId:null,name:'',unit:'mg/L',cHuluDry:'',cHuluWet:'',cSrc:{},bmVal:null,bmStr:'',finalBM:'',usulanBMPerSrc:{}};
   ubmSources.forEach(s=>{p.cSrc[s.id]='';});
   ubmParams.push(p);
   ubmRenderParams(); ubmSave();
@@ -6023,16 +6239,42 @@ function ubmRenderParams(){
     });
   });
 
-  // Shared grid definition (2 C Hulu columns: kemarau + hujan + Usulan BM)
-  const widths=`1fr 70px 90px 90px ${ubmSources.map(()=>'90px').join(' ')} 90px 100px 32px`;
+  // Shared grid definition - sumber diusulkan: dua kolom (C Maks hitung + Usulan BM input)
+  // Kolom: Parameter | Satuan | C Hulu Kemarau | C Hulu Hujan | [per sumber: jika diusulkan=Cmaks+UsulBM, else=C aktual] | BM Kelas | Del
+  const widths=`1fr 70px 90px 90px ${ubmSources.map(s=>ubmProposedSrcIds.has(s.id)?'270px':s.typeId?'110px':'90px').join(' ')} 90px 32px`;
   const srcCols=ubmSources.length;
 
   // Column header
   if(colHdr){
     colHdr.style.display='grid';
-    const hdrSrcCols=ubmSources.map(s=>`<div style="text-align:right">C<sub>${esc(s.name||'Sumber')}</sub><br><span style="font-size:8px;color:var(--mute)">(mg/L)</span></div>`).join('');
+    const hdrSrcCols=ubmSources.map(s=>{
+      const isP = ubmProposedSrcIds.has(s.id);
+      // Checkbox "Diusulkan" di header kolom
+      const checkBox = `<label style="display:flex;align-items:center;gap:3px;cursor:pointer;margin-bottom:2px;justify-content:flex-end">
+        <span style="font-family:var(--mono);font-size:7.5px;color:${isP?'var(--accent)':'var(--mute)'}">${isP?'✓ Diusulkan':'Tandai'}</span>
+        <input type="checkbox" value="${s.id}" ${isP?'checked':''} onchange="ubmToggleProposed(${s.id},this.checked)" style="cursor:pointer;accent-color:var(--accent);width:13px;height:13px">
+      </label>`;
+      if(isP){
+        return `<div style="text-align:right;line-height:1.4;background:rgba(26,176,166,0.08);border-radius:3px;padding:2px 4px;border:1px solid rgba(26,176,166,0.3)">
+          ${checkBox}
+          <span style="font-size:8.5px;font-weight:700;color:var(--txt2);display:block">${esc(s.name||'Sumber')}</span>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px;margin-top:2px">
+            <span style="font-family:var(--mono);font-size:7.5px;color:var(--accent);text-align:center">C Maks Hitung</span>
+            <span style="font-family:var(--mono);font-size:7.5px;color:var(--amber);text-align:center">Usulan BM</span>
+          </div>
+        </div>`;
+      }
+      const typeTag = s.typeId
+        ? `<span style="font-size:7.5px;color:var(--accent);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${esc(s.typeLabel||'')}">${esc((s.typeLabel||'').split('–')[0].trim().substring(0,18))||'Jenis limbah'}</span>`
+        : `<span style="font-size:7.5px;color:var(--mute);display:block">— belum dipilih</span>`;
+      return `<div style="text-align:right;line-height:1.4">
+        ${checkBox}
+        C <span style="font-size:9px;font-weight:700">${esc(s.name||'Sumber')}</span><br>
+        <span style="font-size:7.5px;color:var(--mute)">(mg/L)</span><br>${typeTag}
+      </div>`;
+    }).join('');
     colHdr.style.cssText=`display:grid;grid-template-columns:${widths};gap:6px;padding:6px 8px;font-family:var(--mono);font-size:9px;color:var(--mute);text-transform:uppercase;letter-spacing:0.7px;border-bottom:1px solid var(--brd2);margin-bottom:4px`;
-    colHdr.innerHTML=`<div>Parameter</div><div style="text-align:center">Satuan</div><div style="text-align:right;color:#f5a623">C Hulu ☀<br><span style="font-size:8px;font-weight:400">Kemarau (mg/L)</span></div><div style="text-align:right;color:#4488ff">C Hulu 🌧<br><span style="font-size:8px;font-weight:400">Hujan (mg/L)</span></div>${hdrSrcCols}<div style="text-align:right">BM Kelas</div><div style="text-align:right;color:var(--amber)">Usulan BM<br><span style="font-size:8px;font-weight:400">(mg/L)</span></div><div></div>`;
+    colHdr.innerHTML=`<div>Parameter</div><div style="text-align:center">Satuan</div><div style="text-align:right;color:#f5a623">C Hulu ☀<br><span style="font-size:8px;font-weight:400">Kemarau (mg/L)</span></div><div style="text-align:right;color:#4488ff">C Hulu 🌧<br><span style="font-size:8px;font-weight:400">Hujan (mg/L)</span></div>${hdrSrcCols}<div style="text-align:right">BM Kelas</div><div></div>`;
   }
   const ROW='border:1px solid var(--brd2);border-radius:var(--rs);padding:6px 8px;margin-bottom:4px;background:var(--bg2)';
   const INP='style="width:100%;background:var(--inp);border:1px solid var(--brd2);border-radius:3px;color:var(--txt);font-family:var(--mono);font-size:11.5px;padding:4px 6px;text-align:right;outline:none"';
@@ -6040,7 +6282,53 @@ function ubmRenderParams(){
   const INP_WET='style="width:100%;background:var(--inp);border:1px solid rgba(68,136,255,0.5);border-radius:3px;color:var(--txt);font-family:var(--mono);font-size:11.5px;padding:4px 6px;text-align:right;outline:none"';
 
   list.innerHTML=ubmParams.map(p=>{
-    const srcInputs=ubmSources.map(s=>`<input ${INP} inputmode="decimal" value="${p.cSrc[s.id]||''}" placeholder="0,000" oninput="ubmPChange(${p.id},'cSrc',{srcId:${s.id},v:this.value})">`).join('');
+    const srcInputs=ubmSources.map(s=>{
+      const isProposed = ubmProposedSrcIds.has(s.id);
+
+      // ── Kolom DIUSULKAN: C_maks hitung (kiri) + input Usulan BM (kanan) ──
+      if(isProposed){
+        const bmJenisProposed = s.typeId ? ubmGetBMJenisVal(p.name, s.typeId) : null;
+        const notApplicable = s.typeId && bmJenisProposed===null;
+        const cmD = ubmCalcCmaksProposed(p, getQsDry(), 'dry', s.id);
+        const cmW = ubmCalcCmaksProposed(p, getQsWet(), 'wet', s.id);
+        const cmFinal = (cmD!=null&&cmW!=null) ? Math.min(cmD,cmW) : (cmD??cmW);
+        const fmtCm = v => v==null ? '—' : (v===0 ? '<span style="color:#e53935;font-size:9px">0</span>' : `<span style="font-weight:700;color:var(--accent)">${fmtN(v,2)}</span>`);
+        const usulanVal = p.usulanBMPerSrc?.[s.id] ?? '';
+        const INP_UBM=`style="width:100%;background:var(--inp);border:1.5px solid rgba(245,166,35,0.7);border-radius:3px;color:var(--amber);font-family:var(--mono);font-size:11px;padding:4px 5px;text-align:right;outline:none;font-weight:600"`;
+        if(notApplicable){
+          return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;border:1.5px solid var(--accent);border-radius:4px;padding:4px 5px;background:rgba(26,176,166,0.04)">
+            <div style="font-family:var(--mono);font-size:8px;color:var(--mute);text-align:center;display:flex;align-items:center;justify-content:center">tdk ada<br>di BM jenis</div>
+            <div style="font-family:var(--mono);font-size:8px;color:var(--mute);text-align:center;display:flex;align-items:center;justify-content:center">—</div>
+          </div>`;
+        }
+        return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;border:1.5px solid var(--accent);border-radius:4px;padding:4px 5px;background:rgba(26,176,166,0.06)">
+          <div id="ubm-cmaks-${p.id}-${s.id}">
+            <div style="font-family:var(--mono);font-size:7px;color:var(--accent);font-weight:700;margin-bottom:2px;text-align:center">C MAKS</div>
+            <div style="font-family:var(--mono);font-size:8.5px;display:flex;justify-content:space-between"><span style="color:#f5a623">☀</span>${fmtCm(cmD)}</div>
+            <div style="font-family:var(--mono);font-size:8.5px;display:flex;justify-content:space-between"><span style="color:#4488ff">🌧</span>${fmtCm(cmW)}</div>
+            <div style="border-top:1px solid rgba(26,176,166,0.25);margin-top:2px;padding-top:1px;font-family:var(--mono);font-size:9px;text-align:right;font-weight:700;color:var(--accent)">${cmFinal!=null?fmtN(cmFinal,2):'—'}</div>
+          </div>
+          <div>
+            <div style="font-family:var(--mono);font-size:7px;color:var(--amber);font-weight:700;margin-bottom:2px;text-align:center">USULAN BM</div>
+            <input id="ubm-ubm-${p.id}-${s.id}" ${INP_UBM} inputmode="decimal" value="${usulanVal}" placeholder="0,000" title="Usulan BM untuk ${esc(s.name||'sumber ini')}" oninput="ubmPChange(${p.id},'usulanBMPerSrc',{srcId:${s.id},v:this.value})">
+            ${bmJenisProposed!=null?`<div style="font-family:var(--mono);font-size:7px;color:#b45309;text-align:right;margin-top:1px">BM Jenis: ${String(bmJenisProposed).replace('.',',')}</div>`:''}
+          </div>
+        </div>`;
+      }
+
+      // ── Kolom KONTRIBUSI: badge BM Jenis + input manual ───────────────
+      const bmJenisVal = s.typeId ? ubmGetBMJenisVal(p.name, s.typeId) : null;
+      const bmJenisStr = bmJenisVal!=null ? String(bmJenisVal).replace('.',',') : null;
+      const bmBadge = bmJenisStr!=null
+        ? `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;background:rgba(26,176,166,0.08);border:1px solid rgba(26,176,166,0.25);border-radius:3px;padding:1px 4px 1px 5px">
+            <span style="font-family:var(--mono);font-size:8.5px;color:var(--accent);font-weight:700">${bmJenisStr}</span>
+            <button title="Pakai nilai BM ini sebagai C sumber" onclick="ubmFillCsrcFromBMJenis(${p.id},${s.id})" style="font-family:var(--mono);font-size:7.5px;padding:0 4px;height:14px;background:var(--accent);border:none;border-radius:2px;color:var(--accent-fg);cursor:pointer;line-height:14px">pakai</button>
+          </div>`
+        : s.typeId
+          ? `<div style="margin-bottom:2px;padding:1px 5px;background:rgba(0,0,0,0.04);border:1px solid var(--brd2);border-radius:3px"><span style="font-family:var(--mono);font-size:8px;color:var(--mute)">— tdk ada di BM</span></div>`
+          : `<div style="margin-bottom:2px;padding:1px 5px;background:rgba(0,0,0,0.03);border:1px dashed var(--brd2);border-radius:3px"><span style="font-family:var(--mono);font-size:8px;color:var(--mute)">pilih jenis di step 2</span></div>`;
+      return `<div><div>${bmBadge}</div><input id="ubm-csrc-${p.id}-${s.id}" ${INP} inputmode="decimal" value="${p.cSrc[s.id]||''}" placeholder="0,000" oninput="ubmPChange(${p.id},'cSrc',{srcId:${s.id},v:this.value})"></div>`;
+    }).join('');
     const nameField=p.dbId
       ? `<div style="font-size:12.5px;font-weight:600;color:var(--txt2)">${esc(p.name)}</div>`
       : `<input class="finput" style="font-size:12px;padding:4px 8px" value="${esc(p.name)}" placeholder="Nama parameter" oninput="ubmPChange(${p.id},'name',this.value)">`;
@@ -6052,8 +6340,6 @@ function ubmRenderParams(){
       : `<input class="finput" style="font-size:11px;padding:4px 6px;text-align:right;font-family:var(--mono)" inputmode="decimal" value="${p.bmStr}" placeholder="BM" oninput="ubmPChange(${p.id},'bmStr',this.value);ubmPChange(${p.id},'bmVal',parseFloat(this.value.replace(',','.'))||null)">`;
     const cHD = p.cHuluDry ?? p.cHulu ?? '';
     const cHW = p.cHuluWet ?? p.cHulu ?? '';
-    const usulanBMVal = p.usulanBM ?? '';
-    const INP_AMB=`style="width:100%;background:var(--inp);border:1px solid rgba(245,166,35,0.6);border-radius:3px;color:var(--amber);font-family:var(--mono);font-size:11.5px;padding:4px 6px;text-align:right;outline:none;font-weight:600"`;
     return `<div style="${ROW};display:grid;grid-template-columns:${widths};gap:6px;align-items:center">
       ${nameField}
       ${unitField}
@@ -6061,7 +6347,6 @@ function ubmRenderParams(){
       <input ${INP_WET} data-chuluw="${p.id}" inputmode="decimal" value="${cHW}" placeholder="0,000" oninput="ubmPChange(${p.id},'cHuluWet',this.value)">
       ${srcInputs}
       ${bmField}
-      <input ${INP_AMB} data-usulanbm="${p.id}" inputmode="decimal" value="${usulanBMVal}" placeholder="Isi BM…" title="Usulan Baku Mutu (digunakan untuk alokasi beban)" oninput="ubmPChange(${p.id},'usulanBM',this.value)">
       <button onclick="ubmDelParam(${p.id})" style="width:26px;height:26px;background:rgba(255,80,80,0.1);border:1px solid rgba(255,80,80,0.25);border-radius:3px;color:#ff6060;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center">🗑</button>
     </div>`;
   }).join('');
@@ -6078,8 +6363,14 @@ function ubmPChange(id,field,val){
   const p=ubmParams.find(x=>x.id===id);
   if(!p) return;
   if(field==='cSrc') p.cSrc[val.srcId]=val.v;
+  else if(field==='usulanBMPerSrc'){ if(!p.usulanBMPerSrc) p.usulanBMPerSrc={}; p.usulanBMPerSrc[val.srcId]=val.v; }
   else p[field]=val;
-  // FIX 1: hanya update kalkulasi + tabel hasil, JANGAN re-render param list
+  // Catatan: dulu di sini ubmRenderParams() dipanggil untuk update hint C_maks
+  // saat cSrc sumber lain berubah, tapi itu membangun ulang seluruh tabel input
+  // sehingga fokus & karakter yang sedang diketik hilang tiap 1 huruf.
+  // C_maks hint sudah otomatis ter-update lewat _ubmCalcAndShowResults() di bawah
+  // (disimpan di p._cMaxHint dan dipakai render card lain), jadi rebuild tabel
+  // input tidak diperlukan di sini.
   _ubmCalcAndShowResults();
   ubmSave();
 }
@@ -6088,8 +6379,38 @@ function ubmCalc(){
   _ubmCalcAndShowResults();
 }
 
+// ─── Update C Maks in-place tanpa rebuild tabel input ────────────────
+// Dipanggil saat Usulan BM berubah agar nilai C Maks per sumber diusulkan
+// ter-update secara realtime tanpa merusak fokus/kursor di input Usulan BM.
+function ubmUpdateCmaksInPlace(){
+  if(!ubmProposedSrcIds.size) return;
+  const QsDry = getQsDry(), QsWet = getQsWet();
+  const fmtCm = v => v==null ? '—' : (v===0
+    ? '<span style="color:#e53935;font-size:9px">0</span>'
+    : `<span style="font-weight:700;color:var(--accent)">${fmtN(v,2)}</span>`);
+
+  ubmParams.forEach(p=>{
+    ubmSources.forEach(s=>{
+      if(!ubmProposedSrcIds.has(s.id)) return;
+      const el = document.getElementById(`ubm-cmaks-${p.id}-${s.id}`);
+      if(!el) return;
+      // Hitung ulang C Maks dengan Usulan BM sumber lain sudah terisi
+      const cmD = ubmCalcCmaksProposed(p, QsDry, 'dry', s.id);
+      const cmW = ubmCalcCmaksProposed(p, QsWet, 'wet', s.id);
+      const cmFinal = (cmD!=null&&cmW!=null) ? Math.min(cmD,cmW) : (cmD??cmW);
+      el.innerHTML =
+        `<div style="font-family:var(--mono);font-size:7px;color:var(--accent);font-weight:700;margin-bottom:2px;text-align:center">C MAKS</div>` +
+        `<div style="font-family:var(--mono);font-size:8.5px;display:flex;justify-content:space-between"><span style="color:#f5a623">☀</span>${fmtCm(cmD)}</div>` +
+        `<div style="font-family:var(--mono);font-size:8.5px;display:flex;justify-content:space-between"><span style="color:#4488ff">🌧</span>${fmtCm(cmW)}</div>` +
+        `<div style="border-top:1px solid rgba(26,176,166,0.25);margin-top:2px;padding-top:1px;font-family:var(--mono);font-size:9px;text-align:right;font-weight:700;color:var(--accent)">${cmFinal!=null?fmtN(cmFinal,2):'—'}</div>`;
+    });
+  });
+}
+
 // Pisah: kalkulasi + render result tables (tidak rebuild input list)
 function _ubmCalcAndShowResults(){
+  // Update C Maks in-place untuk sumber yang diusulkan (realtime saat Usulan BM berubah)
+  ubmUpdateCmaksInPlace();
   // Update label Q sungai dari BPM page
   const qd=getQsDry(), qw=getQsWet();
   const lblD=document.getElementById('ubm-qs-dry-lbl');
@@ -6152,7 +6473,11 @@ function _ubmCalcAndShowResults(){
       const cHulu=pNum(cHuluRaw);
       let sumQiCi=0;
       ubmSources.forEach(s=>{
-        const Qi=pNum(s.qDay)/86400, Ci=pNum(p.cSrc[s.id]);
+        const Qi=pNum(s.qDay)/86400;
+        const isProposed = ubmProposedSrcIds.has(s.id);
+        const ubmSrcRaw = isProposed ? (p.usulanBMPerSrc?.[s.id] ?? '') : '';
+        const ubmSrcVal = ubmSrcRaw !== '' ? pNum(ubmSrcRaw) : null;
+        const Ci = isProposed && ubmSrcVal!=null ? ubmSrcVal : pNum(p.cSrc[s.id]);
         sumQiCi+=Qi*Ci;
       });
       const cr=denom>0?(Qs*cHulu+sumQiCi)/denom:null;
@@ -6169,7 +6494,18 @@ function _ubmCalcAndShowResults(){
         cMax=(bm*denom-Qs*cHulu)/totalQi;
         if(cMax<0) cMax=0;
       }
-      return {p,cr,bm,status,cMax,totalQi,Qs,denom,cHulu};
+      // usulanBMVal: null jika tidak ada sumber diusulkan, atau jika semua sumber diusulkan belum diisi
+      // Untuk display tabel hasil, ambil nilai pertama dari sumber diusulkan yang ada isinya
+      const usulanBMVal = (() => {
+        for(const s of ubmSources){
+          if(ubmProposedSrcIds.has(s.id)){
+            const raw = p.usulanBMPerSrc?.[s.id] ?? '';
+            if(raw !== '') return pNum(raw);
+          }
+        }
+        return null;
+      })();
+      return {p,cr,bm,status,cMax,totalQi,Qs,denom,cHulu,usulanBMVal};
     });
   }
 
@@ -6179,9 +6515,12 @@ function _ubmCalcAndShowResults(){
   // Show/hide cards — rekap hanya di laporan, tidak di menu UBM
   const hasQ=getQsDry()>0||getQsWet()>0;
   const showCards=ubmParams.length>0&&totalQi>0&&hasQ;
-  ['ubm-result-card','ubm-max-card','ubm-final-card'].forEach(id=>{
+  ['ubm-result-card','ubm-final-card'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.style.display=showCards?'block':'none';
   });
+  // ubm-max-card (Usulan Baku Mutu Maksimum Air Limbah) sengaja disembunyikan permanen di Step 4
+  const maxCardEl=document.getElementById('ubm-max-card');
+  if(maxCardEl) maxCardEl.style.display='none';
   // ubm-rekap-card selalu tersembunyi di menu UBM — hanya muncul di Laporan
   const rekapCard=document.getElementById('ubm-rekap-card');
   if(rekapCard) rekapCard.style.display='none';
@@ -6236,9 +6575,17 @@ function _ubmCalcAndShowResults(){
     </tr>`;
 
     tbody.innerHTML = resArr.map(({p, cr, bm, status, cHulu}) => {
-      const srcCols = ubmSources.map(s =>
-        TD(p.cSrc[s.id] ? fmtN(pNum(p.cSrc[s.id]),4) : '—', 'text-align:right;color:var(--txt2)')
-      ).join('');
+      const srcCols = ubmSources.map(s => {
+        const isProposed = ubmProposedSrcIds.has(s.id);
+        const ubmSrcRaw = isProposed ? (p.usulanBMPerSrc?.[s.id] ?? '') : '';
+        const ubmSrcVal = ubmSrcRaw !== '' ? pNum(ubmSrcRaw) : null;
+        const val = isProposed && ubmSrcVal!=null ? ubmSrcVal : (p.cSrc[s.id] ? pNum(p.cSrc[s.id]) : null);
+        const disp = val!=null ? fmtN(val,4) : '—';
+        const style = isProposed && ubmSrcVal!=null
+          ? 'text-align:right;color:#e65100;font-weight:700;background:rgba(245,166,35,0.08)'
+          : 'text-align:right;color:var(--txt2)';
+        return TD(disp, style);
+      }).join('');
 
       // BM per jenis limbah per parameter
       // Alias: nama parameter di WQDB (ubmParams.name) → sinonim di BMALLDB
@@ -6336,7 +6683,8 @@ function _ubmCalcAndShowResults(){
   buildCRSection('wet', getQsWet(), resWet, '#4488ff', 'Hujan');
 
   // ── CR Hilir Sungai dari Usulan BM (baru) ─────────────────────
-  // Hitung CR per parameter menggunakan usulanBM sebagai C_i sumber
+  // Hitung CR per parameter: sumber yang diusulkan (ubmProposedSrcId) pakai nilai
+  // Usulan BM sebagai C_i, sedangkan sumber lain tetap pakai input C sumber dari Step 3 (p.cSrc).
   function calcSeasonUsulan(Qs, seasonKey) {
     const denom = Qs + totalQi;
     return ubmParams.map(p => {
@@ -6344,11 +6692,13 @@ function _ubmCalcAndShowResults(){
         ? (p.cHuluDry ?? p.cHulu ?? '')
         : (p.cHuluWet ?? p.cHulu ?? '');
       const cHulu = pNum(cHuluRaw);
-      const usulanBMVal = (p.usulanBM ?? '') !== '' ? pNum(p.usulanBM) : null;
       let sumQiCi = 0;
       ubmSources.forEach(s => {
         const Qi = pNum(s.qDay) / 86400;
-        const Ci = usulanBMVal != null ? usulanBMVal : 0;
+        const isProposed = ubmProposedSrcIds.has(s.id);
+        const ubmSrcRaw = isProposed ? (p.usulanBMPerSrc?.[s.id] ?? '') : '';
+        const ubmSrcVal = ubmSrcRaw !== '' ? pNum(ubmSrcRaw) : null;
+        const Ci = isProposed && ubmSrcVal!=null ? ubmSrcVal : pNum(p.cSrc[s.id]);
         sumQiCi += Qi * Ci;
       });
       const cr = denom > 0 ? (Qs * cHulu + sumQiCi) / denom : null;
@@ -6359,7 +6709,7 @@ function _ubmCalcAndShowResults(){
       } else {
         status = cr!=null&&bm!=null ? (cr<=bm?'ok':'ng') : null;
       }
-      return { p, cr, bm, status, cHulu, usulanBMVal };
+      return { p, cr, bm, status, cHulu };
     });
   }
 
@@ -6367,9 +6717,10 @@ function _ubmCalcAndShowResults(){
   const resWetUsulan = calcSeasonUsulan(getQsWet(), 'wet');
 
   // Tampilkan card CR Usulan BM jika ada parameter dan ada setidaknya satu Usulan BM
-  const hasAnyUsulan = ubmParams.some(p=>(p.usulanBM??'')!=='');
+  const hasAnyUsulan = ubmParams.some(p=>Object.values(p.usulanBMPerSrc||{}).some(v=>v!==''));
+  // ubm-cr-usulan-card (CR HILIR SUNGAI — HASIL USULAN BAKU MUTU) sengaja disembunyikan permanen di Step 4
   const crUsulanCard = document.getElementById('ubm-cr-usulan-card');
-  if (crUsulanCard) crUsulanCard.style.display = (showCards && hasAnyUsulan) ? 'block' : 'none';
+  if (crUsulanCard) crUsulanCard.style.display = 'none';
   if (showCards && hasAnyUsulan) {
     _buildCRUsulanTable(resDryUsulan, resWetUsulan, totalQi);
   }
@@ -6444,40 +6795,41 @@ function _ubmCalcAndShowResults(){
   }
 
   // ── BM Akhir + Alokasi ───────────────────────────────────────
+  // Header kolom per-sumber (dinamis sesuai daftar ubmSources) — idempotent: hapus th lama dulu
+  const finTableEl=document.getElementById('ubm-final-tbody')?.closest('table');
+  if(finTableEl){
+    const theadRow = finTableEl.querySelector('thead tr');
+    if(theadRow){
+      theadRow.querySelectorAll('th[data-final-src]').forEach(el=>el.remove());
+      const totalTh = theadRow.querySelector('th:last-child');
+      ubmSources.forEach(s=>{
+        const isProposed = ubmProposedSrcIds.has(s.id);
+        const th=document.createElement('th');
+        th.className='th';
+        th.setAttribute('data-final-src', s.id);
+        th.style.textAlign='right';
+        th.style.color = isProposed ? 'var(--amber)' : 'var(--mute2)';
+        th.innerHTML = `Alokasi ${esc(s.name||'Sumber')}${isProposed?' <span style="font-size:8px">(diusulkan)</span>':''}<br><span style="font-weight:400;font-size:8px">(kg/hari)</span>`;
+        theadRow.insertBefore(th, totalTh);
+      });
+    }
+  }
   const finTbody=document.getElementById('ubm-final-tbody');
   if(finTbody){
     finTbody.innerHTML=ubmParams.map(p=>{
-      const cMaxHint = p._cMaxHint;  // dari perhitungan BM Maks
-      // Usulan BM: dari input form di Parameter Kualitas Air
-      const usulanBMRaw = p.usulanBM ?? '';
-      const usulanBMVal = usulanBMRaw !== '' ? pNum(usulanBMRaw) : null;
-      // Alokasi dihitung dari Usulan BM × ΣQ limbah khusus sumber yang punya nilai parameter ini
-      const pQi3 = ubmParamQi(p);
-      const alokasi  = usulanBMVal!=null&&pQi3>0 ? usulanBMVal*pQi3*86400/1000 : null;
-      const cMaxStr  = cMaxHint!=null ? fmtN(cMaxHint,4) : '—';
-      // Status: apakah Usulan BM ≤ Cmax (masih dalam batas)
-      const overLimit = cMaxHint!=null && usulanBMVal!=null && usulanBMVal > cMaxHint;
-      const ok        = cMaxHint!=null && usulanBMVal!=null && usulanBMVal <= cMaxHint;
-      const noInput   = usulanBMVal == null;
-      const rowBg     = overLimit ? 'background:rgba(239,68,68,0.05)' : '';
-      // Tampilan nilai Usulan BM
-      const usulanBMDisp = p.isPH
-        ? `<span style="color:var(--accent);font-weight:700">6–9</span>`
-        : noInput
-          ? `<span style="color:var(--mute);font-size:10px;font-family:var(--mono)">— isi di tabel atas —</span>`
-          : `<div style="font-family:var(--mono);font-size:13px;font-weight:700;color:${overLimit?'var(--red)':ok?'var(--amber)':'var(--mute2)'}">${fmtN(usulanBMVal,4)}</div>
-             ${overLimit?`<div style="font-size:9px;color:var(--red)">⚠ Melebihi C<sub>maks</sub></div>`:''}
-             ${ok?`<div style="font-size:9px;color:var(--green)">✓ Di bawah C<sub>maks</sub></div>`:''}`;
-      return `<tr style="${rowBg}">
+      // Alokasi per sumber + total: sumber diusulkan pakai Usulan BM, sumber lain pakai C aktual
+      const {perSrc, total: alokasi} = ubmParamAlokasiPerSrc(p);
+      const srcCols = ubmSources.map(s=>{
+        const isProposed = ubmProposedSrcIds.has(s.id);
+        const v = perSrc[s.id];
+        const disp = v!=null ? fmtN(v,4) : '—';
+        return `<td class="td-r" style="color:${isProposed?'var(--amber)':'var(--mute2)'};${isProposed?'font-weight:700':''}">${disp}</td>`;
+      }).join('');
+      return `<tr>
         <td style="font-weight:700;font-size:12.5px">${esc(p.name||'—')}</td>
         <td class="td-c" style="color:var(--mute);font-size:11px">${esc(p.unit)}</td>
-        <td class="td-r" style="color:var(--mute)">${cMaxStr}</td>
-        <td class="td-c">
-          <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
-            ${usulanBMDisp}
-          </div>
-        </td>
-        <td class="td-r" style="color:var(--amber);font-weight:700">${alokasi!=null?fmtN(alokasi,4):'—'}</td>
+        ${srcCols}
+        <td class="td-r" style="color:var(--amber);font-weight:700;border-left:2px solid var(--brd)">${alokasi!=null?fmtN(alokasi,4):'—'}</td>
       </tr>`;
     }).join('');
   }
@@ -6523,18 +6875,22 @@ function _buildRekapTable(resDry, resWet, totalQi){
   // Build body rows
   function buildBody(results, totalQi){
     return results.map(({p, cr, bm, status, cMax}, i)=>{
-      // Usulan BM: dari input form
-      const usulanBMRaw = p.usulanBM ?? '';
-      const usulanBMVal = usulanBMRaw !== '' ? pNum(usulanBMRaw) : null;
-      const pQi4 = ubmParamQi(p);
-      const alokasi  = usulanBMVal!=null&&pQi4>0 ? usulanBMVal*pQi4*86400/1000 : null;
+      // Usulan BM: gabungan dari semua sumber yang diusulkan (tampilkan semua yang terisi)
+      const usulanPerSrc = ubmSources.filter(s=>ubmProposedSrcIds.has(s.id)).map(s=>{
+        const raw = p.usulanBMPerSrc?.[s.id] ?? '';
+        return raw !== '' ? pNum(raw) : null;
+      }).filter(v=>v!=null);
+      const usulanBMVal = usulanPerSrc.length > 0 ? usulanPerSrc[0] : null; // untuk C_maks check
+      const alokasi  = ubmParamAlokasi(p);
       // Tampilan BM Sungai: "6–9" untuk pH, angka untuk lainnya
       const bmSungaiDisp = p.isPH ? '<span style="color:var(--accent);font-weight:700">6–9</span>'
                                   : (bm!=null ? fmtN(bm,4) : '—');
       const cMaxDisp = p.isPH ? '<span style="color:var(--mute);font-size:9.5px">Rentang 6–9</span>'
                                : (cMax!=null ? fmtN(cMax,4) : '—');
       const usulanBMDisp = p.isPH ? '<span style="color:var(--accent)">6–9</span>'
-                                 : (usulanBMVal!=null ? fmtN(usulanBMVal,4) : '—');
+                                 : usulanPerSrc.length > 0 
+                                   ? usulanPerSrc.map(v=>fmtN(v,4)).join(' / ')
+                                   : '—';
       // Status badge
       const statusBadge = status==='ok'
         ? `<span style="color:#22c55e;font-weight:700;font-size:10px">✓ Memenuhi</span>`
@@ -6606,10 +6962,15 @@ function _buildCRUsulanTable(resDryUsulan, resWetUsulan, totalQi) {
     const tbody  = document.getElementById(`ubm-cr-usulan-tbody-${seasonKey}`);
     if (!thead || !tbody) return;
 
-    // Satu kolom per sumber — sama seperti tabel CR HILIR biasa
-    const srcHeaders = ubmSources.map(s =>
-      TH(`${esc(s.name||`Sumber ${s.id}`)}<br><span style="font-weight:400;font-size:8.5px;color:var(--amber)">(mg/L) = Usulan BM</span>`, 'text-align:right;color:var(--amber)')
-    ).join('');
+    // Sumber diusulkan: label Usulan BM; sumber lain: label C Aktual
+    const srcHeaders = ubmSources.map(s => {
+      const isProposed = ubmProposedSrcIds.has(s.id);
+      if (isProposed) {
+        return TH(`${esc(s.name||`Sumber ${s.id}`)}<br><span style="font-weight:400;font-size:8.5px;color:var(--amber)">(mg/L) = Usulan BM</span>`, 'text-align:right;color:var(--amber)');
+      } else {
+        return TH(`${esc(s.name||`Sumber ${s.id}`)}<br><span style="font-weight:400;font-size:8.5px;color:var(--txt2)">(mg/L) = C Aktual</span>`, 'text-align:right');
+      }
+    }).join('');
 
     thead.innerHTML = `<tr style="background:rgba(0,0,0,0.04)">
       ${TH('Parameter', 'text-align:left')}
@@ -6622,7 +6983,7 @@ function _buildCRUsulanTable(resDryUsulan, resWetUsulan, totalQi) {
       ${TH('Keterangan', 'text-align:center')}
     </tr>`;
 
-    tbody.innerHTML = resArr.map(({p, cr, bm, status, cHulu, usulanBMVal}) => {
+    tbody.innerHTML = resArr.map(({p, cr, bm, status, cHulu}) => {
       const crColor = status==='ok' ? 'var(--green)' : status==='ng' ? 'var(--red)' : 'var(--txt2)';
       const ketBadge = status==='ok'
         ? `<span style="color:var(--green);font-weight:700;font-family:var(--mono);font-size:9.5px">Memenuhi</span>`
@@ -6631,21 +6992,31 @@ function _buildCRUsulanTable(resDryUsulan, resWetUsulan, totalQi) {
         : `<span style="color:var(--mute);font-family:var(--mono);font-size:9.5px">—</span>`;
       const rowBg = status==='ng' ? 'rgba(255,60,60,0.04)' : status==='ok' ? 'rgba(0,232,122,0.03)' : '';
 
-      // Satu kolom per sumber, semua menampilkan nilai Usulan BM (bukan C aktual)
-      const srcCols = ubmSources.map(() =>
-        TD(
-          usulanBMVal != null
-            ? `<span style="color:var(--amber);font-weight:600">${fmtN(usulanBMVal,4)}</span>`
-            : '<span style="color:var(--mute);font-size:9.5px">— (belum diisi)</span>',
-          'text-align:right'
-        )
-      ).join('');
+      // Sumber yang diusulkan → tampilkan Usulan BM per-sumber; sumber lain → tampilkan C aktual dari Step 3
+      const srcCols = ubmSources.map(s => {
+        const isProposed = ubmProposedSrcIds.has(s.id);
+        if (isProposed) {
+          const ubmSrcRaw = p.usulanBMPerSrc?.[s.id] ?? '';
+          const ubmSrcVal = ubmSrcRaw !== '' ? pNum(ubmSrcRaw) : null;
+          return TD(
+            ubmSrcVal != null
+              ? `<span style="color:var(--amber);font-weight:600">${fmtN(ubmSrcVal,4)}</span>`
+              : '<span style="color:var(--mute);font-size:9.5px">— (belum diisi)</span>',
+            'text-align:right'
+          );
+        } else {
+          const cAktual = p.cSrc[s.id];
+          return TD(
+            (cAktual != null && cAktual !== '')
+              ? fmtN(pNum(cAktual), 4)
+              : '<span style="color:var(--mute)">—</span>',
+            'text-align:right;color:var(--txt2)'
+          );
+        }
+      }).join('');
 
-      // Alokasi Beban Pencemar = Usulan BM × ΣQi (khusus sumber yang punya nilai parameter ini) × 86400 / 1000 (kg/hari)
-      const pQi5 = ubmParamQi(p);
-      const alokasi = (!p.isPH && usulanBMVal != null && pQi5 > 0)
-        ? usulanBMVal * pQi5 * 86400 / 1000
-        : null;
+      // Alokasi Beban Pencemar = Σ(Ci × Qi) per sumber; sumber diusulkan pakai Usulan BM (kg/hari)
+      const alokasi = ubmParamAlokasi(p);
       const alokasiDisp = p.isPH
         ? '<span style="color:var(--mute);font-size:9.5px">—</span>'
         : alokasi != null
@@ -6802,7 +7173,11 @@ async function exportExcel(){
   const blank  = (style)=>({v:null,t:'s',s:style||S.dat});
   const fmtV   = (v,d=4)=>v!=null&&!isNaN(v)?parseFloat(v.toFixed(d)):null;
   const round4 = (v)=>v!=null&&!isNaN(v)?Math.round(v*10000)/10000:0;
-  const fmtS   = (v,d=4)=>v!=null&&!isNaN(v)?parseFloat(v.toFixed(d)).toLocaleString('id-ID',{minimumFractionDigits:d,maximumFractionDigits:d}):'—';
+  const fmtS   = (v,d=4)=>{
+    if(v==null||isNaN(v)) return '—';
+    var s = parseFloat(v.toFixed(d)).toLocaleString('id-ID',{minimumFractionDigits:d,maximumFractionDigits:d});
+    return (typeof _trimTrailingZerosID==='function') ? _trimTrailingZerosID(s) : s;
+  };
 
   function addSheet(wb, name, aoa, colWidths, merges, rowHeights, freezeRow){
     const ws = XLSX.utils.aoa_to_sheet([]);
@@ -7170,17 +7545,30 @@ async function exportExcel(){
           const cHuluRaw=seasonKey==='dry'?(p.cHuluDry??p.cHulu??''):(p.cHuluWet??p.cHulu??'');
           const cHulu=pNum(cHuluRaw);
           let sumQiCi=0;
-          ubmSources.forEach(s=>{ sumQiCi+=(pNum(s.qDay)/86400)*pNum(p.cSrc[s.id]); });
+          ubmSources.forEach(s=>{
+            const Qi=pNum(s.qDay)/86400;
+            const isP=ubmProposedSrcIds.has(s.id);
+            const ubmSrcRaw=isP?(p.usulanBMPerSrc?.[s.id]??''):'';
+            const ubmSrcVal=ubmSrcRaw!==''?pNum(ubmSrcRaw):null;
+            const Ci=isP&&ubmSrcVal!=null?ubmSrcVal:pNum(p.cSrc[s.id]);
+            sumQiCi+=Qi*Ci;
+          });
           const cr=denom>0?(Qs*cHulu+sumQiCi)/denom:null;
           const bm=p.bmVal;
           const status=cr!=null&&bm!=null?(cr<=bm?'ok':'ng'):null;
           const cmRaw=bm!=null&&ubmTotalQi>0?(bm*denom-Qs*cHulu)/ubmTotalQi:null;
           const cMax=cmRaw!=null?Math.max(0,cmRaw):null;
-          // Usulan BM dari input pengguna
-          const usulanBMRaw=p.usulanBM??'';
-          const usulanBMVal=usulanBMRaw!==''?pNum(usulanBMRaw):null;
-          const pQi6 = ubmParamQi(p);
-          const alokasi=usulanBMVal!=null&&pQi6>0?usulanBMVal*pQi6*86400/1000:null;
+          const alokasi=ubmParamAlokasi(p);
+          // Representatif Usulan BM untuk backward compat (sumber diusulkan pertama yang terisi)
+          const usulanBMVal = (() => {
+            for(const s of ubmSources){
+              if(ubmProposedSrcIds.has(s.id)){
+                const raw=p.usulanBMPerSrc?.[s.id]??'';
+                if(raw!=='') return pNum(raw);
+              }
+            }
+            return null;
+          })();
           return {p,cr,bm,status,cmRaw,cMax,usulanBMVal,alokasi,cHulu};
         });
       }
@@ -7300,14 +7688,25 @@ async function exportExcel(){
           // ΣQi_param — total debit HANYA dari sumber yang punya nilai Ci>0 untuk parameter ini (baris ini).
           // Dibangun sebagai penjumlahan bersyarat per sumber (bukan SUMPRODUCT range karena referensi Qi
           // tersebar di sel-sel berbeda, bukan range berurutan): IF(Ci>0, Qi_ref, 0) + IF(...) + ...
-          const paramSigmaQFormula = ubmSources.length
-            ? ubmSources.map((s,si)=>`IF(${srcColLetters[si]}${excelRow}>0,${srcQiCellRefs[si]},0)`).join('+')
+          // (paramSigmaQFormula lama dihapus — alokasi kini pakai alokasiSumFormula di atas)
+
+          // ΣCi×Qi_param (kg/hari basis) — jumlah kontribusi tiap sumber yang punya Ci>0 untuk parameter ini.
+          // Kolom sumber di baris ini (di atas) SUDAH memakai nilai Usulan BM untuk sumber yang diusulkan,
+          // jadi rumus ini otomatis konsisten: sumber diusulkan pakai Usulan BM, sumber lain pakai C aktual.
+          const alokasiSumFormula = ubmSources.length
+            ? ubmSources.map((s,si)=>`IF(${srcColLetters[si]}${excelRow}>0,${srcColLetters[si]}${excelRow}*${srcQiCellRefs[si]},0)`).join('+')
             : '0';
 
           aoa.push([
             mkCell(i+1,baseC),mkCell(p.name||'—',base),mkCell(p.unit||'—',baseC),
             nCell(fmtV(cHuluNum,4),baseR),
-            ...ubmSources.map(s=>nCell(fmtV(pNum(p.cSrc[s.id]),4),baseR)),
+            ...ubmSources.map(s=>{
+              const isP=ubmProposedSrcIds.has(s.id);
+              const ubmSrcRaw=isP?(p.usulanBMPerSrc?.[s.id]??''):'';
+              const ubmSrcVal=ubmSrcRaw!==''?pNum(ubmSrcRaw):null;
+              const val=isP&&ubmSrcVal!=null?ubmSrcVal:pNum(p.cSrc[s.id]);
+              return nCell(fmtV(val,4),isP&&ubmSrcVal!=null?{...baseR,fill:fill('fef3c7'),font:font(true,10,C.amb2)}:baseR);
+            }),
             // CR Hilir — formula Excel hidup: (Qs×C_hulu + ΣQi×Ci) / (Qs+ΣQi), Qs & ΣQi merujuk sel KPI A6/B6
             {f:`(${qSungaiCell}*${cHuluRef}+${sumQiCiTerms})/(${qSungaiCell}+${sigmaQCell})`,t:'n',s:crSt,v:fmtV(cr,4)},
             // BM Kelas Sungai — nilai baku mutu (referensi statis dari database, bukan dihitung)
@@ -7325,11 +7724,10 @@ async function exportExcel(){
               ? {f:`MAX(0,(${bmRef}*(${qSungaiCell}+${sigmaQCell})-${qSungaiCell}*${cHuluRef})/${sigmaQCell})`,t:'n',s:cmSt,v:fmtV(cMax,4)}
               : mkCell('—',cmSt),
             usulanBMVal!=null?nCell(fmtV(usulanBMVal,4),ubmSt):mkCell('— (belum diisi)',{...baseC,font:font(false,9,C.muted)}),
-            // Alokasi Beban (kg/hari) = Usulan_BM × ΣQ_Limbah_parameter_ini × 86400 / 1000 — FORMULA EXCEL HIDUP
-            // ΣQ di sini HANYA menjumlahkan debit sumber yang punya nilai Ci>0 untuk parameter ini
-            // (jika Ci=0/kosong, dianggap sumber tsb tidak mengandung parameter ini, debitnya tidak diikutkan).
-            usulanBMVal!=null
-              ? fCell(`${usulanRef}*(${paramSigmaQFormula})*86400/1000`,S.alok,fmtV(alokasi,4))
+            // Alokasi Beban (kg/hari) = Σ(Ci_sumber × Qi_sumber) × 86.400 ÷ 1.000 — FORMULA EXCEL HIDUP
+            // Ci sumber yang diusulkan = Usulan BM (sudah tercermin di kolom sumber di atas); Ci sumber lain = C aktual.
+            alokasi!=null
+              ? fCell(`(${alokasiSumFormula})*86400/1000`,S.alok,fmtV(alokasi,4))
               : mkCell('—',{...baseR,font:font(false,9,C.muted)}),
           ]);
           rh.push(RH.data);

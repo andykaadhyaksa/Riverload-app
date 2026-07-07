@@ -65,7 +65,7 @@ window.RL_LOGO_FULL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAArwAAAFeCAY
   --brd2:   rgba(59,130,246,0.10);
   --txt:    #eaf3fb;
   --txt2:   #93b3cf;
-  --mute:   #4f7396;
+  --mute:   #7398ba;
   --inp:    rgba(0,0,0,0.25);
   --shd:    0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(59,130,246,0.12);
   --scan-line: transparent;
@@ -832,6 +832,28 @@ tr:hover td { background: rgba(26,176,166,0.02); }
 .tif-gradient-labels { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 8px; color: var(--mute); }
 .tif-opacity-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
 .tif-opacity-row input[type="range"] { flex: 1; accent-color: #60aef0; }
+
+/* ── Label garis kontur (elevasi) di peta ── */
+.tif-contour-label,
+.leaflet-tooltip.tif-contour-label {
+  background: transparent !important;
+  border: none !important;
+  color: #e0a020 !important;
+  font-family: var(--mono);
+  font-weight: 700;
+  padding: 0 !important;
+  margin: 0 !important;
+  text-shadow: -1px -1px 0 rgba(0,0,0,.85), 1px -1px 0 rgba(0,0,0,.85), -1px 1px 0 rgba(0,0,0,.85), 1px 1px 0 rgba(0,0,0,.85), 0 0 3px rgba(0,0,0,.9);
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  white-space: nowrap;
+}
+.tif-contour-label::before,
+.leaflet-tooltip.tif-contour-label::before {
+  display: none !important;
+  border: none !important;
+  content: none !important;
+}
 
 /* ── Accordion jenis titik (Input Koordinat DMS) ── */
 #dms-acc-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 4px; }
@@ -7961,6 +7983,27 @@ if (document.readyState === 'loading') {
         <div id="peta-map-wrap" style="flex:1;min-height:0;border-radius:var(--rs);overflow:hidden;border:1px solid var(--brd);background:#a8d5e8;position:relative;z-index:0;isolation:isolate">
           <div id="peta-map" style="width:100%;height:100%"></div>
           <div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);z-index:500;background:rgba(0,0,0,0.5);color:#fff;font-family:'Inter',sans-serif;font-size:10px;padding:3px 10px;border-radius:10px;pointer-events:none;white-space:nowrap">Ctrl/⌘ + scroll atau tombol +/− untuk zoom · Drag untuk geser peta</div>
+          <div id="elev-overlay" onclick="elevCloseModal()"></div>
+          <div id="elev-modal" style="display:none">
+            <div id="elev-header">
+              <div id="elev-title">📈 Profil Elevasi</div>
+              <button id="elev-close" onclick="elevCloseModal()" title="Tutup">✕</button>
+            </div>
+            <div id="elev-select-wrap">
+              <div style="font-family:var(--mono);font-size:8.5px;color:var(--mute);margin:12px 0 5px">Layer elevasi (TIF) yang dipakai untuk sampling</div>
+              <select class="finput" id="elev-tif-select" onchange="elevRecompute()" style="font-size:11px;padding:6px 8px;width:100%"></select>
+            </div>
+            <div id="elev-body">
+              <div class="elev-stat-grid" id="elev-stat-grid"></div>
+              <div id="elev-chart-wrap"><canvas id="elev-chart"></canvas></div>
+              <div id="elev-empty-msg" style="display:none;text-align:center;padding:30px 10px;font-family:var(--mono);font-size:10.5px;color:var(--mute)"></div>
+              <div style="font-family:var(--mono);font-size:8px;color:var(--mute);margin-top:8px;line-height:1.5">💡 Arahkan kursor ke grafik untuk melihat posisi titik tersebut ditandai langsung di peta.</div>
+            </div>
+            <div id="elev-footer">
+              <span id="elev-footer-txt"></span>
+              <button class="btn btn-outline btn-sm" onclick="elevExportCSV()" style="font-size:9px">⬇ CSV</button>
+            </div>
+          </div>
         </div>
 
         <!-- Tabel ringkasan — tinggi maks 200px, scroll internal -->
@@ -8136,6 +8179,37 @@ if (document.readyState === 'loading') {
               <option value="gray">Grayscale (hitam → putih)</option>
               <option value="viridis">Viridis (ungu → hijau → kuning)</option>
             </select>
+          </div>
+
+          <!-- Opsi Garis Kontur -->
+          <div style="margin-bottom:8px;padding:9px 10px;border-radius:var(--rs);background:rgba(96,174,240,0.06);border:1px solid rgba(96,174,240,0.18)">
+            <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-family:var(--mono);font-size:9.5px;color:var(--txt2);text-transform:uppercase;letter-spacing:.5px">
+              <input type="checkbox" id="tif-contour-enable" onchange="tifContourTogglePanel()" style="accent-color:#60aef0;width:13px;height:13px;cursor:pointer">
+              🧭 Tampilkan Garis Kontur
+            </label>
+            <div id="tif-contour-opts" style="display:none;margin-top:8px">
+              <div style="display:flex;gap:8px;margin-bottom:7px">
+                <div style="flex:1">
+                  <div style="font-family:var(--mono);font-size:8px;color:var(--mute);margin-bottom:3px">Interval (m)</div>
+                  <input type="number" id="tif-contour-interval" class="finput" value="12.5" min="0.1" step="0.5" style="font-size:10.5px;padding:5px 7px;width:100%">
+                </div>
+                <div style="flex:1">
+                  <div style="font-family:var(--mono);font-size:8px;color:var(--mute);margin-bottom:3px">Interval Indeks (mayor)</div>
+                  <input type="number" id="tif-contour-major" class="finput" value="5" min="1" step="1" style="font-size:10.5px;padding:5px 7px;width:100%">
+                </div>
+              </div>
+              <div style="margin-bottom:7px">
+                <div style="font-family:var(--mono);font-size:8px;color:var(--mute);margin-bottom:3px">Ukuran Label (px)</div>
+                <input type="number" id="tif-contour-labelsize" class="finput" value="9" min="5" max="24" step="1" style="font-size:10.5px;padding:5px 7px;width:100%">
+              </div>
+              <div style="font-family:var(--mono);font-size:7.5px;color:var(--mute);line-height:1.5;margin-bottom:7px">Interval mayor = tiap berapa garis, garis akan ditebalkan &amp; diberi label elevasi (mis. isi 5 → tiap garis ke-5 jadi garis indeks). Label kontur tanpa latar (fill) — hanya teks di atas garis, ukurannya bisa diperkecil/diperbesar.</div>
+              <div style="display:flex;gap:8px;align-items:center">
+                <span style="width:11px;height:2px;background:#e0a020;flex-shrink:0"></span>
+                <span style="font-family:var(--mono);font-size:8px;color:var(--mute)">Garis biasa</span>
+                <span style="width:16px;height:3px;background:#e0a020;flex-shrink:0;margin-left:8px"></span>
+                <span style="font-family:var(--mono);font-size:8px;color:var(--mute)">Garis indeks (berlabel)</span>
+              </div>
+            </div>
           </div>
 
           <!-- Tombol load -->
@@ -11949,6 +12023,7 @@ function tifRemoveLayer(id) {
   if (idx < 0) return;
   var l = _tifLayers[idx];
   if (l.layer && _map && _map.hasLayer(l.layer)) _map.removeLayer(l.layer);
+  tifContourClearLayer(l);
   _tifLayers.splice(idx, 1);
   if (typeof _layerOrderSync === 'function') _layerOrderSync();
   tifUpdateLayerList();
@@ -11958,7 +12033,10 @@ function tifRemoveLayer(id) {
 function tifClearAll() {
   if (!_tifLayers.length) return;
   if (!confirm('Hapus semua layer GeoTIFF dari peta?')) return;
-  _tifLayers.forEach(function(l){ if (l.layer && _map && _map.hasLayer(l.layer)) _map.removeLayer(l.layer); });
+  _tifLayers.forEach(function(l){
+    if (l.layer && _map && _map.hasLayer(l.layer)) _map.removeLayer(l.layer);
+    tifContourClearLayer(l);
+  });
   _tifLayers = [];
   if (typeof _layerOrderSync === 'function') _layerOrderSync();
   tifUpdateLayerList();
@@ -12005,8 +12083,279 @@ function tifUpdateLayerList() {
         '<input type="range" min="10" max="100" value="'+l.opacity+'" oninput="tifChangeOpacity(\''+l.id+'\',this.value)">' +
         '<span style="font-family:var(--mono);font-size:8px;color:var(--mute);flex-shrink:0;width:28px;text-align:right">'+l.opacity+'%</span>' +
       '</div>' +
+      '<div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.06)">' +
+        '<label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-family:var(--mono);font-size:8.5px;color:var(--txt2)">' +
+          '<input type="checkbox" '+(l.contourOn?'checked':'')+' onchange="tifContourToggle(\''+l.id+'\',this.checked)" style="accent-color:#e0a020;width:12px;height:12px;cursor:pointer">' +
+          '🧭 Garis Kontur' +
+        '</label>' +
+        (l.contourOn ? (
+          '<div style="display:flex;gap:6px;margin-top:6px;align-items:center">' +
+            '<span style="font-family:var(--mono);font-size:8px;color:var(--mute);flex-shrink:0">Interval</span>' +
+            '<input type="number" value="'+l.contourInterval+'" min="0.1" step="0.5" style="font-size:9.5px;padding:3px 5px;width:56px" ' +
+              'onchange="tifContourSetInterval(\''+l.id+'\',this.value)">' +
+            '<span style="font-family:var(--mono);font-size:8px;color:var(--mute);flex-shrink:0">m · mayor tiap</span>' +
+            '<input type="number" value="'+l.contourMajor+'" min="1" step="1" style="font-size:9.5px;padding:3px 5px;width:40px" ' +
+              'onchange="tifContourSetMajor(\''+l.id+'\',this.value)">' +
+          '</div>' +
+          '<div style="display:flex;gap:6px;margin-top:6px;align-items:center">' +
+            '<span style="font-family:var(--mono);font-size:8px;color:var(--mute);flex-shrink:0">Ukuran label</span>' +
+            '<input type="number" value="'+(l.contourLabelSize||9)+'" min="5" max="24" step="1" style="font-size:9.5px;padding:3px 5px;width:48px" ' +
+              'onchange="tifContourSetLabelSize(\''+l.id+'\',this.value)">' +
+            '<span style="font-family:var(--mono);font-size:8px;color:var(--mute);flex-shrink:0">px</span>' +
+          '</div>' +
+          (l.contourBuilding ? '<div style="font-family:var(--mono);font-size:8px;color:#e0a020;margin-top:5px">⏳ Menghitung kontur…</div>' : '') +
+          (l.contourCount!=null && !l.contourBuilding ? '<div style="font-family:var(--mono);font-size:8px;color:var(--mute);margin-top:5px">'+l.contourCount+' garis kontur</div>' : '')
+        ) : '') +
+      '</div>' +
     '</div>';
   }).join('');
+}
+
+/* ══════════════════════════════════════════════════════════════
+   GARIS KONTUR dari GeoTIFF/DEM — marching squares di client-side.
+   Interval & interval indeks (mayor) bisa diubah per-layer.
+   ══════════════════════════════════════════════════════════════ */
+function tifContourTogglePanel() {
+  var chk = document.getElementById('tif-contour-enable');
+  var opts = document.getElementById('tif-contour-opts');
+  if (opts) opts.style.display = chk && chk.checked ? 'block' : 'none';
+}
+
+function tifContourToggle(id, on) {
+  var l = _tifLayers.find(function(x){ return x.id === id; });
+  if (!l) return;
+  l.contourOn = on;
+  if (on) {
+    if (!l.contourInterval) l.contourInterval = 12.5;
+    if (!l.contourMajor) l.contourMajor = 5;
+    if (!l.contourLabelSize) {
+      var lsInput = document.getElementById('tif-contour-labelsize');
+      l.contourLabelSize = (lsInput && parseInt(lsInput.value,10)) || 9;
+    }
+    tifContourRebuild(l);
+  } else {
+    tifContourClearLayer(l);
+    tifUpdateLayerList();
+  }
+  _persist();
+}
+
+function tifContourSetInterval(id, val) {
+  var l = _tifLayers.find(function(x){ return x.id === id; });
+  if (!l) return;
+  var v = parseFloat(val);
+  if (!isFinite(v) || v <= 0) return;
+  l.contourInterval = v;
+  tifContourRebuild(l);
+  _persist();
+}
+
+function tifContourSetMajor(id, val) {
+  var l = _tifLayers.find(function(x){ return x.id === id; });
+  if (!l) return;
+  var v = parseInt(val, 10);
+  if (!isFinite(v) || v < 1) return;
+  l.contourMajor = v;
+  tifContourRebuild(l);
+  _persist();
+}
+
+function tifContourSetLabelSize(id, val) {
+  var l = _tifLayers.find(function(x){ return x.id === id; });
+  if (!l) return;
+  var v = parseInt(val, 10);
+  if (!isFinite(v) || v < 5) return;
+  if (v > 24) v = 24;
+  l.contourLabelSize = v;
+  // update label yang sudah ada langsung tanpa rebuild ulang garis
+  if (l.contourLayerGroup) {
+    l.contourLayerGroup.eachLayer(function(pl) {
+      if (pl.getTooltip && pl.getTooltip()) {
+        var tt = pl.getTooltip().getElement();
+        if (tt) tt.style.fontSize = v + 'px';
+      }
+    });
+  }
+  _persist();
+}
+
+function tifContourClearLayer(l) {
+  if (l.contourLayerGroup && _map && _map.hasLayer(l.contourLayerGroup)) {
+    _map.removeLayer(l.contourLayerGroup);
+  }
+  l.contourLayerGroup = null;
+  l.contourCount = null;
+  l.contourBuilding = false;
+}
+
+/* Marching squares sederhana: untuk tiap sel grid (4 titik sudut), cari
+   perpotongan garis dengan level tertentu via interpolasi linear, lalu
+   sambungkan jadi polyline per level dengan pendekatan segmen (cukup akurat
+   untuk visualisasi kontur & tidak butuh library eksternal). */
+function _tifContourBuildSegments(values2D, width, height, xmin, ymin, pixelWidth, pixelHeight, noData, level) {
+  var segs = [];
+  function val(r, c) {
+    var v = values2D[r][c];
+    if (v === null || v === undefined || isNaN(v) || v === noData) return null;
+    return v;
+  }
+  function pt(r, c) {
+    // r,c dalam ruang grid -> koordinat geografis (lat = ymax - r*pixelHeight, tapi kita pakai ymin+... tergantung orientasi)
+    var lng = xmin + c * pixelWidth;
+    var lat = ymin + (height - r) * pixelHeight; // baris 0 = atas (ymax), sesuai georaster kita
+    return [lat, lng];
+  }
+  function interp(r1, c1, v1, r2, c2, v2) {
+    var t = (level - v1) / (v2 - v1);
+    var r = r1 + (r2 - r1) * t;
+    var c = c1 + (c2 - c1) * t;
+    return pt(r, c);
+  }
+  for (var r = 0; r < height - 1; r++) {
+    for (var c = 0; c < width - 1; c++) {
+      var tl = val(r, c), tr = val(r, c+1), bl = val(r+1, c), br = val(r+1, c+1);
+      if (tl === null || tr === null || bl === null || br === null) continue;
+      var idx = 0;
+      if (tl > level) idx |= 8;
+      if (tr > level) idx |= 4;
+      if (br > level) idx |= 2;
+      if (bl > level) idx |= 1;
+      if (idx === 0 || idx === 15) continue;
+
+      var top    = (tl > level) !== (tr > level) ? interp(r, c, tl, r, c+1, tr) : null;
+      var right  = (tr > level) !== (br > level) ? interp(r, c+1, tr, r+1, c+1, br) : null;
+      var bottom = (bl > level) !== (br > level) ? interp(r+1, c, bl, r+1, c+1, br) : null;
+      var left   = (tl > level) !== (bl > level) ? interp(r, c, tl, r+1, c, bl) : null;
+
+      switch (idx) {
+        case 1: case 14: if (left && bottom) segs.push([left, bottom]); break;
+        case 2: case 13: if (bottom && right) segs.push([bottom, right]); break;
+        case 3: case 12: if (left && right) segs.push([left, right]); break;
+        case 4: case 11: if (top && right) segs.push([top, right]); break;
+        case 6: case 9: if (top && bottom) segs.push([top, bottom]); break;
+        case 7: case 8: if (top && left) segs.push([top, left]); break;
+        case 5: // saddle — dua kemungkinan, pakai rata-rata sel utk pilih konfigurasi
+          var avg = (tl+tr+bl+br)/4;
+          if (avg > level) { if (top&&left) segs.push([top,left]); if (bottom&&right) segs.push([bottom,right]); }
+          else { if (top&&right) segs.push([top,right]); if (left&&bottom) segs.push([left,bottom]); }
+          break;
+        case 10:
+          var avg2 = (tl+tr+bl+br)/4;
+          if (avg2 > level) { if (top&&right) segs.push([top,right]); if (left&&bottom) segs.push([left,bottom]); }
+          else { if (top&&left) segs.push([top,left]); if (bottom&&right) segs.push([bottom,right]); }
+          break;
+      }
+    }
+  }
+  return segs;
+}
+
+/* Sambung segmen-segmen lepas jadi polyline yang lebih panjang (biar rendering
+   & label lebih rapi), dengan pencocokan titik ujung yang berdekatan. */
+function _tifContourChainSegments(segs) {
+  var key = function(p){ return p[0].toFixed(5)+','+p[1].toFixed(5); };
+  var map = {};
+  segs.forEach(function(s, i){
+    [0,1].forEach(function(end){
+      var k = key(s[end]);
+      if (!map[k]) map[k] = [];
+      map[k].push({seg:i, end:end});
+    });
+  });
+  var used = new Array(segs.length).fill(false);
+  var lines = [];
+  for (var i = 0; i < segs.length; i++) {
+    if (used[i]) continue;
+    used[i] = true;
+    var line = [segs[i][0], segs[i][1]];
+    // extend forward
+    var guard = 0;
+    while (guard++ < 5000) {
+      var lastKey = key(line[line.length-1]);
+      var candidates = (map[lastKey] || []).filter(function(x){ return !used[x.seg]; });
+      if (!candidates.length) break;
+      var cand = candidates[0];
+      used[cand.seg] = true;
+      var other = segs[cand.seg][cand.end === 0 ? 1 : 0];
+      line.push(other);
+    }
+    lines.push(line);
+  }
+  return lines;
+}
+
+function tifContourRebuild(l) {
+  tifContourClearLayer(l);
+  l.contourBuilding = true;
+  tifUpdateLayerList();
+
+  setTimeout(function() {
+    try {
+      var g = l.georaster;
+      var values2D = g.values[0];
+      var width = g.width, height = g.height;
+      var noData = g.noDataValue;
+      var min = l.min, max = l.max;
+      var interval = l.contourInterval || 12.5;
+      var majorEvery = l.contourMajor || 5;
+
+      var startLevel = Math.ceil(min / interval) * interval;
+      var levels = [];
+      for (var lv = startLevel; lv <= max; lv += interval) levels.push(lv);
+      // batasi jumlah level agar tidak macet di raster besar/interval kecil
+      if (levels.length > 400) {
+        tifSetStatus('', '');
+        toast('Interval kontur terlalu kecil untuk rentang elevasi ini (>400 garis) — perbesar interval.', 'err');
+        l.contourBuilding = false;
+        l.contourOn = false;
+        tifUpdateLayerList();
+        return;
+      }
+
+      var group = L.layerGroup();
+      var levelIdx0 = Math.round(startLevel / interval);
+      levels.forEach(function(level, i) {
+        var levelIdx = levelIdx0 + i;
+        var isMajor = (levelIdx % majorEvery) === 0;
+        var segs = _tifContourBuildSegments(values2D, width, height, g.xmin, g.ymin, g.pixelWidth, g.pixelHeight, noData, level);
+        if (!segs.length) return;
+        var lines = _tifContourChainSegments(segs);
+        lines.forEach(function(line) {
+          if (line.length < 2) return;
+          var pl = L.polyline(line, {
+            color: '#e0a020',
+            weight: isMajor ? 1.8 : 0.8,
+            opacity: isMajor ? 0.85 : 0.55
+          });
+          if (isMajor) {
+            var mid = line[Math.floor(line.length/2)];
+            pl.bindTooltip(Math.round(level) + ' m', {
+              permanent: true, direction: 'center', className: 'tif-contour-label', opacity: 0.9
+            });
+            pl.on('tooltipopen', function(ev) {
+              var el = ev.tooltip.getElement();
+              if (el) el.style.fontSize = (l.contourLabelSize || 9) + 'px';
+            });
+          }
+          group.addLayer(pl);
+        });
+      });
+
+      l.contourLayerGroup = group;
+      l.contourCount = levels.length;
+      l.contourBuilding = false;
+      if (_map && l.layer && _map.hasLayer(l.layer)) group.addTo(_map);
+      else if (_map) group.addTo(_map); // tampilkan kontur meski raster warna disembunyikan
+      tifUpdateLayerList();
+      _persist();
+    } catch (err) {
+      console.error('[TIF-Contour] Gagal membangun kontur:', err);
+      toast('Gagal membangun garis kontur: ' + err.message, 'err');
+      l.contourBuilding = false;
+      l.contourOn = false;
+      tifUpdateLayerList();
+    }
+  }, 30);
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -12276,6 +12625,7 @@ function map3dResetView() {
 var _elevChart = null;
 var _elevCurrentLineId = null;
 var _elevCurrentSamples = null; // cache hasil terakhir utk export CSV
+var _elevHoverMarker = null; // marker penanda posisi di peta saat hover grafik
 
 /* Hitung jarak Haversine antar 2 titik [lat,lng] dalam meter */
 function _elevHaversine(p1, p2) {
@@ -12344,12 +12694,16 @@ function elevOpenModal(lineId) {
   document.getElementById('elev-title').textContent = '📈 Profil Elevasi — ' + line.name;
   document.getElementById('elev-overlay').style.display = 'block';
   document.getElementById('elev-modal').style.display = 'flex';
+  document.getElementById('peta-map-wrap').classList.add('elev-open');
 
   // Beri browser waktu reflow layout modal dulu, supaya canvas Chart.js
   // dibuat dengan ukuran yang benar (kalau langsung, kadang lebar terbaca 0/salah → blur).
   requestAnimationFrame(function() {
     requestAnimationFrame(function() {
       elevRecompute();
+      if (_map && typeof _map.invalidateSize === 'function') {
+        _map.invalidateSize();
+      }
     });
   });
 }
@@ -12357,8 +12711,35 @@ function elevOpenModal(lineId) {
 function elevCloseModal() {
   document.getElementById('elev-overlay').style.display = 'none';
   document.getElementById('elev-modal').style.display = 'none';
+  document.getElementById('peta-map-wrap').classList.remove('elev-open');
   _elevCurrentLineId = null;
   if (_elevChart) { _elevChart.destroy(); _elevChart = null; }
+  _elevHideHoverMarker();
+  requestAnimationFrame(function() {
+    if (_map && typeof _map.invalidateSize === 'function') {
+      _map.invalidateSize();
+    }
+  });
+}
+
+function _elevShowHoverMarker(lat, lng) {
+  if (!_map) return;
+  if (!_elevHoverMarker) {
+    _elevHoverMarker = L.circleMarker([lat, lng], {
+      radius: 7, color: '#fff', weight: 2.5, fillColor: '#ff5252', fillOpacity: 1,
+      pane: 'markerPane'
+    }).addTo(_map);
+  } else {
+    _elevHoverMarker.setLatLng([lat, lng]);
+    if (!_map.hasLayer(_elevHoverMarker)) _elevHoverMarker.addTo(_map);
+  }
+}
+
+function _elevHideHoverMarker() {
+  if (_elevHoverMarker && _map && _map.hasLayer(_elevHoverMarker)) {
+    _map.removeLayer(_elevHoverMarker);
+  }
+  _elevHoverMarker = null;
 }
 
 function elevRecompute() {
@@ -12448,6 +12829,19 @@ function elevRecompute() {
       maintainAspectRatio: false,
       devicePixelRatio: Math.max(2, window.devicePixelRatio || 1),
       interaction: { mode: 'index', intersect: false },
+      onHover: function(evt, activeElements) {
+        if (activeElements && activeElements.length) {
+          var idx = activeElements[0].index;
+          var s = samples[idx];
+          if (s && s.elev !== null) {
+            _elevShowHoverMarker(s.lat, s.lng);
+          } else {
+            _elevHideHoverMarker();
+          }
+        } else {
+          _elevHideHoverMarker();
+        }
+      },
       plugins: {
         legend: { display: false },
         tooltip: {
@@ -12470,6 +12864,8 @@ function elevRecompute() {
 
   document.getElementById('elev-footer-txt').textContent =
     validSamples.length + ' titik sample (interval ~' + Math.round(intervalM) + ' m)' + (naCount > 0 ? ' · ' + naCount + ' titik di luar cakupan raster' : '');
+
+  ctx.canvas.onmouseleave = function() { _elevHideHoverMarker(); };
 }
 
 function elevExportCSV() {
@@ -15118,17 +15514,27 @@ setTimeout(initHome, 800);
   100% { transform:scale(0.4); opacity:0; }
 }
 
-/* ── Modal Profil Elevasi ── */
+/* ── Panel Profil Elevasi (docked SEBAGAI KOLOM di samping peta — tidak menutupi peta) ── */
+#peta-map-wrap.elev-open { display:flex !important;flex-direction:row;gap:10px; }
+#peta-map-wrap.elev-open #peta-map { flex:1;min-width:0; }
 #elev-overlay {
-  display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9000;
-  backdrop-filter:blur(3px);
+  display:none;
 }
 #elev-modal {
-  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
-  width:min(92vw,780px);max-height:85vh;
+  position:relative;top:auto;right:auto;bottom:auto;flex-shrink:0;
+  width:min(90vw,320px);max-width:320px;height:100%;max-height:none;
   background:var(--bg2,#111827);border:1px solid var(--brd,rgba(255,255,255,0.08));
-  border-radius:10px;z-index:9001;display:flex;flex-direction:column;
-  box-shadow:0 24px 60px rgba(0,0,0,0.6);overflow:hidden;
+  border-radius:10px;z-index:901;display:flex;flex-direction:column;
+  box-shadow:0 12px 34px rgba(0,0,0,0.45);overflow:hidden;pointer-events:auto;
+  margin:0;
+}
+@media (max-width: 720px) {
+  #peta-map-wrap.elev-open { display:block !important; }
+  #elev-overlay { display:block;position:absolute;inset:0;background:rgba(0,0,0,0.35);z-index:900;pointer-events:auto; }
+  #elev-modal {
+    position:absolute;top:10px;right:10px;bottom:10px;height:auto;
+    width:min(88vw,340px);max-height:calc(100% - 20px);
+  }
 }
 #elev-header {
   display:flex;align-items:center;gap:10px;
@@ -15155,7 +15561,7 @@ setTimeout(initHome, 800);
 }
 .elev-stat-label { font-family:var(--mono,'monospace');font-size:8px;color:var(--mute,#64748b);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px; }
 .elev-stat-value { font-family:var(--mono,'monospace');font-size:14px;font-weight:700;color:var(--txt,#e2e8f0); }
-#elev-chart-wrap { position:relative;height:260px;margin-bottom:6px; }
+#elev-chart-wrap { position:relative;height:220px;margin-bottom:6px; }
 #elev-select-wrap { padding:0 16px 14px; }
 #elev-footer {
   padding:8px 16px;border-top:1px solid var(--brd,rgba(255,255,255,0.08));
@@ -15180,27 +15586,6 @@ setTimeout(initHome, 800);
   <div id="shp-attr-footer">
     <span id="shp-attr-footer-txt"></span>
     <span>Klik baris → zoom &amp; tandai · klik lagi / ✕ pada tanda · klik area kosong peta untuk hapus tanda</span>
-  </div>
-</div>
-
-<div id="elev-overlay" onclick="elevCloseModal()"></div>
-<div id="elev-modal" style="display:none">
-  <div id="elev-header">
-    <div id="elev-title">📈 Profil Elevasi</div>
-    <button id="elev-close" onclick="elevCloseModal()" title="Tutup">✕</button>
-  </div>
-  <div id="elev-select-wrap">
-    <div style="font-family:var(--mono);font-size:8.5px;color:var(--mute);margin:12px 0 5px">Layer elevasi (TIF) yang dipakai untuk sampling</div>
-    <select class="finput" id="elev-tif-select" onchange="elevRecompute()" style="font-size:11px;padding:6px 8px;width:100%"></select>
-  </div>
-  <div id="elev-body">
-    <div class="elev-stat-grid" id="elev-stat-grid"></div>
-    <div id="elev-chart-wrap"><canvas id="elev-chart"></canvas></div>
-    <div id="elev-empty-msg" style="display:none;text-align:center;padding:30px 10px;font-family:var(--mono);font-size:10.5px;color:var(--mute)"></div>
-  </div>
-  <div id="elev-footer">
-    <span id="elev-footer-txt"></span>
-    <button class="btn btn-outline btn-sm" onclick="elevExportCSV()" style="font-size:9px">⬇ CSV</button>
   </div>
 </div>
 

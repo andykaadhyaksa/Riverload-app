@@ -13,6 +13,8 @@ window.RL_LOGO_FULL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAArwAAAFeCAY
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/3.0.1/chartjs-plugin-annotation.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style/dist/xlsx.bundle.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>if(window['pdfjsLib']) pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
 
 <!-- Google Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1232,6 +1234,7 @@ input.inp-sm::placeholder {
       <div class="rl-nav-group" id="navgrp-analisis">
         <button class="rl-nav-group-btn" id="navgrp-btn-analisis">Analisis <span class="rl-nav-arrow">▾</span></button>
         <div class="rl-dd">
+          <div class="rl-dd-item" onclick="nav('impor')" id="nav-impor"><span class="rl-dd-icon">📥</span> Impor Sertifikat Uji</div>
           <div class="rl-dd-item" onclick="nav('bpm')" id="nav-bpm"><span class="rl-dd-icon">📊</span> Beban Pencemar</div>
           <div class="rl-dd-item" onclick="nav('ubm')" id="nav-ubm"><span class="rl-dd-icon">🎯</span> Usulan Baku Mutu</div>
           <div class="rl-dd-item" onclick="nav('peta')" id="nav-peta"><span class="rl-dd-icon">🗺</span> Pemetaan</div>
@@ -1651,6 +1654,100 @@ input.inp-sm::placeholder {
 </div><!-- /page-home -->
 
 <!-- ═══ PAGE: BEBAN PENCEMAR ═══════════════════════════ -->
+<div class="page" id="page-impor">
+  <div class="ph">
+    <div>
+      <div class="ph-title">IMPOR SERTIFIKAT HASIL UJI</div>
+      <div class="ph-sub">Unggah file Excel atau PDF sertifikat hasil uji laboratorium — parameter &amp; nilai konsentrasi akan otomatis terbaca dan siap dipakai di menu Beban Pencemar</div>
+    </div>
+    <div class="ph-acts">
+      <button class="btn btn-outline btn-sm" onclick="importSertifikatReset()">↺ Reset</button>
+    </div>
+  </div>
+
+  <div class="glossary-box">
+    <div class="gi">💡</div>
+    <div class="gt">
+      Unggah file <b>.xlsx</b>/<b>.xls</b> atau <b>.pdf</b> sertifikat hasil uji air sungai (lab). Sistem akan membaca baris berisi nama parameter dan nilai hasil uji, lalu mencocokkannya secara otomatis dengan 49 parameter <span class="term">PP 22/2021 Lampiran VI</span>. Baris <b>Debit</b> (bila ada) juga dikenali otomatis dan dikirim ke field <b>Debit Sungai (Q)</b>, bukan ke tabel parameter. Hasil yang cocok bisa langsung dikirim ke menu <b>Beban Pencemar</b> sebagai C Aktual.
+      <br><span style="color:var(--mute);font-size:10px">Catatan: untuk PDF hasil scan/gambar (tanpa lapisan teks), sistem belum bisa membaca isinya secara otomatis — gunakan file Excel atau PDF hasil export digital.</span>
+    </div>
+  </div>
+
+  <!-- Upload Panel -->
+  <div class="card mb18 wiz-card">
+    <div class="card-hd">
+      <div>
+        <div class="card-title">Upload File Excel atau PDF</div>
+        <div class="card-help">Format bebas — sistem mencari kolom/baris nama parameter dan nilai/hasil secara otomatis (Excel: per sheet, PDF: per halaman teks).</div>
+      </div>
+    </div>
+
+    <div class="shp-upload-zone" id="isj-drop-zone" ondragover="isjDragOver(event)" ondragleave="isjDragLeave(event)" ondrop="isjDrop(event)">
+      <input type="file" class="shp-upload-input" id="isj-file-input" accept=".xlsx,.xls,.pdf" onchange="isjFilePicked(event)">
+      <div class="shp-upload-icon">📄</div>
+      <div class="shp-upload-title">Drag &amp; drop file Excel atau PDF di sini</div>
+      <div class="shp-upload-sub">atau klik untuk pilih file<br>Format: .xlsx, .xls, atau .pdf</div>
+    </div>
+
+    <div id="isj-file-info" style="display:none;margin-top:10px" class="shp-file-slot">
+      <span class="slot-ext" id="isj-file-ext" style="background:rgba(26,176,166,0.15);color:#1ab0a6">.XLSX</span>
+      <span class="slot-name" id="isj-file-name">—</span>
+      <span class="slot-miss" id="isj-file-icon">✓</span>
+    </div>
+
+    <div id="isj-sheet-picker" style="display:none;margin-top:14px">
+      <label class="flabel">Pilih Sheet</label>
+      <select class="fselect" id="isj-sheet-select" onchange="isjParseSheet(this.value)"></select>
+    </div>
+  </div>
+
+  <!-- Hasil Parsing -->
+  <div class="card mb18 wiz-card" id="isj-result-card" style="display:none">
+    <div class="card-hd">
+      <div>
+        <div class="card-title" style="color:var(--accent)">Parameter Terbaca</div>
+        <div class="card-help">Periksa hasil pembacaan otomatis. Centang parameter yang ingin dikirim ke Beban Pencemar, lalu tentukan musim datanya.</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <select class="fselect" id="isj-season-target" style="font-size:11px;padding:6px 10px">
+          <option value="cDry">☀ Musim Kemarau</option>
+          <option value="cWet">🌧 Musim Hujan</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="font-family:var(--mono);font-size:9.5px;color:var(--txt2);margin-bottom:10px;padding:8px 12px;background:rgba(245,166,35,0.06);border:1px solid rgba(245,166,35,0.2);border-radius:var(--rs)">
+      ⚠ &nbsp;Baris berwarna <span style="color:var(--mute)">abu-abu</span> tidak cocok dengan parameter manapun di database (PP 22/2021) dan akan diabaikan. Periksa satuan &amp; nilai sebelum mengirim.
+    </div>
+
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:11.5px;font-family:var(--mono)">
+        <thead>
+          <tr style="border-bottom:2px solid var(--brd)">
+            <th style="padding:6px 8px;text-align:center;width:30px"><input type="checkbox" id="isj-check-all" onchange="isjToggleAll(this.checked)"></th>
+            <th style="padding:6px 8px;text-align:left">Nama di Sertifikat</th>
+            <th style="padding:6px 8px;text-align:left">Cocok dengan Parameter (DB)</th>
+            <th style="padding:6px 8px;text-align:right">Nilai</th>
+            <th style="padding:6px 8px;text-align:center">Satuan</th>
+          </tr>
+        </thead>
+        <tbody id="isj-result-tbody"></tbody>
+      </table>
+    </div>
+
+    <div class="bpm-wiz-nav" style="border-top:1px solid var(--brd);margin-top:14px;padding-top:14px">
+      <span style="font-family:var(--mono);font-size:10.5px;color:var(--mute)" id="isj-summary"></span>
+      <button class="bpm-wiz-btn-next" onclick="isjSendToBPM()">⬆ Kirim ke Beban Pencemar →</button>
+    </div>
+  </div>
+
+  <div class="empty" id="isj-empty">
+    <div class="empty-ico">📥</div>
+    <div class="empty-title">Belum ada file diunggah</div>
+    <div class="empty-sub">Unggah sertifikat hasil uji (.xlsx/.xls/.pdf) untuk memulai</div>
+  </div>
+</div>
+
 <div class="page" id="page-bpm">
   <div class="ph">
     <div>
@@ -1773,6 +1870,7 @@ input.inp-sm::placeholder {
       </div>
       <div style="font-family:var(--mono);font-size:9.5px;color:var(--txt2);margin-bottom:12px;padding:8px 12px;background:rgba(26,176,166,0.04);border:1px solid var(--brd);border-radius:var(--rs)">
         ℹ &nbsp;Pilih jenis air limbah dari database. Tabel baku mutu gabungan dan daftar parameter akan muncul otomatis.
+        Klik <strong style="color:var(--accent)">＋ Input Manual</strong> untuk menambah baris berisi dropdown pilih parameter (sesuai 49 parameter PP 22/2021) dan isi nilainya langsung — otomatis masuk ke tabel Parameter & C Aktual sesuai musim yang sedang aktif.
         Debit air limbah dimasukkan pada bagian <strong style="color:var(--accent)">Sumber Air Limbah</strong> di bawah (untuk perhitungan BPM).
       </div>
       <!-- Header -->
@@ -2660,6 +2758,7 @@ function nav(p) {
   if(p==='home') initHome();
   if(p==='db') renderDB();
   if(p==='report') buildReport();
+  if(p==='impor') importSertifikatOnOpen();
   if(p==='bpm') bpmWizGoto(1, true);
   if(p==='ubm') { ubmSyncFromBPM(); ubmRenderSources(); ubmRenderParams(); ubmWizGoto(1, true); }
   if(p==='peta') { setTimeout(function(){ petaOnOpen(); }, 50); }
@@ -2803,6 +2902,454 @@ function onClassChange() {
   recalcAll();
   renderParams();
   saveAuto();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// IMPOR SERTIFIKAT HASIL UJI (Excel) — auto-parse ke param WQDB
+// ═══════════════════════════════════════════════════════════════
+let isjWorkbook = null;
+let isjRows = [];        // hasil parse mentah: [{rawName, value, unit, no, name}]
+const ISJ_ALIAS = {
+  'suhu':1,'temperature':1,'temp':1,
+  'tds':2,'padatan terlarut':2,'zat padat terlarut':2,
+  'tss':3,'padatan tersuspensi':3,'zat padat tersuspensi':3,'residu tersuspensi':3,
+  'warna':4,'color':4,
+  'ph':5,'derajat keasaman':5,'p h':5,
+  'bod':6,'bod5':6,'bod 5':6,
+  'cod':7,
+  'do':8,'oksigen terlarut':8,'dissolved oxygen':8,
+  'sulfat':9,'so4':9,
+  'klorida':10,'cl':10,'chloride':10,
+  'nitrat':11,'no3':11,
+  'nitrit':12,'no2':12,
+  'amoniak':13,'nh3':13,'amonia':13,'nh3-n':13,
+  'total nitrogen':14,'nitrogen total':14,'tn':14,
+  'total fosfat':15,'fosfat':15,'total phosphat':15,'phosphat':15,'po4':15,
+  'fluorida':16,'f':16,
+  'sulfida':17,'h2s':17,'belerang':17,
+  'sianida':18,'cn':18,
+  'klorin bebas':19,'free chlorine':19,'sisa klorin':19,'cl2':19,
+  'barium':20,'ba':20,
+  'boron':21,'b':21,
+  'merkuri':22,'hg':22,'raksa':22,
+  'arsen':23,'as':23,
+  'selenium':24,'se':24,
+  'besi':25,'fe':25,'besi terlarut':25,
+  'kadmium':26,'cd':26,
+  'kobalt':27,'co':27,
+  'mangan':28,'mn':28,
+  'nikel':29,'ni':29,
+  'seng':30,'zn':30,'zinc':30,
+  'tembaga':31,'cu':31,'copper':31,
+  'timbal':32,'pb':32,'timah hitam':32,
+  'kromium heksavalen':33,'cr6+':33,'cr-vi':33,'cr heksavalen':33,
+  'minyak dan lemak':34,'minyak lemak':34,'oil and grease':34,'minyak & lemak':34,
+  'deterjen':35,'deterjen total':35,'mbas':35,
+  'fenol':36,'phenol':36,
+  'aldrin':37,'dieldrin':37,
+  'bhc':38,
+  'chlordane':39,
+  'ddt':40,
+  'endrin':41,
+  'heptachlor':42,
+  'lindane':43,
+  'methoxychlor':44,
+  'toxapan':45,'toxaphene':45,
+  'fecal coliform':46,'coliform tinja':46,
+  'total coliform':47,'coliform total':47,
+  'sampah':48,
+  'radioaktivitas':49,'gross alpha':49,'gross beta':49,
+};
+function isjNorm(s) {
+  return String(s||'').toLowerCase()
+    .replace(/[₀-₉²³⁻⁺]/g,'')
+    .replace(/[()]/g,' ')
+    .replace(/[^a-z0-9\s]/g,' ')
+    .replace(/\s+/g,' ')
+    .trim();
+}
+// Debit sungai BUKAN bagian dari 49 parameter WQDB (PP 22/2021), jadi dideteksi terpisah
+// dan dikirim ke field Debit Sungai (Q) di wizard Beban Pencemar, bukan ke tabel parameter.
+const ISJ_DEBIT_HINTS = ['debit','flow rate','flowrate','debit sungai','debit air'];
+function isjIsDebitRow(rawName) {
+  const norm = isjNorm(rawName);
+  return ISJ_DEBIT_HINTS.some(h => norm === h || norm.split(' ').includes(h));
+}
+function isjMatchParam(rawName) {
+  const norm = isjNorm(rawName);
+  if(!norm) return null;
+  // 1) Cocok persis dengan alias
+  if(ISJ_ALIAS[norm]) return WQDB.find(r=>r.no===ISJ_ALIAS[norm]);
+  // 2) Cocok persis dengan nama parameter di WQDB (setelah dinormalisasi)
+  const exact = WQDB.find(r => isjNorm(r.name) === norm);
+  if(exact) return exact;
+  // 3) Cocok substring, tapi HANYA untuk alias yang cukup panjang (>=4 karakter)
+  //    agar simbol kimia pendek seperti "b","co","as","f","cn" tidak memicu collision palsu
+  //    (mis. "Kobalt, Co" mengandung huruf yang sama dengan alias pendek parameter lain).
+  //    Dicocokkan sebagai kata utuh (word-boundary), bukan sekadar substring string.
+  const normWords = norm.split(' ');
+  let bestKey = null, bestLen = 0;
+  for(const key in ISJ_ALIAS) {
+    if(key.length < 4) continue; // lewati simbol kimia pendek pada tahap substring
+    const keyWords = key.split(' ');
+    const matchAsPhrase = norm.includes(key) || key.includes(norm);
+    if(matchAsPhrase && key.length > bestLen) { bestKey = key; bestLen = key.length; }
+  }
+  if(bestKey) return WQDB.find(r=>r.no===ISJ_ALIAS[bestKey]);
+  // 4) Simbol kimia pendek (<4 char): hanya cocok bila jadi TOKEN UTUH yang berdiri sendiri
+  //    (mis. token "co" berdiri sendiri, bukan bagian dari "kobalt")
+  for(const key in ISJ_ALIAS) {
+    if(key.length >= 4) continue;
+    if(normWords.includes(key)) return WQDB.find(r=>r.no===ISJ_ALIAS[key]);
+  }
+  // 5) Cocok substring terhadap nama resmi WQDB
+  const direct = WQDB.find(r => isjNorm(r.name).includes(norm) || norm.includes(isjNorm(r.name)));
+  return direct || null;
+}
+
+function importSertifikatOnOpen() {
+  // no-op saat ini; state persist selama sesi
+}
+function importSertifikatReset() {
+  isjWorkbook = null; isjRows = [];
+  document.getElementById('isj-file-input').value = '';
+  document.getElementById('isj-file-info').style.display = 'none';
+  document.getElementById('isj-sheet-picker').style.display = 'none';
+  document.getElementById('isj-result-card').style.display = 'none';
+  document.getElementById('isj-empty').style.display = 'block';
+  const extEl = document.getElementById('isj-file-ext');
+  extEl.textContent = '.XLSX';
+  extEl.style.background = 'rgba(26,176,166,0.15)';
+  extEl.style.color = '#1ab0a6';
+}
+function isjDragOver(e){ e.preventDefault(); document.getElementById('isj-drop-zone').classList.add('drag-over'); }
+function isjDragLeave(e){ e.preventDefault(); document.getElementById('isj-drop-zone').classList.remove('drag-over'); }
+function isjDrop(e){
+  e.preventDefault();
+  document.getElementById('isj-drop-zone').classList.remove('drag-over');
+  const f = e.dataTransfer.files[0];
+  if(f) isjHandleFile(f);
+}
+function isjFilePicked(e){
+  const f = e.target.files[0];
+  if(f) isjHandleFile(f);
+}
+function isjHandleFile(file) {
+  const isPdf = /\.pdf$/i.test(file.name);
+  const extEl = document.getElementById('isj-file-ext');
+  if(isPdf) {
+    extEl.textContent = '.PDF';
+    extEl.style.background = 'rgba(224,64,64,0.15)';
+    extEl.style.color = '#e04040';
+    isjHandlePdfFile(file);
+    return;
+  }
+  extEl.textContent = '.XLSX';
+  extEl.style.background = 'rgba(26,176,166,0.15)';
+  extEl.style.color = '#1ab0a6';
+
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      const data = new Uint8Array(ev.target.result);
+      isjWorkbook = XLSX.read(data, {type:'array'});
+      document.getElementById('isj-file-name').textContent = file.name;
+      document.getElementById('isj-file-info').style.display = 'flex';
+      document.getElementById('isj-empty').style.display = 'none';
+
+      const sel = document.getElementById('isj-sheet-select');
+      sel.innerHTML = isjWorkbook.SheetNames.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join('');
+      document.getElementById('isj-sheet-picker').style.display = isjWorkbook.SheetNames.length>1 ? 'block' : 'none';
+      isjParseSheet(isjWorkbook.SheetNames[0]);
+      toast('✓ File berhasil dibaca','ok');
+    } catch(err) {
+      toast('⚠ Gagal membaca file Excel: '+err.message,'err');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ─── PDF handling ───
+function isjHandlePdfFile(file) {
+  if(!window['pdfjsLib']) {
+    toast('⚠ Modul pembaca PDF belum siap, coba lagi sebentar','err');
+    return;
+  }
+  isjWorkbook = null; // PDF tidak pakai sheet picker
+  document.getElementById('isj-sheet-picker').style.display = 'none';
+
+  const reader = new FileReader();
+  reader.onload = async function(ev) {
+    try {
+      const data = new Uint8Array(ev.target.result);
+      const pdf = await pdfjsLib.getDocument({data}).promise;
+      let allPageLines = []; // array of pages, each page = array of {y, items:[{str,x}]}
+      for(let p=1; p<=pdf.numPages; p++) {
+        const page = await pdf.getPage(p);
+        const content = await page.getTextContent();
+        const items = content.items
+          .filter(it=>it.str && it.str.trim()!=='')
+          .map(it=>({str:it.str.trim(), x:it.transform[4], y:Math.round(it.transform[5])}));
+        const byY = {};
+        items.forEach(it=>{
+          let foundKey = it.y;
+          for(const k in byY) { if(Math.abs(Number(k)-it.y) <= 2) { foundKey = Number(k); break; } }
+          if(!byY[foundKey]) byY[foundKey] = [];
+          byY[foundKey].push(it);
+        });
+        const lines = Object.keys(byY)
+          .map(k=>({y:Number(k), items: byY[k].sort((a,b)=>a.x-b.x)}))
+          .sort((a,b)=> b.y - a.y);
+        allPageLines.push(lines);
+      }
+      document.getElementById('isj-file-name').textContent = file.name;
+      document.getElementById('isj-file-info').style.display = 'flex';
+      document.getElementById('isj-empty').style.display = 'none';
+      isjParsePdfPages(allPageLines);
+      toast('✓ File PDF berhasil dibaca','ok');
+    } catch(err) {
+      toast('⚠ Gagal membaca file PDF: '+err.message,'err');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// Header kolom yang dicari di tabel sertifikat lab (variasi umum)
+const ISJ_COL_HEADERS = {
+  no: ['no','no.'],
+  param: ['parameter uji','parameter','jenis uji','komponen'],
+  hasil: ['hasil uji','hasil','nilai','kadar','konsentrasi'],
+  satuan: ['satuan','unit'],
+  baku: ['baku mutu','kelas i','kelas ii'],
+};
+
+function isjParsePdfPages(pages) {
+  isjRows = [];
+
+  pages.forEach(lines=>{
+    // 1) Temukan baris header tabel pada halaman ini: harus memuat kolom "parameter" DAN ("hasil" atau "nilai")
+    let headerLineIdx = -1, colX = null; // colX = {param:x, hasil:x, satuan:x}
+    for(let i=0; i<lines.length; i++) {
+      const items = lines[i].items;
+      let paramX = null, hasilX = null, satuanX = null;
+      items.forEach(it=>{
+        const norm = isjNorm(it.str);
+        if(paramX===null && ISJ_COL_HEADERS.param.some(h=>norm.includes(h))) paramX = it.x;
+        if(hasilX===null && ISJ_COL_HEADERS.hasil.some(h=>norm===h || norm.includes(h))) hasilX = it.x;
+        if(satuanX===null && ISJ_COL_HEADERS.satuan.some(h=>norm.includes(h))) satuanX = it.x;
+      });
+      if(paramX!==null && hasilX!==null) {
+        headerLineIdx = i;
+        colX = {param:paramX, hasil:hasilX, satuan:satuanX};
+        break;
+      }
+    }
+    if(headerLineIdx===-1) return; // halaman ini tidak berisi tabel hasil uji (mis. halaman sampul)
+
+    // 2) Untuk setiap baris SETELAH header, ambil teks yang x-nya paling dekat dengan kolom "param" sebagai nama,
+    //    dan teks yang x-nya paling dekat dengan kolom "hasil" sebagai nilai.
+    for(let i=headerLineIdx+1; i<lines.length; i++) {
+      const items = lines[i].items;
+      if(!items.length) continue;
+      const fullLineText = items.map(it=>it.str).join(' ');
+      // lewati baris section seperti "Fisika :", "Kimia :", "Organik :", "Biologi :", atau baris keterangan/footer
+      if(/^(fisika|kimia|organik|biologi)\s*:?$/i.test(fullLineText.trim())) continue;
+      if(/^keterangan/i.test(fullLineText.trim())) break; // tabel sudah berakhir, sisanya catatan kaki
+      if(/^pt\.?\s|kepala laboratorium|bogor,|referensi sampling/i.test(fullLineText.trim())) break;
+
+      // Kumpulkan semua item yang berada di rentang kolom "parameter" (dari sedikit sebelum paramX sampai sebelum hasilX)
+      const paramItems = items.filter(it => it.x >= colX.param - 40 && it.x < colX.hasil - 15);
+      if(!paramItems.length) continue;
+      let rawName = paramItems.map(it=>it.str).join(' ').replace(/^\d+[.)]?\s*/,'').trim();
+      if(rawName.length<2) continue;
+
+      // Item paling dekat dengan kolom "hasil"
+      let hasilItem = null, bestDist = Infinity;
+      items.forEach(it=>{
+        if(it.x < colX.hasil - 20) return; // pasti bukan di kolom hasil atau sesudahnya
+        const dist = Math.abs(it.x - colX.hasil);
+        if(dist < bestDist) { bestDist = dist; hasilItem = it; }
+      });
+      if(!hasilItem) continue;
+      const rawValCleaned = hasilItem.str.trim();
+      // pastikan ini benar2 terlihat seperti angka/nilai (boleh diawali <,>,≤,≥,•)
+      if(!/^[<>≤≥•]?\s*[\d.,]+/.test(rawValCleaned)) continue;
+
+      const match = isjMatchParam(rawName);
+      if(!match) {
+        isjRows.push({rawName, rawVal: rawValCleaned, rawUnit:''});
+        continue;
+      }
+
+      // Satuan: cari item di sekitar kolom satuan (jika ada), kalau tidak pakai satuan default dari DB
+      let rawUnit = '';
+      if(colX.satuan!==null) {
+        const unitItem = items.find(it => Math.abs(it.x - colX.satuan) < 25);
+        if(unitItem) rawUnit = unitItem.str.trim();
+      }
+      isjRows.push({rawName, rawVal: rawValCleaned, rawUnit});
+    }
+  });
+
+  isjRenderResults();
+}
+
+function isjParseSheet(sheetName) {
+  if(!isjWorkbook) return;
+  const ws = isjWorkbook.Sheets[sheetName];
+  if(!ws) return;
+  const grid = XLSX.utils.sheet_to_json(ws, {header:1, raw:false, defval:''});
+
+  // Heuristik: cari baris yang punya sel bertipe teks (nama parameter) diikuti sel angka (nilai)
+  // Coba deteksi kolom "parameter" dan kolom "hasil/nilai" dari header di 15 baris pertama
+  let nameCol = -1, valCol = -1, unitCol = -1, headerRow = -1;
+  const nameHints = ['parameter','uji','jenis','komponen'];
+  const valHints  = ['hasil','nilai','kadar','konsentrasi'];
+  const unitHints = ['satuan','unit'];
+
+  for(let r=0; r<Math.min(20, grid.length); r++) {
+    const row = grid[r];
+    if(!row) continue;
+    let nc=-1, vc=-1, uc=-1;
+    row.forEach((cell,c)=>{
+      const norm = isjNorm(cell);
+      if(nc===-1 && nameHints.some(h=>norm.includes(h))) nc=c;
+      if(vc===-1 && valHints.some(h=>norm.includes(h))) vc=c;
+      if(uc===-1 && unitHints.some(h=>norm.includes(h))) uc=c;
+    });
+    if(nc!==-1 && vc!==-1) { nameCol=nc; valCol=vc; unitCol=uc; headerRow=r; break; }
+  }
+
+  isjRows = [];
+  if(nameCol!==-1 && valCol!==-1) {
+    for(let r=headerRow+1; r<grid.length; r++) {
+      const row = grid[r]; if(!row) continue;
+      const rawName = row[nameCol]; const rawVal = row[valCol];
+      const rawUnit = unitCol!==-1 ? row[unitCol] : '';
+      if(!rawName || String(rawName).trim()==='') continue;
+      const valNum = pNum(rawVal);
+      if(!rawVal || (valNum===0 && !/^0([.,]0*)?$/.test(String(rawVal).trim()))) {
+        if(String(rawVal).trim()==='') continue;
+      }
+      isjRows.push({rawName: String(rawName).trim(), rawVal: String(rawVal).trim(), rawUnit: String(rawUnit||'').trim()});
+    }
+  } else {
+    // Fallback: pindai semua baris, cari pasangan [teks, angka] di kolom bersebelahan
+    for(let r=0; r<grid.length; r++) {
+      const row = grid[r]; if(!row) continue;
+      for(let c=0; c<row.length-1; c++) {
+        const cellText = String(row[c]||'').trim();
+        if(cellText.length<2) continue;
+        const match = isjMatchParam(cellText);
+        if(!match) continue;
+        // cari angka di sel-sel berikutnya dalam baris yang sama
+        for(let c2=c+1; c2<row.length; c2++) {
+          const v = String(row[c2]||'').trim();
+          if(v==='') continue;
+          const n = pNum(v);
+          if(n>0 || v==='0' || v.replace(',','.')==='0') {
+            isjRows.push({rawName: cellText, rawVal: v, rawUnit:''});
+            break;
+          }
+        }
+        break;
+      }
+    }
+  }
+
+  isjRenderResults();
+}
+
+function isjRenderResults() {
+  const tbody = document.getElementById('isj-result-tbody');
+  const card = document.getElementById('isj-result-card');
+  if(!isjRows.length) {
+    card.style.display='none';
+    toast('⚠ Tidak ditemukan data parameter di sheet ini','err');
+    return;
+  }
+  card.style.display = 'block';
+
+  let matched = 0;
+  tbody.innerHTML = isjRows.map((row,i)=>{
+    const isDebit = isjIsDebitRow(row.rawName);
+    const db = isDebit ? null : isjMatchParam(row.rawName);
+    if(db || isDebit) matched++;
+    const recognized = !!(db || isDebit);
+    const rowStyle = recognized ? '' : 'color:var(--mute);opacity:0.55';
+    const matchLabel = isDebit
+      ? '<span style="color:var(--amber)">→ Debit Sungai (Q)</span>'
+      : (db ? esc(db.name) : '— tidak dikenali —');
+    return `<tr data-idx="${i}" data-debit="${isDebit?'1':'0'}" style="border-bottom:1px solid var(--brd2);${rowStyle}">
+      <td style="padding:6px 8px;text-align:center"><input type="checkbox" class="isj-row-check" data-idx="${i}" ${recognized?'checked':'disabled'}></td>
+      <td style="padding:6px 8px">${esc(row.rawName)}</td>
+      <td style="padding:6px 8px;color:${db?'var(--accent)':(isDebit?'var(--amber)':'var(--mute)')}">${matchLabel}</td>
+      <td style="padding:6px 8px;text-align:right">${esc(row.rawVal)}</td>
+      <td style="padding:6px 8px;text-align:center">${esc(row.rawUnit||(db?db.unit:(isDebit?'m³/s':'—')))}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('isj-summary').textContent =
+    `${matched} dari ${isjRows.length} parameter berhasil dikenali dan siap dikirim`;
+}
+
+function isjToggleAll(checked) {
+  document.querySelectorAll('.isj-row-check').forEach(cb=>{ if(!cb.disabled) cb.checked = checked; });
+}
+
+function isjSendToBPM() {
+  const season = document.getElementById('isj-season-target').value; // 'cDry' | 'cWet'
+  const checks = document.querySelectorAll('.isj-row-check:checked');
+  if(!checks.length) { toast('⚠ Tidak ada parameter tercentang untuk dikirim','err'); return; }
+
+  const cls = document.getElementById('r-class').value;
+  let sent = 0, debitSent = false;
+  checks.forEach(cb=>{
+    const idx = parseInt(cb.dataset.idx,10);
+    const row = isjRows[idx];
+    if(!row) return;
+
+    if(isjIsDebitRow(row.rawName)) {
+      const qFieldId = season === 'cWet' ? 'q-wet' : 'q-dry';
+      const qEl = document.getElementById(qFieldId);
+      if(qEl) {
+        qEl.value = String(row.rawVal).replace('.',',').replace(/^[<>≤≥•]\s*/,'');
+        debitSent = true;
+      }
+      return;
+    }
+
+    const db = isjMatchParam(row.rawName);
+    if(!db) return;
+
+    let p = params.find(x=>x.no===db.no);
+    if(!p) {
+      const bm = cls ? getKVal(db, cls) : '';
+      pid++;
+      p = {
+        id:pid, no:db.no, name:db.name, unit:db.unit,
+        bm:bm, bmNum:numVal(bm),
+        cDry:'', cWet:'',
+        bpmDry:null,bpaDry:null,statusDry:null,
+        bpmWet:null,bpaWet:null,statusWet:null
+      };
+      params.push(p);
+    }
+    p[season] = String(row.rawVal).replace('.',',');
+    sent++;
+  });
+
+  recalcAll();
+  renderParams();
+  saveAuto();
+  if(typeof bpmWizValidate === 'function') bpmWizValidate();
+
+  const msgParts = [];
+  if(sent>0) msgParts.push(`${sent} parameter`);
+  if(debitSent) msgParts.push(`debit sungai (${season==='cWet'?'musim hujan':'musim kemarau'})`);
+  toast(msgParts.length ? `✓ ${msgParts.join(' & ')} dikirim ke Beban Pencemar` : '⚠ Tidak ada data yang dikirim', msgParts.length?'ok':'err');
+  nav('bpm');
+  bpmWizGoto(4);
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -3556,7 +4103,8 @@ async function exportWord() {
         // Usulan BM: dari input form pengguna
         const usulanBMRaw = p.usulanBM ?? '';
         const usulanBMVal = usulanBMRaw !== '' ? pNum(usulanBMRaw) : null;
-        const alokasi = usulanBMVal!=null&&ubmTotalQi>0 ? usulanBMVal*ubmTotalQi*86400/1000 : null;
+        const pQi = ubmParamQi(p);
+        const alokasi = usulanBMVal!=null&&pQi>0 ? usulanBMVal*pQi*86400/1000 : null;
         return {p, cr, bm, status, cmRaw, cMax, usulanBMVal, alokasi};
       });
 
@@ -3742,9 +4290,10 @@ async function exportWord() {
             status = cr!=null&&bm!=null ? (cr<=bm?'ok':'ng') : null;
           }
 
-          // Alokasi Beban = Usulan BM × ΣQi × 86400 / 1000
-          const alokasi = (!p.isPH && usulanBMVal!=null && ubmTotalQi>0)
-            ? usulanBMVal * ubmTotalQi * 86400 / 1000 : null;
+          // Alokasi Beban = Usulan BM × ΣQi (khusus sumber yang punya nilai parameter ini) × 86400 / 1000
+          const pQi2 = ubmParamQi(p);
+          const alokasi = (!p.isPH && usulanBMVal!=null && pQi2>0)
+            ? usulanBMVal * pQi2 * 86400 / 1000 : null;
 
           const rowBg = i % 2 ? 'f5f5f5' : null;
           const ket = status==='ok' ? 'Memenuhi' : status==='ng' ? 'Melebihi' : '—';
@@ -4539,6 +5088,83 @@ const BMALLDB = [
       {param:'Nitrat (sebagai N)',      unit:'mg/L',       kadarMaks:'10',     num:10},
     ]
   },
+  // ── PEMBANGKIT LISTRIK TENAGA TERMAL (Permen LH No.08/2009) ──
+  {
+    id:'pltt-proses-utama', label:'PLTT – Proses Utama (Umum)', kategori:'Pembangkit Listrik Tenaga Termal',
+    params:[
+      {param:'pH',                    unit:'—',    kadarMaks:'6 – 9', num:null},
+      {param:'TSS',                   unit:'mg/L', kadarMaks:'100',   num:100},
+      {param:'Minyak dan Lemak',      unit:'mg/L', kadarMaks:'10',    num:10},
+      {param:'Klorin Bebas (Cl₂)',    unit:'mg/L', kadarMaks:'0,5',   num:0.5, ket:'Apabila cooling tower blowdown dialirkan ke IPAL'},
+      {param:'Kromium Total (Cr)',    unit:'mg/L', kadarMaks:'0,5',   num:0.5},
+      {param:'Tembaga (Cu)',          unit:'mg/L', kadarMaks:'1',     num:1},
+      {param:'Besi (Fe)',             unit:'mg/L', kadarMaks:'3',     num:3},
+      {param:'Seng (Zn)',             unit:'mg/L', kadarMaks:'1',     num:1},
+      {param:'Phosphat (PO4-)',       unit:'mg/L', kadarMaks:'10',    num:10, ket:'Apabila melakukan injeksi Phospat'},
+    ]
+  },
+  {
+    id:'pltt-blowdown-boiler', label:'PLTT – Blowdown Boiler', kategori:'Pembangkit Listrik Tenaga Termal',
+    params:[
+      {param:'pH',           unit:'—',    kadarMaks:'6 – 9', num:null},
+      {param:'Tembaga (Cu)', unit:'mg/L', kadarMaks:'1',     num:1},
+      {param:'Besi (Fe)',    unit:'mg/L', kadarMaks:'3',     num:3},
+    ]
+  },
+  {
+    id:'pltt-blowdown-cooling-tower', label:'PLTT – Blowdown Cooling Tower', kategori:'Pembangkit Listrik Tenaga Termal',
+    params:[
+      {param:'pH',                 unit:'—',    kadarMaks:'6 – 9', num:null},
+      {param:'Klorin Bebas (Cl₂)', unit:'mg/L', kadarMaks:'1',     num:1},
+      {param:'Zinc (Zn)',          unit:'mg/L', kadarMaks:'1',     num:1},
+      {param:'Phosphat (PO4-)',    unit:'mg/L', kadarMaks:'10',    num:10},
+    ]
+  },
+  {
+    id:'pltt-demin-wtp', label:'PLTT – Demineralisasi/WTP', kategori:'Pembangkit Listrik Tenaga Termal',
+    params:[
+      {param:'pH',  unit:'—',    kadarMaks:'6 – 9', num:null},
+      {param:'TSS', unit:'mg/L', kadarMaks:'100',   num:100},
+    ]
+  },
+  {
+    id:'pltt-air-bahang', label:'PLTT – Air Bahang (Air Pendingin)', kategori:'Pembangkit Listrik Tenaga Termal',
+    params:[
+      {param:'Temperatur',         unit:'°C',   kadarMaks:'40',  num:40, ket:'Hasil pengukuran rata-rata bulanan di outlet kondensor'},
+      {param:'Klorin Bebas (Cl₂)', unit:'mg/L', kadarMaks:'0,5', num:0.5},
+    ]
+  },
+  {
+    id:'pltt-desalinasi', label:'PLTT – Desalinasi', kategori:'Pembangkit Listrik Tenaga Termal',
+    params:[
+      {param:'pH',        unit:'—',   kadarMaks:'6 – 9', num:null},
+      {param:'Salinitas', unit:'‰',   kadarMaks:'Sama dengan kadar salinitas alami pada radius 30 m dari lokasi pembuangan', num:null},
+    ]
+  },
+  {
+    id:'pltt-fgd-scrubber', label:'PLTT – FGD Sistem Sea Water Wet Scrubber', kategori:'Pembangkit Listrik Tenaga Termal',
+    params:[
+      {param:'pH',       unit:'—', kadarMaks:'6 – 9', num:null},
+      {param:'SO4 (2-)', unit:'%', kadarMaks:'Kenaikan maks. 4% dibanding kadar Sulfat titik penaatan inlet air laut', num:null},
+    ]
+  },
+  {
+    id:'pltt-coal-stockpile', label:'PLTT – Coal Stockpile', kategori:'Pembangkit Listrik Tenaga Termal',
+    params:[
+      {param:'pH',  unit:'—',    kadarMaks:'6 – 9', num:null},
+      {param:'TSS', unit:'mg/L', kadarMaks:'200',   num:200},
+      {param:'Fe',  unit:'mg/L', kadarMaks:'5',     num:5},
+      {param:'Mn',  unit:'mg/L', kadarMaks:'2',     num:2},
+    ]
+  },
+  {
+    id:'pltt-oily-water', label:'PLTT – Air Limbah Mengandung Minyak (Oily Water)', kategori:'Pembangkit Listrik Tenaga Termal',
+    params:[
+      {param:'COD',               unit:'mg/L', kadarMaks:'300', num:300, ket:'Berlaku sampai dengan 31 Desember 2009'},
+      {param:'TOC',               unit:'mg/L', kadarMaks:'110', num:110, ket:'Berlaku mulai 1 Januari 2010'},
+      {param:'Minyak dan Lemak',  unit:'mg/L', kadarMaks:'15',  num:15},
+    ]
+  },
 ];
 
 // State: jenis limbah yang dipilih untuk picker
@@ -4636,6 +5262,27 @@ function renderWasteSources(){
     const typeBadge = w.typeId
       ? `<span style="font-size:10px;font-family:var(--mono);color:var(--accent);background:rgba(26,176,166,0.1);border:1px solid rgba(26,176,166,0.25);border-radius:4px;padding:3px 10px;font-weight:600">${esc(typeLabel)}</span>`
       : `<span style="font-size:10px;font-family:var(--mono);color:var(--mute);border:1px solid var(--brd2);border-radius:4px;padding:3px 10px">Manual</span>`;
+
+    if (!w.typeId) {
+      // Row manual: tampilkan dropdown pilih parameter (49 parameter WQDB) + input nilai
+      const selectedDb = w.paramNo ? WQDB.find(r=>r.no===w.paramNo) : null;
+      const unitLbl = selectedDb ? selectedDb.unit : '';
+      const paramOpts = '<option value="">— Pilih Parameter —</option>' +
+        WQDB.map(r=>`<option value="${r.no}" ${w.paramNo===r.no?'selected':''}>${esc(r.name)}</option>`).join('');
+      return `<div id="ws-row-${w.id}" style="display:grid;grid-template-columns:1fr 32px;gap:8px;padding:9px 12px;align-items:center;background:var(--bg2);border:1px solid var(--brd2);border-radius:var(--rs);margin-bottom:5px">
+        <div style="display:flex;align-items:center;gap:10px;min-width:0;flex-wrap:wrap">
+          ${typeBadge}
+          <select class="fselect" style="font-size:11px;padding:6px 10px;min-width:200px;flex:1" onchange="wsParamChange(${w.id}, this.value)">
+            ${paramOpts}
+          </select>
+          <input class="finput" style="width:110px;font-size:11px;padding:6px 10px" placeholder="Nilai" inputmode="decimal"
+            value="${esc(w.paramValue||'')}" oninput="wsParamValueChange(${w.id}, this.value)" ${w.paramNo?'':'disabled'}>
+          <span style="font-size:9.5px;font-family:var(--mono);color:var(--mute);min-width:36px">${esc(unitLbl)}</span>
+        </div>
+        <button onclick="delWasteSource(${w.id})" style="width:28px;height:28px;background:rgba(255,80,80,0.1);border:1px solid rgba(255,80,80,0.25);border-radius:var(--rs);color:#ff6060;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0">×</button>
+      </div>`;
+    }
+
     return `<div id="ws-row-${w.id}" style="display:grid;grid-template-columns:1fr 32px;gap:8px;padding:9px 12px;align-items:center;background:var(--bg2);border:1px solid var(--brd2);border-radius:var(--rs);margin-bottom:5px">
       <div style="display:flex;align-items:center;gap:10px;min-width:0;overflow:hidden">
         ${typeBadge}
@@ -4644,6 +5291,49 @@ function renderWasteSources(){
     </div>`;
   }).join('');
   renderBMGabungan();
+}
+
+// ─── Manual parameter row: pilih parameter & isi nilai langsung ke tabel Parameter (Step 4) ───
+function wsParamChange(wsId, valStr) {
+  const w = wasteSources.find(x=>x.id===wsId);
+  if(!w) return;
+  const no = valStr ? parseInt(valStr,10) : null;
+  w.paramNo = no;
+  renderWasteSources(); // re-render agar input nilai enabled/disabled sesuai pilihan
+  if (no && w.paramValue) wsApplyParamValue(w);
+  saveAuto();
+}
+function wsParamValueChange(wsId, val) {
+  const w = wasteSources.find(x=>x.id===wsId);
+  if(!w) return;
+  w.paramValue = val;
+  if (w.paramNo) wsApplyParamValue(w);
+  saveAuto();
+}
+function wsApplyParamValue(w) {
+  const db = WQDB.find(r=>r.no===w.paramNo);
+  if(!db) return;
+  const season = (typeof _season!=='undefined' && _season==='wet') ? 'cWet' : 'cDry';
+  const cls = document.getElementById('r-class')?.value;
+
+  let p = params.find(x=>x.no===db.no);
+  if (!p) {
+    const bm = cls ? getKVal(db, cls) : '';
+    pid++;
+    p = {
+      id:pid, no:db.no, name:db.name, unit:db.unit,
+      bm:bm, bmNum:numVal(bm),
+      cDry:'', cWet:'',
+      bpmDry:null,bpaDry:null,statusDry:null,
+      bpmWet:null,bpaWet:null,statusWet:null
+    };
+    params.push(p);
+  }
+  p[season] = String(w.paramValue).replace('.',',');
+
+  recalcAll();
+  renderParams();
+  saveAuto();
 }
 
 // ─── Tabel BM Gabungan ────────────────────────────────────────
@@ -4742,7 +5432,7 @@ function delWasteSource(id){
 
 function addWasteSource(){
   wsId++;
-  wasteSources.push({id:wsId, typeId:null, typeLabel:null, name:'', qDay:''});
+  wasteSources.push({id:wsId, typeId:null, typeLabel:null, name:'', qDay:'', paramNo:null, paramValue:''});
   renderWasteSources();
 }
 
@@ -4886,6 +5576,17 @@ function importParamsFromGabungan() {
 // ═══════════════════════════════════════════════════════════════
 let ubmSources=[], ubmSrcId=0;  // sumber air limbah untuk CR
 let ubmParams=[], ubmPId=0;     // parameter CR
+
+// Alokasi beban pencemar per parameter hanya menghitung debit dari sumber yang
+// benar-benar punya nilai konsentrasi (C > 0) untuk parameter tersebut.
+// Jika C = 0 / kosong, dianggap sumber itu tidak mengandung parameter itu,
+// sehingga debitnya TIDAK diikutkan ke total Q untuk alokasi parameter ini.
+function ubmParamQi(p){
+  return ubmSources.reduce((sum,s)=>{
+    const ci = pNum(p.cSrc ? p.cSrc[s.id] : 0);
+    return ci>0 ? sum + pNum(s.qDay)/86400 : sum;
+  },0);
+}
 const CL_DESC={
   '1':'Air Baku Minum — baku mutu paling ketat',
   '2':'Rekreasi, Budidaya Ikan, Pertanian',
@@ -5728,8 +6429,9 @@ function _ubmCalcAndShowResults(){
       // Usulan BM: dari input form di Parameter Kualitas Air
       const usulanBMRaw = p.usulanBM ?? '';
       const usulanBMVal = usulanBMRaw !== '' ? pNum(usulanBMRaw) : null;
-      // Alokasi dihitung dari Usulan BM (bukan BM kelas sungai)
-      const alokasi  = usulanBMVal!=null&&totalQi>0 ? usulanBMVal*totalQi*86400/1000 : null;
+      // Alokasi dihitung dari Usulan BM × ΣQ limbah khusus sumber yang punya nilai parameter ini
+      const pQi3 = ubmParamQi(p);
+      const alokasi  = usulanBMVal!=null&&pQi3>0 ? usulanBMVal*pQi3*86400/1000 : null;
       const cMaxStr  = cMaxHint!=null ? fmtN(cMaxHint,4) : '—';
       // Status: apakah Usulan BM ≤ Cmax (masih dalam batas)
       const overLimit = cMaxHint!=null && usulanBMVal!=null && usulanBMVal > cMaxHint;
@@ -5802,7 +6504,8 @@ function _buildRekapTable(resDry, resWet, totalQi){
       // Usulan BM: dari input form
       const usulanBMRaw = p.usulanBM ?? '';
       const usulanBMVal = usulanBMRaw !== '' ? pNum(usulanBMRaw) : null;
-      const alokasi  = usulanBMVal!=null&&totalQi>0 ? usulanBMVal*totalQi*86400/1000 : null;
+      const pQi4 = ubmParamQi(p);
+      const alokasi  = usulanBMVal!=null&&pQi4>0 ? usulanBMVal*pQi4*86400/1000 : null;
       // Tampilan BM Sungai: "6–9" untuk pH, angka untuk lainnya
       const bmSungaiDisp = p.isPH ? '<span style="color:var(--accent);font-weight:700">6–9</span>'
                                   : (bm!=null ? fmtN(bm,4) : '—');
@@ -5916,9 +6619,10 @@ function _buildCRUsulanTable(resDryUsulan, resWetUsulan, totalQi) {
         )
       ).join('');
 
-      // Alokasi Beban Pencemar = Usulan BM × ΣQi × 86400 / 1000 (kg/hari)
-      const alokasi = (!p.isPH && usulanBMVal != null && totalQi > 0)
-        ? usulanBMVal * totalQi * 86400 / 1000
+      // Alokasi Beban Pencemar = Usulan BM × ΣQi (khusus sumber yang punya nilai parameter ini) × 86400 / 1000 (kg/hari)
+      const pQi5 = ubmParamQi(p);
+      const alokasi = (!p.isPH && usulanBMVal != null && pQi5 > 0)
+        ? usulanBMVal * pQi5 * 86400 / 1000
         : null;
       const alokasiDisp = p.isPH
         ? '<span style="color:var(--mute);font-size:9.5px">—</span>'
@@ -6453,7 +7157,8 @@ async function exportExcel(){
           // Usulan BM dari input pengguna
           const usulanBMRaw=p.usulanBM??'';
           const usulanBMVal=usulanBMRaw!==''?pNum(usulanBMRaw):null;
-          const alokasi=usulanBMVal!=null&&ubmTotalQi>0?usulanBMVal*ubmTotalQi*86400/1000:null;
+          const pQi6 = ubmParamQi(p);
+          const alokasi=usulanBMVal!=null&&pQi6>0?usulanBMVal*pQi6*86400/1000:null;
           return {p,cr,bm,status,cmRaw,cMax,usulanBMVal,alokasi,cHulu};
         });
       }
@@ -6570,6 +7275,12 @@ async function exportExcel(){
             return `${srcQiCellRefs[si]}*${srcColLetters[si]}${excelRow}`;
           }).join('+');
           const bmNum=(typeof bm==='number')?bm:null;
+          // ΣQi_param — total debit HANYA dari sumber yang punya nilai Ci>0 untuk parameter ini (baris ini).
+          // Dibangun sebagai penjumlahan bersyarat per sumber (bukan SUMPRODUCT range karena referensi Qi
+          // tersebar di sel-sel berbeda, bukan range berurutan): IF(Ci>0, Qi_ref, 0) + IF(...) + ...
+          const paramSigmaQFormula = ubmSources.length
+            ? ubmSources.map((s,si)=>`IF(${srcColLetters[si]}${excelRow}>0,${srcQiCellRefs[si]},0)`).join('+')
+            : '0';
 
           aoa.push([
             mkCell(i+1,baseC),mkCell(p.name||'—',base),mkCell(p.unit||'—',baseC),
@@ -6592,9 +7303,11 @@ async function exportExcel(){
               ? {f:`MAX(0,(${bmRef}*(${qSungaiCell}+${sigmaQCell})-${qSungaiCell}*${cHuluRef})/${sigmaQCell})`,t:'n',s:cmSt,v:fmtV(cMax,4)}
               : mkCell('—',cmSt),
             usulanBMVal!=null?nCell(fmtV(usulanBMVal,4),ubmSt):mkCell('— (belum diisi)',{...baseC,font:font(false,9,C.muted)}),
-            // Alokasi Beban (kg/hari) = Usulan_BM × ΣQ_Limbah × 86400 / 1000 — FORMULA EXCEL HIDUP
+            // Alokasi Beban (kg/hari) = Usulan_BM × ΣQ_Limbah_parameter_ini × 86400 / 1000 — FORMULA EXCEL HIDUP
+            // ΣQ di sini HANYA menjumlahkan debit sumber yang punya nilai Ci>0 untuk parameter ini
+            // (jika Ci=0/kosong, dianggap sumber tsb tidak mengandung parameter ini, debitnya tidak diikutkan).
             usulanBMVal!=null
-              ? fCell(`${usulanRef}*${sigmaQCell}*86400/1000`,S.alok,fmtV(alokasi,4))
+              ? fCell(`${usulanRef}*(${paramSigmaQFormula})*86400/1000`,S.alok,fmtV(alokasi,4))
               : mkCell('—',{...baseR,font:font(false,9,C.muted)}),
           ]);
           rh.push(RH.data);

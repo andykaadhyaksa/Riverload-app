@@ -3998,17 +3998,17 @@ async function exportWord() {
     const rest = fitCols(arr.slice(1), target-firstW);
     return [firstW, ...rest];
   };
-  const clr=h=>`<w:color w:val="${h||'000000'}"/>`;
+  const clr=h=>`<w:color w:val="000000"/>`;
   const sz=p=>`<w:sz w:val="${p}"/><w:szCs w:val="${p}"/>`;
-  const fnt=`<w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>`;
-  const run=(t,o={})=>`<w:r><w:rPr>${fnt}${sz(o.sz||22)}${o.b?'<w:b/>':''}${o.it?'<w:i/>':''}${clr(o.c||'1e293b')}</w:rPr><w:t xml:space="preserve">${esc(t)}</w:t></w:r>`;
+  const fnt=`<w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/>`;
+  const run=(t,o={})=>`<w:r><w:rPr>${fnt}${sz(o.sz||22)}${o.b?'<w:b/>':''}${o.it?'<w:i/>':''}${clr()}</w:rPr><w:t xml:space="preserve">${esc(t)}</w:t></w:r>`;
   const par=(ct,o={})=>`<w:p><w:pPr><w:spacing w:before="${o.bef||0}" w:after="${o.aft||120}" w:line="280" w:lineRule="auto"/><w:jc w:val="${o.ctr?'center':'both'}"/></w:pPr>${ct}</w:p>`;
   const sp=()=>`<w:p><w:pPr><w:spacing w:after="80"/></w:pPr></w:p>`;
   const pb=()=>`<w:p><w:r><w:br w:type="page"/></w:r></w:p>`;
-  const tc=(t,o={})=>`<w:tc><w:tcPr><w:tcW w:w="${o.w||1000}" w:type="dxa"/>${o.span?`<w:gridSpan w:val="${o.span}"/>`:''}<w:tcBorders><w:top w:val="single" w:sz="6" w:color="cbd5e1"/><w:left w:val="single" w:sz="6" w:color="cbd5e1"/><w:bottom w:val="single" w:sz="6" w:color="cbd5e1"/><w:right w:val="single" w:sz="6" w:color="cbd5e1"/></w:tcBorders>${o.bg?`<w:shd w:val="clear" w:color="auto" w:fill="${o.bg}"/>`:''}${o.vm?`<w:vAlign w:val="center"/>`:''}${o.mar||''}</w:tcPr><w:p><w:pPr><w:spacing w:before="0" w:after="0"/><w:jc w:val="${o.ctr?'center':'left'}"/></w:pPr>${run(t,{sz:o.sz||20,b:o.b,c:o.c||'1e293b'})}</w:p></w:tc>`;
+  const tc=(t,o={})=>`<w:tc><w:tcPr><w:tcW w:w="${o.w||1000}" w:type="dxa"/>${o.span?`<w:gridSpan w:val="${o.span}"/>`:''}<w:tcBorders><w:top w:val="single" w:sz="6" w:color="000000"/><w:left w:val="single" w:sz="6" w:color="000000"/><w:bottom w:val="single" w:sz="6" w:color="000000"/><w:right w:val="single" w:sz="6" w:color="000000"/></w:tcBorders>${o.vm?`<w:vAlign w:val="center"/>`:''}${o.mar||''}</w:tcPr><w:p><w:pPr><w:spacing w:before="0" w:after="0"/><w:jc w:val="${o.ctr?'center':'left'}"/></w:pPr>${run(t,{sz:o.sz||20,b:o.b,c:o.headerText?'000000':(o.c||'1e293b')})}</w:p></w:tc>`;
   const tr2=(cells,hdr=false)=>`<w:tr>${hdr?'<w:trPr><w:tblHeader/></w:trPr>':''}${cells}</w:tr>`;
-  const mkTbl=(cws,rows)=>{const tot=cws.reduce((a,b)=>a+b,0);const grid=cws.map(w=>`<w:gridCol w:w="${w}"/>`).join('');return `<w:tbl><w:tblPr><w:tblW w:w="${tot}" w:type="dxa"/><w:tblBorders><w:top w:val="single" w:sz="6" w:color="cbd5e1"/><w:left w:val="single" w:sz="6" w:color="cbd5e1"/><w:bottom w:val="single" w:sz="6" w:color="cbd5e1"/><w:right w:val="single" w:sz="6" w:color="cbd5e1"/><w:insideH w:val="single" w:sz="6" w:color="cbd5e1"/><w:insideV w:val="single" w:sz="6" w:color="cbd5e1"/></w:tblBorders><w:tblCellMar><w:top w:w="60" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="60" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid>${grid}</w:tblGrid>${rows.join('')}</w:tbl>`;};
-  const hc=(t,w)=>tc(t,{w,b:true,ctr:true,bg:'004d45',c:'FFFFFF',sz:20});
+  const mkTbl=(cws,rows)=>{const tot=cws.reduce((a,b)=>a+b,0);const grid=cws.map(w=>`<w:gridCol w:w="${w}"/>`).join('');return `<w:tbl><w:tblPr><w:tblW w:w="${tot}" w:type="dxa"/><w:tblLayout w:type="autofit"/><w:tblBorders><w:top w:val="single" w:sz="6" w:color="000000"/><w:left w:val="single" w:sz="6" w:color="000000"/><w:bottom w:val="single" w:sz="6" w:color="000000"/><w:right w:val="single" w:sz="6" w:color="000000"/><w:insideH w:val="single" w:sz="6" w:color="000000"/><w:insideV w:val="single" w:sz="6" w:color="000000"/></w:tblBorders><w:tblCellMar><w:top w:w="60" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="60" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid>${grid}</w:tblGrid>${rows.join('')}</w:tbl>`;};
+  const hc=(t,w)=>tc(t,{w,b:true,ctr:true,headerText:true,sz:20});
 
   let xml='';
   // Cover
@@ -4203,33 +4203,40 @@ async function exportWord() {
       // Kolom: No|Parameter|Satuan|C Hulu|C Sumber...|CR Hilir|BM Kelas|[BM Jenis...]|Status|C_maks Hitung|Usulan BM|Alokasi
       const nSrc = ubmSources.length;
       const nJenis = _uniqueJenis.length;
-      const srcW = nSrc > 0 ? Math.min(S(900), Math.floor(S(1600)/Math.max(nSrc,1))) : 0;
-      const jenisW = nJenis > 0 ? Math.min(S(850), Math.floor(S(1400)/Math.max(nJenis,1))) : 0;
-      const fixedW = [NO_COL_W, ...[1500,500,600].map(S)];
-      const trailW = [700,700].map(S); // CR, BM Kelas
-      const afterJenisW = [700,700,700,700].map(S); // Status, C_maks Hitung, Usulan BM, Alokasi
-      const used = fixedW.reduce((a,b)=>a+b,0)+nSrc*srcW+trailW.reduce((a,b)=>a+b,0)+nJenis*jenisW+afterJenisW.reduce((a,b)=>a+b,0);
-      const alokasiW = Math.max(S(600), CW-used+afterJenisW[3]);
-      const allCols=[...fixedW,...ubmSources.map(()=>srcW),...trailW,..._uniqueJenis.map(()=>jenisW),...afterJenisW.slice(0,3),alokasiW];
-      const hdrBgHex = hdrBg; const hdrC = hdrTxt;
+      const totalDataCols = 8 + nSrc + nJenis; // No,Parameter,Satuan,CHulu,[src..],CR,BMKelas,[jenis..],Status,Cmaks,UsulanBM,Alokasi
+      // Ukuran font dasar diperkecil otomatis mengikuti jumlah kolom, agar tabel yang sangat lebar tetap muat 1 halaman (autofit window).
+      // >=16 kolom → paling kecil; makin sedikit kolom, makin besar (maks ukuran normal).
+      const _fitSz = totalDataCols>=18 ? 12 : totalDataCols>=15 ? 13 : totalDataCols>=12 ? 15 : totalDataCols>=9 ? 17 : 18;
+      const _fitSzHdr = Math.min(18, _fitSz+1);
+      const _fitSzNo  = Math.max(11, _fitSz-1);
+      const srcWRaw = nSrc > 0 ? 900 : 0;
+      const jenisWRaw = nJenis > 0 ? 850 : 0;
+      const fixedWRaw = [280, 1500, 500, 600]; // No, Parameter, Satuan, C Hulu
+      const trailWRaw = [700,700]; // CR, BM Kelas
+      const afterJenisWRaw = [700,700,700,900]; // Status, C_maks Hitung, Usulan BM, Alokasi
+      // Bangun proporsi lebar kolom lalu regangkan/paksa PAS ke lebar halaman (CW) — inilah "autofit window" sesungguhnya.
+      const colsRaw = [...fixedWRaw, ...Array(nSrc).fill(srcWRaw), ...trailWRaw, ...Array(nJenis).fill(jenisWRaw), ...afterJenisWRaw];
+      const allCols = fitColsKeepFirst(colsRaw, CW, NO_COL_W);
+      const alokasiW = allCols[allCols.length-1];
+      const hdrBgHex = hdrBg; const hdrC = '000000';
 
       const hdrRow = tr2(
-        tc('No',       {w:allCols[0],b:true,ctr:true,bg:hdrBgHex,c:hdrC,sz:18})+
-        tc('Parameter',{w:allCols[1],b:true,ctr:true,bg:hdrBgHex,c:hdrC,sz:18})+
-        tc('Satuan',   {w:allCols[2],b:true,ctr:true,bg:hdrBgHex,c:hdrC,sz:18})+
-        tc('C Hulu Sungai (mg/L)',{w:allCols[3],b:true,ctr:true,bg:hdrBgHex,c:hdrC,sz:18})+
-        ubmSources.map((s,si)=>tc((s.name||`Sumber ${si+1}`)+' (mg/L)',{w:allCols[4+si],b:true,ctr:true,bg:hdrBgHex,c:hdrC,sz:17})).join('')+
-        tc('CR Hilir (mg/L)',{w:allCols[4+nSrc],b:true,ctr:true,bg:hdrBgHex,c:hdrC,sz:18})+
-        tc('BM Kelas Sungai (mg/L)',{w:allCols[5+nSrc],b:true,ctr:true,bg:hdrBgHex,c:hdrC,sz:17})+
+        tc('No',       {w:allCols[0],b:true,ctr:true,c:hdrC,sz:_fitSzHdr})+
+        tc('Parameter',{w:allCols[1],b:true,ctr:true,c:hdrC,sz:_fitSzHdr})+
+        tc('Satuan',   {w:allCols[2],b:true,ctr:true,c:hdrC,sz:_fitSzHdr})+
+        tc('C Hulu Sungai (mg/L)',{w:allCols[3],b:true,ctr:true,c:hdrC,sz:_fitSzHdr})+
+        ubmSources.map((s,si)=>tc((s.name||`Sumber ${si+1}`)+' (mg/L)',{w:allCols[4+si],b:true,ctr:true,c:hdrC,sz:_fitSzHdr})).join('')+
+        tc('CR Hilir (mg/L)',{w:allCols[4+nSrc],b:true,ctr:true,c:hdrC,sz:_fitSzHdr})+
+        tc('BM Kelas Sungai (mg/L)',{w:allCols[5+nSrc],b:true,ctr:true,c:hdrC,sz:_fitSzHdr})+
         _uniqueJenis.map((j,ji)=>{
           const t=BMALLDB.find(x=>x.id===j.typeId);
           const label=t?t.label.replace(/–.*/,'').trim().slice(0,25):j.name;
-          return tc('BM '+label+' (mg/L)',{w:allCols[6+nSrc+ji],b:true,ctr:true,bg:'fff0c8',c:'78350f',sz:16});
+          return tc('BM '+label+' (mg/L)',{w:allCols[6+nSrc+ji],b:true,ctr:true,c:'000000',sz:_fitSzHdr});
         }).join('')+
-        tc('Status Mutu',{w:allCols[6+nSrc+nJenis],b:true,ctr:true,bg:hdrBgHex,c:hdrC,sz:18})+
-        tc('C_maks Hitung (mg/L)',{w:allCols[7+nSrc+nJenis],b:true,ctr:true,bg:hdrBgHex,c:hdrC,sz:17})+
-        tc('Usulan BM (mg/L)\n[Sumber Diusulkan Pertama]',{w:allCols[8+nSrc+nJenis],b:true,ctr:true,bg:'fef3c7',c:'78350f',sz:17})+
-        tc('Alokasi Beban (kg/hari)',{w:alokasiW,b:true,ctr:true,bg:'fef3c7',c:'78350f',sz:17}),
+        tc('Status Mutu',{w:allCols[6+nSrc+nJenis],b:true,ctr:true,c:hdrC,sz:_fitSzHdr})+
+        tc('C_maks Hitung (mg/L)',{w:allCols[7+nSrc+nJenis],b:true,ctr:true,c:hdrC,sz:_fitSzHdr})+
+        tc('Usulan BM (mg/L)\n[Sumber Diusulkan Pertama]',{w:allCols[8+nSrc+nJenis],b:true,ctr:true,c:'000000',sz:_fitSzHdr})+
+        tc('Alokasi Beban (kg/hari)',{w:alokasiW,b:true,ctr:true,c:'000000',sz:_fitSzHdr}),
         true
       );
 
@@ -4245,26 +4252,25 @@ async function exportWord() {
         // Usulan BM: tampilkan nilai yang diinput, beri tanda jika melebihi C_maks
         const ubmStr = p.isPH ? '6-9 (rentang)' : (usulanBMVal!=null ? fmtN(usulanBMVal,4) : '— (belum diisi)');
         const ubmC   = p.isPH ? '004d45' : usulanBMVal!=null ? (cMax!=null&&usulanBMVal>cMax?'b71c1c':'e65100') : '546e7a';
-        const ubmBg  = p.isPH ? null : usulanBMVal!=null&&cMax!=null&&usulanBMVal>cMax ? 'ffebee' : usulanBMVal!=null ? 'fffbe6' : null;
         return tr2(
-          tc(i+1,           {w:allCols[0],ctr:true,bg:rowBg,sz:18})+
-          tc(p.name||'—',  {w:allCols[1],bg:rowBg,sz:18,b:true})+
-          tc(p.unit||'—',  {w:allCols[2],ctr:true,bg:rowBg,sz:17})+
-          tc(cHuluDisp||'—',{w:allCols[3],ctr:true,bg:rowBg,sz:18})+
+          tc(i+1,           {w:allCols[0],ctr:true,sz:_fitSzNo})+
+          tc(p.name||'—',  {w:allCols[1],sz:_fitSz,b:true})+
+          tc(p.unit||'—',  {w:allCols[2],ctr:true,sz:_fitSzNo})+
+          tc(cHuluDisp||'—',{w:allCols[3],ctr:true,sz:_fitSz})+
           ubmSources.map((s,si)=>{
             const isP = ubmProposedSrcIds.has(s.id);
             const ubmSrcRaw = isP ? (p.usulanBMPerSrc?.[s.id] ?? '') : '';
             const ubmSrcVal = ubmSrcRaw !== '' ? pNum(ubmSrcRaw) : null;
             const disp = isP && ubmSrcVal!=null ? fmtN(ubmSrcVal,4) : (p.cSrc[s.id]||'—');
-            return tc(disp,{w:allCols[4+si],ctr:true,bg:isP&&ubmSrcVal!=null?'fffbe6':rowBg,sz:17,b:isP&&ubmSrcVal!=null,c:isP&&ubmSrcVal!=null?'e65100':undefined});
+            return tc(disp,{w:allCols[4+si],ctr:true,sz:_fitSzNo,b:isP&&ubmSrcVal!=null,c:isP&&ubmSrcVal!=null?'e65100':undefined});
           }).join('')+
-          tc(cr!=null?fmtN(cr,4):'—',{w:allCols[4+nSrc],ctr:true,bg:rowBg,sz:18,b:true,c:cr!=null&&bm!=null&&cr>bm?'b71c1c':'004d45'})+
-          tc(bm!=null?fmtN(bm,4):'—',{w:allCols[5+nSrc],ctr:true,bg:rowBg,sz:18})+
-          _uniqueJenis.map((j,ji)=>tc(_getBMJenis(p.name,j.typeId),{w:allCols[6+nSrc+ji],ctr:true,bg:'fffbe6',c:'92400e',sz:17})).join('')+
-          tc(ket,{w:allCols[6+nSrc+nJenis],ctr:true,bg:status==='ng'?'ffebee':status==='ok'?'e8f5e9':rowBg,sz:18,b:true,c:ketC})+
-          tc(cmStr,{w:allCols[7+nSrc+nJenis],ctr:true,bg:rowBg,sz:18,c:cmC})+
-          tc(ubmStr,{w:allCols[8+nSrc+nJenis],ctr:true,bg:ubmBg,sz:18,b:usulanBMVal!=null,c:ubmC})+
-          tc(alokasi!=null?fmtN(alokasi,2):'—',{w:alokasiW,ctr:true,bg:alokasi!=null?'fffbe6':rowBg,sz:18,b:alokasi!=null,c:alokasi!=null?'e65100':'546e7a'})
+          tc(cr!=null?fmtN(cr,4):'—',{w:allCols[4+nSrc],ctr:true,sz:_fitSz,b:true,c:cr!=null&&bm!=null&&cr>bm?'b71c1c':'004d45'})+
+          tc(bm!=null?fmtN(bm,4):'—',{w:allCols[5+nSrc],ctr:true,sz:_fitSz})+
+          _uniqueJenis.map((j,ji)=>tc(_getBMJenis(p.name,j.typeId),{w:allCols[6+nSrc+ji],ctr:true,c:'92400e',sz:_fitSzNo})).join('')+
+          tc(ket,{w:allCols[6+nSrc+nJenis],ctr:true,sz:_fitSz,b:true,c:ketC})+
+          tc(cmStr,{w:allCols[7+nSrc+nJenis],ctr:true,sz:_fitSzNo,c:cmC})+
+          tc(ubmStr,{w:allCols[8+nSrc+nJenis],ctr:true,sz:_fitSzNo,b:usulanBMVal!=null,c:ubmC})+
+          tc(alokasi!=null?fmtN(alokasi,2):'—',{w:alokasiW,ctr:true,sz:_fitSzNo,b:alokasi!=null,c:alokasi!=null?'e65100':'546e7a'})
         );
       });
 
@@ -4298,23 +4304,26 @@ async function exportWord() {
           .concat([900, 950, 900, 1076]);
         const crCols = fitCols(crColsBase, CW); // regangkan proporsional agar pas penuh ke ujung kertas
         const srcColW = crCols[3]; // lebar kolom per-sumber setelah diregangkan (semua kolom sumber sama lebar)
+        const _totalCrCols = 7 + nSrc; // Parameter,Satuan,CHulu,[src..],CR,BM,Alokasi,Status
+        const _crSz = _totalCrCols>=14 ? 13 : _totalCrCols>=11 ? 15 : _totalCrCols>=8 ? 17 : 18;
+        const _crSzHdr = Math.min(18, _crSz+1);
 
         // Header sumber — diusulkan → label "Usulan BM", lainnya → label "C Aktual"
         const srcHdrCells = ubmSources.map(s => {
           const isP = ubmProposedSrcIds.has(s.id);
           return tc(`${s.name||`Sumber ${s.id}`}\n(mg/L) = ${isP?'Usulan BM':'C Aktual'}`,
-            {w:srcColW,b:true,ctr:true,bg:isP?'78350f':'546e7a',c:'fef3c7',sz:15});
+            {w:srcColW,b:true,ctr:true,c:'000000',sz:_crSzHdr});
         }).join('');
 
         const hdrRow = tr2(
-          tc('Parameter',{w:crCols[0],b:true,ctr:true,bg:hdrBgHex,c:'FFFFFF',sz:18})+
-          tc('Satuan',{w:crCols[1],b:true,ctr:true,bg:hdrBgHex,c:'FFFFFF',sz:18})+
-          tc('C Hulu (mg/L)',{w:crCols[2],b:true,ctr:true,bg:hdrBgHex,c:'FFFFFF',sz:17})+
+          tc('Parameter',{w:crCols[0],b:true,ctr:true,c:'000000',sz:_crSzHdr})+
+          tc('Satuan',{w:crCols[1],b:true,ctr:true,c:'000000',sz:_crSzHdr})+
+          tc('C Hulu (mg/L)',{w:crCols[2],b:true,ctr:true,c:'000000',sz:_crSzHdr})+
           srcHdrCells+
-          tc('CR Hilir (mg/L)',{w:crCols[crCols.length-4],b:true,ctr:true,bg:hdrBgHex,c:'FFFFFF',sz:17})+
-          tc('BM Air Sungai (PP 22/2021)',{w:crCols[crCols.length-3],b:true,ctr:true,bg:hdrBgHex,c:'FFFFFF',sz:16})+
-          tc('Alokasi Beban (kg/hari)',{w:crCols[crCols.length-2],b:true,ctr:true,bg:'78350f',c:'fef3c7',sz:15})+
-          tc('Status Mutu',{w:crCols[crCols.length-1],b:true,ctr:true,bg:hdrBgHex,c:'FFFFFF',sz:17}),
+          tc('CR Hilir (mg/L)',{w:crCols[crCols.length-4],b:true,ctr:true,c:'000000',sz:_crSzHdr})+
+          tc('BM Air Sungai (PP 22/2021)',{w:crCols[crCols.length-3],b:true,ctr:true,c:'000000',sz:_crSzHdr})+
+          tc('Alokasi Beban (kg/hari)',{w:crCols[crCols.length-2],b:true,ctr:true,c:'000000',sz:_crSzHdr})+
+          tc('Status Mutu',{w:crCols[crCols.length-1],b:true,ctr:true,c:'000000',sz:_crSzHdr}),
           true
         );
 
@@ -4357,18 +4366,18 @@ async function exportWord() {
             const cellVal = isP && ubmSrcVal!=null
               ? fmtN(ubmSrcVal,4)
               : ((p.cSrc[s.id]!=null && p.cSrc[s.id]!=='') ? fmtN(pNum(p.cSrc[s.id]),4) : '—');
-            return tc(cellVal,{w:srcColW,ctr:true,bg:isP&&ubmSrcVal!=null?'fffbe6':rowBg,sz:18,b:isP&&ubmSrcVal!=null,c:isP&&ubmSrcVal!=null?'e65100':'546e7a'});
+            return tc(cellVal,{w:srcColW,ctr:true,sz:_crSz,b:isP&&ubmSrcVal!=null,c:isP&&ubmSrcVal!=null?'e65100':'546e7a'});
           }).join('');
 
           return tr2(
-            tc(p.name||'—',{w:crCols[0],bg:rowBg,sz:18,b:true})+
-            tc(p.unit||'—',{w:crCols[1],ctr:true,bg:rowBg,sz:17})+
-            tc(cHulu>0?fmtN(cHulu,4):'—',{w:crCols[2],ctr:true,bg:rowBg,sz:18})+
+            tc(p.name||'—',{w:crCols[0],sz:_crSz,b:true})+
+            tc(p.unit||'—',{w:crCols[1],ctr:true,sz:_crSz})+
+            tc(cHulu>0?fmtN(cHulu,4):'—',{w:crCols[2],ctr:true,sz:_crSz})+
             srcDataCells+
-            tc(cr!=null?fmtN(cr,4):'—',{w:crCols[crCols.length-4],ctr:true,bg:rowBg,sz:18,b:true,c:status==='ng'?'b71c1c':'004d45'})+
-            tc(bmDisp,{w:crCols[crCols.length-3],ctr:true,bg:rowBg,sz:18})+
-            tc(alokasi!=null?fmtN(alokasi,4):'—',{w:crCols[crCols.length-2],ctr:true,bg:alokasi!=null?'fffbe6':rowBg,sz:18,b:alokasi!=null,c:alokasi!=null?'e65100':'546e7a'})+
-            tc(ket,{w:crCols[crCols.length-1],ctr:true,bg:status==='ng'?'ffebee':status==='ok'?'e8f5e9':rowBg,sz:18,b:true,c:ketC})
+            tc(cr!=null?fmtN(cr,4):'—',{w:crCols[crCols.length-4],ctr:true,sz:_crSz,b:true,c:status==='ng'?'b71c1c':'004d45'})+
+            tc(bmDisp,{w:crCols[crCols.length-3],ctr:true,sz:_crSz})+
+            tc(alokasi!=null?fmtN(alokasi,4):'—',{w:crCols[crCols.length-2],ctr:true,sz:_crSz,b:alokasi!=null,c:alokasi!=null?'e65100':'546e7a'})+
+            tc(ket,{w:crCols[crCols.length-1],ctr:true,sz:_crSz,b:true,c:ketC})
           );
         });
 
@@ -4479,7 +4488,7 @@ async function exportWord() {
   zip.file('word/_rels/document.xml.rels','<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>'+(fishboneRel?'<Relationship Id="rIdFishboneImg" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/fishbone.png"/>':'')+'</Relationships>');
   zip.file('word/document.xml',docXml);
   if (fishboneRel) zip.file('word/media/fishbone.png', fishboneRel.base64, {base64:true});
-  zip.file('word/styles.xml','<?xml version="1.0" encoding="UTF-8"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/><w:sz w:val="22"/></w:rPr></w:rPrDefault></w:docDefaults></w:styles>');
+  zip.file('word/styles.xml','<?xml version="1.0" encoding="UTF-8"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/><w:sz w:val="22"/><w:color w:val="000000"/></w:rPr></w:rPrDefault></w:docDefaults></w:styles>');
   const buf=await zip.generateAsync({type:'arraybuffer',compression:'DEFLATE',compressionOptions:{level:6}});
   const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
   const url=URL.createObjectURL(blob);
@@ -7094,8 +7103,8 @@ async function exportExcel(){
   // ═══════════════════════════════════════════════════════
   // STYLE HELPERS
   // ═══════════════════════════════════════════════════════
-  const font  = (bold,sz,color,name='Calibri')=>({name,bold:!!bold,sz:sz||11,color:{rgb:color||C.ink}});
-  const fill  = hex=>({type:'pattern',pattern:'solid',fgColor:{rgb:hex}});
+  const font  = (bold,sz,color,name='Arial')=>({name,bold:!!bold,sz:sz||11,color:{rgb:'000000'}});
+  const fill  = hex=>undefined;
   const align = (h='left',v='center',wrap=false)=>({horizontal:h,vertical:v,wrapText:wrap});
   const bdr   = (c='CBD5E1',style='thin')=>{ const s={style,color:{rgb:c}}; return {top:s,bottom:s,left:s,right:s}; };
   const bdrT  = (c,style='medium')=>bdr(c||C.teal2,style);
@@ -7208,6 +7217,46 @@ async function exportExcel(){
     ws['!cols']=autoFitCols(aoa, maxC, colWidths, merges);
 
     if(merges) ws['!merges']=merges;
+
+    // ═══ PASTIKAN SEL LANJUTAN DALAM RANGE MERGE IKUT BER-BORDER ═══
+    // SheetJS tidak otomatis mewariskan style sel pertama (anchor) ke sel-sel lain
+    // dalam range merge; kalau dibiarkan, sel tsb "null" (tanpa objek sel sama sekali)
+    // sehingga tampak tanpa border di Excel meski border diminta untuk semua tabel.
+    if(merges){
+      merges.forEach(m=>{
+        const anchorAddr=XLSX.utils.encode_cell({r:m.s.r,c:m.s.c});
+        const anchorCell=ws[anchorAddr];
+        const anchorStyle=anchorCell&&anchorCell.s;
+        if(!anchorStyle) return;
+        for(let r=m.s.r;r<=m.e.r;r++){
+          for(let c=m.s.c;c<=m.e.c;c++){
+            if(r===m.s.r&&c===m.s.c) continue;
+            const addr=XLSX.utils.encode_cell({r,c});
+            if(!ws[addr]) ws[addr]={v:'',t:'s',s:anchorStyle};
+            else if(!ws[addr].s) ws[addr].s=anchorStyle;
+          }
+        }
+      });
+    }
+
+    // ═══ JARING PENGAMAN: pastikan SELURUH area terpakai (!ref) punya border ═══
+    // Baris yang lebih pendek dari kolom terlebar (maxC) meninggalkan sel kosong
+    // tanpa objek sel sama sekali di ujung kanan — sel itu tampil tanpa border.
+    // Loop ini mengisi setiap sel yang masih kosong di dalam !ref dengan style
+    // ber-border netral (S.dat), dan menambahkan border ke sel yang sudah ada
+    // tapi kebetulan belum punya properti border.
+    for(let r=0;r<aoa.length;r++){
+      for(let c=0;c<=maxC;c++){
+        const addr=XLSX.utils.encode_cell({r,c});
+        if(!ws[addr]){
+          ws[addr]={v:'',t:'s',s:S.dat};
+        } else if(!ws[addr].s){
+          ws[addr].s=S.dat;
+        } else if(!ws[addr].s.border){
+          ws[addr].s={...ws[addr].s,border:bdr()};
+        }
+      }
+    }
 
     // ═══ AUTO-FIT BARIS — tinggi dasar dari rowHeights, ditambah ekstra jika ada teks wrap panjang ═══
     ws['!rows']=autoFitRows(aoa, rowHeights, colWidths);
@@ -7378,7 +7427,8 @@ async function exportExcel(){
       rh.push(RH.gap);
       aoa.push([mkCell('  RINGKASAN USULAN BAKU MUTU (UBM)',{...S.secG,alignment:align('left')}),...Array(NC-1).fill(null)]);
       rh.push(RH.sec);
-      aoa.push(['Sumber','Total Debit (m³/hari)','Total Debit (m³/det)','Parameter','Kelas UBM','Tanggal','',''].map((c,i)=>mkCell(c,i<6?S.hdrG:S.dat)));
+      const ubmHdrCols=['Sumber','Total Debit (m³/hari)','Total Debit (m³/det)','Parameter','Kelas UBM','Tanggal'];
+      aoa.push([...ubmHdrCols.map(c=>mkCell(c,S.hdrG)), mkCell('',S.hdrG), mkCell('',S.hdrG)]);
       rh.push(RH.hdr);
       const ubmCls=document.getElementById('ubm-class')?.value||rc;
       const ubmClsRom=ubmCls?['I','II','III','IV'][ubmCls-1]:clsRom;
@@ -7386,6 +7436,12 @@ async function exportExcel(){
       aoa.push([nCell(ubmSources.length,S.datC),nCell(fmtV(totalQiDay,2),S.datR),nCell(fmtV(ubmTotalQi,6),S.datR),nCell(ubmParams.length,S.datC),mkCell('Kelas '+ubmClsRom,S.datC),mkCell(dateStr,S.datC),blank(S.dat),blank(S.dat)]);
       rh.push(RH.data);
     }
+
+    // Baris penutup — footer ringkas agar sheet terlihat tuntas & tidak menggantung
+    aoa.push(Array(NC).fill(blank({...S.dat,fill:fill(C.slateL)})));
+    rh.push(RH.gap);
+    aoa.push([mkCell('Dibuat otomatis oleh RiverLoad v2.0  ·  '+dateStr,{...S.meta,font:font(false,8,C.muted)}),...Array(NC-1).fill(null)]);
+    rh.push(RH.meta);
 
     const merges=[
       {s:{r:0,c:0},e:{r:0,c:NC-1}},{s:{r:1,c:0},e:{r:1,c:NC-1}},
@@ -7402,7 +7458,9 @@ async function exportExcel(){
       {s:{r:12,c:2},e:{r:12,c:NC-1}},
       {s:{r:13,c:0},e:{r:13,c:NC-1}},
     ];
-    addSheet(WB,'📋 Ringkasan',aoa,[32,16,16,16,32,14,14,14],merges,rh);
+    // Merge baris footer terakhir juga (baris terakhir dari aoa, index dinamis)
+    merges.push({s:{r:aoa.length-1,c:0},e:{r:aoa.length-1,c:NC-1}});
+    addSheet(WB,'📋 Ringkasan',aoa,[26,18,18,16,26,16,16,16],merges,rh,4);
   }
 
   // ═══════════════════════════════════════════════════════

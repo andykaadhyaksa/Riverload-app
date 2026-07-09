@@ -986,6 +986,7 @@ tr:hover td { background: rgba(26,176,166,0.02); }
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
 <script src="https://cdn.jsdelivr.net/npm/shpjs@4/dist/shp.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dxf-parser@1.1.2/dist/dxf-parser.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/geotiff@2.1.3/dist-browser/geotiff.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/georaster@1.6.0/dist/georaster.browser.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/georaster-layer-for-leaflet@3.10.0/dist/georaster-layer-for-leaflet.min.js"></script>
@@ -4542,15 +4543,16 @@ function getState(){
           fillColor:p.fillColor||p.color, fillStyle:p.fillStyle||'solid', fillOpacity:(p.fillOpacity!=null?p.fillOpacity:22),
           outlineColor:p.outlineColor||p.color, outlineWeight:(p.outlineWeight!=null?p.outlineWeight:2.5), legendName:p.legendName||'' };
       }))),
-      shp: JSON.parse(JSON.stringify((typeof _shpLayers !== 'undefined' ? _shpLayers : []).map(function(l){
-        return { id: l.id, name: l.name, color: l.color, count: l.count, features: l.features || [],
+      shp: (typeof _shpLayers !== 'undefined' ? _shpLayers : []).map(function(l){
+        /* features tidak disimpan di state — terlalu besar; layer direstorasi dari _shpFeatureCache */
+        return { id: l.id, name: l.name, color: l.color, count: l.count,
           fillStyle: l.fillStyle||'solid', fillOpacity: (l.fillOpacity!=null?l.fillOpacity:22), fillBaseColor: l.fillBaseColor||l.color,
           lineStyle: l.lineStyle||'solid', weight: (l.weight!=null?l.weight:2.2), opacity: (l.opacity!=null?l.opacity:85),
           legendName: l.legendName||'',
           outlineColorMode: l.outlineColorMode||'single', outlineColorField: l.outlineColorField||null, outlineStyleMap: l.outlineStyleMap||{},
           fillColorMode: l.fillColorMode||'single', fillColorField: l.fillColorField||null, fillStyleMap: l.fillStyleMap||{},
           labelField: l.labelField||null, labelFontSize: l.labelFontSize||11, labelColor: l.labelColor||'#1a1a1a', labelVisible: l.labelVisible!==false };
-      }))),
+      }),
       shpColorIdx: typeof _shpColorIdx !== 'undefined' ? _shpColorIdx : 0,
       layerOrder: JSON.parse(JSON.stringify(typeof _layerOrder !== 'undefined' ? _layerOrder : [])),
     },
@@ -4950,7 +4952,7 @@ function saveAuto(){
       sitesPersist();
       sitesRenderSwitcher();
     }
-  }, 600);
+  }, 1500);
 }
 
 function saveProject(){
@@ -8407,7 +8409,9 @@ if (document.readyState === 'loading') {
         <button class="btn btn-outline btn-sm" onclick="petaAddMode('circle')" style="color:#38bdf8;border-color:rgba(56,189,248,.4)" title="Gambar lingkaran — klik pusat, lalu tepi utk menentukan radius">◯ Lingkaran</button>
         <button class="btn btn-outline btn-sm" onclick="petaAddMode('ruler')" style="color:#f5c030;border-color:rgba(245,192,48,.4)" title="Ukur jarak/panjang di peta">📏 Ukur</button>
         <button class="btn btn-outline btn-sm" onclick="petaToggleShpPanel()" style="color:#f5c030;border-color:rgba(245,192,48,.4)" title="Upload file SHP sungai kamu sendiri">📂 Upload SHP</button>
+        <button class="btn btn-outline btn-sm" onclick="petaToggleDxfPanel()" style="color:#a78bfa;border-color:rgba(167,139,250,.4)" title="Upload file CAD DXF (garis/poligon) sebagai layer di peta">📐 Upload DXF</button>
         <button class="btn btn-outline btn-sm" onclick="petaToggleTifPanel()" style="color:#60aef0;border-color:rgba(96,174,240,.4)" title="Upload file GeoTIFF (mis. DEMNAS) sebagai layer elevasi">🏔️ Upload TIF</button>
+        <button class="btn btn-outline btn-sm" onclick="petaToggleKmzPanel()" style="color:#34d399;border-color:rgba(52,211,153,.4)" title="Upload file KMZ/KML (Google Earth) sebagai layer di peta">📍 Upload KMZ</button>
         <button class="btn btn-outline btn-sm" id="peta-btn-3d" onclick="open3DMap()" style="color:#7c5cff;border-color:rgba(124,92,255,.4)" title="Lihat medan sebagai peta 3D dari data DEM/TIF yang sudah diupload">🧊 Peta 3D</button>
       </div>
     </div>
@@ -8550,30 +8554,14 @@ if (document.readyState === 'loading') {
 
           <!-- Drop Zone -->
           <div class="shp-upload-zone" id="shp-drop-zone" ondragover="shpDragOver(event)" ondragleave="shpDragLeave(event)" ondrop="shpDrop(event)">
-            <input type="file" class="shp-upload-input" id="shp-file-input" multiple accept=".shp,.dbf,.prj,.shx" onchange="shpFilePicked(event)">
+            <input type="file" class="shp-upload-input" id="shp-file-input" multiple accept=".shp,.dbf,.prj,.shx,.zip" onchange="shpFilePicked(event)">
             <div class="shp-upload-icon">🗂️</div>
             <div class="shp-upload-title">Drag & drop file SHP di sini</div>
-            <div class="shp-upload-sub">atau klik untuk pilih file<br>Pilih .shp + .dbf + .prj sekaligus</div>
+            <div class="shp-upload-sub">Pilih banyak set .shp+.dbf+.prj sekaligus, atau .zip berisi banyak SHP<br><span style="color:var(--accent)">&#10022; Geometri campuran otomatis dipisah per tipe</span></div>
           </div>
 
-          <!-- Slot file terpilih -->
-          <div style="margin-top:10px" id="shp-slot-list">
-            <div class="shp-file-slot" id="shp-slot-shp">
-              <span class="slot-ext" style="background:rgba(245,192,48,0.15);color:#f5c030">.SHP</span>
-              <span class="slot-name" id="shp-name-shp">Belum dipilih</span>
-              <span class="slot-miss" id="shp-icon-shp">○</span>
-            </div>
-            <div class="shp-file-slot" id="shp-slot-dbf">
-              <span class="slot-ext" style="background:rgba(26,176,166,0.15);color:#1ab0a6">.DBF</span>
-              <span class="slot-name" id="shp-name-dbf">Belum dipilih</span>
-              <span class="slot-miss" id="shp-icon-dbf">○</span>
-            </div>
-            <div class="shp-file-slot" id="shp-slot-prj">
-              <span class="slot-ext" style="background:rgba(96,174,240,0.15);color:#60aef0">.PRJ</span>
-              <span class="slot-name" id="shp-name-prj">Belum dipilih</span>
-              <span class="slot-miss" id="shp-icon-prj">○</span>
-            </div>
-          </div>
+          <!-- Antrian SHP -->
+          <div id="shp-queue-list" style="margin-top:10px"></div>
 
           <!-- Progress bar -->
           <div class="shp-progress-bar" id="shp-progress-wrap" style="display:none">
@@ -8592,6 +8580,114 @@ if (document.readyState === 'loading') {
             <div style="font-family:var(--mono);font-size:9px;font-weight:700;color:var(--mute);text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px">Layer Aktif</div>
             <div id="shp-layers-items"></div>
             <button onclick="shpClearAll()" style="width:100%;margin-top:8px;font-family:var(--mono);font-size:10px;padding:6px;border-radius:var(--rs);background:transparent;border:1px solid rgba(255,68,68,0.3);color:var(--red);cursor:pointer">🗑 Hapus Semua Layer SHP</button>
+          </div>
+        </div>
+
+        <!-- Upload KMZ Panel -->
+        <div class="card" id="kmz-upload-panel" style="padding:14px 15px;flex-shrink:0;display:none">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <div style="font-family:var(--mono);font-size:9.5px;font-weight:700;color:#34d399;text-transform:uppercase;letter-spacing:.8px">📍 Upload KMZ / KML</div>
+            <button onclick="petaToggleKmzPanel()" style="background:none;border:none;color:var(--mute);cursor:pointer;font-size:14px;line-height:1;padding:0">✕</button>
+          </div>
+          <div style="font-family:var(--mono);font-size:8.5px;color:var(--mute);line-height:1.55;margin-bottom:10px">
+            Unggah file <b>.kmz</b> (Google Earth, paket terkompresi) atau <b>.kml</b> (XML terbuka) untuk ditampilkan sebagai layer di peta. Titik, garis, dan poligon dari Placemark KML akan dirender otomatis. Koordinat menggunakan <b>WGS84 (Lon/Lat)</b>.
+          </div>
+
+          <!-- Drop Zone -->
+          <div class="shp-upload-zone" id="kmz-drop-zone" ondragover="kmzDragOver(event)" ondragleave="kmzDragLeave(event)" ondrop="kmzDrop(event)">
+            <input type="file" class="shp-upload-input" id="kmz-file-input" accept=".kmz,.kml" onchange="kmzFilePicked(event)">
+            <div class="shp-upload-icon">📍</div>
+            <div class="shp-upload-title">Drag &amp; drop file KMZ atau KML di sini</div>
+            <div class="shp-upload-sub">atau klik untuk pilih file<br>Format: .kmz (Google Earth) atau .kml</div>
+          </div>
+
+          <!-- Slot file terpilih -->
+          <div style="margin-top:10px" id="kmz-slot-list">
+            <div class="shp-file-slot" id="kmz-slot-file">
+              <span class="slot-ext" style="background:rgba(52,211,153,0.15);color:#34d399">.KMZ</span>
+              <span class="slot-name" id="kmz-name-file">Belum dipilih</span>
+              <span class="slot-miss" id="kmz-icon-file">○</span>
+            </div>
+          </div>
+
+          <!-- Progress bar -->
+          <div class="shp-progress-bar" id="kmz-progress-wrap" style="display:none">
+            <div class="shp-progress-fill" id="kmz-progress-fill"></div>
+          </div>
+          <div id="kmz-status-txt" style="font-family:var(--mono);font-size:9.5px;color:var(--mute);text-align:center;margin-bottom:8px;min-height:14px"></div>
+
+          <!-- Tombol load -->
+          <button id="kmz-load-btn" onclick="kmzLoadFile()" disabled
+            style="width:100%;font-family:var(--mono);font-size:11px;font-weight:700;padding:9px;border-radius:var(--rs);border:none;cursor:pointer;background:rgba(52,211,153,0.12);color:#34d399;border:1px solid rgba(52,211,153,0.3);transition:all .2s;opacity:0.4">
+            ⚡ Tampilkan di Peta
+          </button>
+
+          <!-- Daftar layer yang sudah di-load -->
+          <div id="kmz-layers-list" style="margin-top:12px;display:none">
+            <div style="font-family:var(--mono);font-size:9px;font-weight:700;color:var(--mute);text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px">Layer KMZ Aktif</div>
+            <div id="kmz-layers-items"></div>
+            <button onclick="kmzClearAll()" style="width:100%;margin-top:8px;font-family:var(--mono);font-size:10px;padding:6px;border-radius:var(--rs);background:transparent;border:1px solid rgba(255,68,68,0.3);color:var(--red);cursor:pointer">🗑 Hapus Semua Layer KMZ</button>
+          </div>
+        </div>
+
+        <!-- Upload DXF Panel -->
+        <div class="card" id="dxf-upload-panel" style="padding:14px 15px;flex-shrink:0;display:none">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <div style="font-family:var(--mono);font-size:9.5px;font-weight:700;color:#a78bfa;text-transform:uppercase;letter-spacing:.8px">📐 Upload DXF</div>
+            <button onclick="petaToggleDxfPanel()" style="background:none;border:none;color:var(--mute);cursor:pointer;font-size:14px;line-height:1;padding:0">✕</button>
+          </div>
+          <div style="font-family:var(--mono);font-size:8.5px;color:var(--mute);line-height:1.5;margin-bottom:10px">Unggah file CAD <b>.dxf</b> berkoordinat (mis. hasil digitasi AutoCAD/QGIS) untuk ditampilkan sebagai layer garis/poligon di peta. Koordinat DXF harus sudah dalam sistem <b>geografis (Lon/Lat, WGS84)</b> atau <b>UTM</b> — pilih zona UTM di bawah kalau file kamu memakai koordinat UTM (meter).</div>
+
+          <!-- Pilihan sistem koordinat -->
+          <div style="margin-bottom:10px">
+            <div style="font-family:var(--mono);font-size:8.5px;color:var(--mute);margin-bottom:4px">Sistem koordinat file DXF</div>
+            <select class="finput" id="dxf-crs-select" style="font-size:10.5px;padding:6px 8px;width:100%">
+              <option value="wgs84">Geografis / Lon,Lat (WGS84)</option>
+              <option value="utm-s" selected>UTM Zona Indonesia — Belahan Selatan (S)</option>
+              <option value="utm-n">UTM Zona Indonesia — Belahan Utara (N)</option>
+            </select>
+          </div>
+          <div style="margin-bottom:10px" id="dxf-utm-zone-wrap">
+            <div style="font-family:var(--mono);font-size:8.5px;color:var(--mute);margin-bottom:4px">Zona UTM (Indonesia: 46–54)</div>
+            <select class="finput" id="dxf-utm-zone" style="font-size:10.5px;padding:6px 8px;width:100%">
+              <option>46</option><option>47</option><option>48</option><option selected>49</option><option>50</option><option>51</option><option>52</option><option>53</option><option>54</option>
+            </select>
+          </div>
+
+          <!-- Drop Zone -->
+          <div class="shp-upload-zone" id="dxf-drop-zone" ondragover="dxfDragOver(event)" ondragleave="dxfDragLeave(event)" ondrop="dxfDrop(event)">
+            <input type="file" class="shp-upload-input" id="dxf-file-input" accept=".dxf" onchange="dxfFilePicked(event)">
+            <div class="shp-upload-icon">📐</div>
+            <div class="shp-upload-title">Drag &amp; drop file .dxf di sini</div>
+            <div class="shp-upload-sub">atau klik untuk pilih file<br>Format: AutoCAD DXF (garis, polyline, poligon)</div>
+          </div>
+
+          <!-- Slot file terpilih -->
+          <div style="margin-top:10px" id="dxf-slot-list">
+            <div class="shp-file-slot" id="dxf-slot-dxf">
+              <span class="slot-ext" style="background:rgba(167,139,250,0.15);color:#a78bfa">.DXF</span>
+              <span class="slot-name" id="dxf-name-dxf">Belum dipilih</span>
+              <span class="slot-miss" id="dxf-icon-dxf">○</span>
+            </div>
+          </div>
+
+          <!-- Progress bar -->
+          <div class="shp-progress-bar" id="dxf-progress-wrap" style="display:none">
+            <div class="shp-progress-fill" id="dxf-progress-fill"></div>
+          </div>
+          <div id="dxf-status-txt" style="font-family:var(--mono);font-size:9.5px;color:var(--mute);text-align:center;margin-bottom:8px;min-height:14px"></div>
+
+          <!-- Tombol load -->
+          <button id="dxf-load-btn" onclick="dxfLoadFile()" disabled
+            style="width:100%;font-family:var(--mono);font-size:11px;font-weight:700;padding:9px;border-radius:var(--rs);border:none;cursor:pointer;background:rgba(167,139,250,0.12);color:#a78bfa;border:1px solid rgba(167,139,250,0.3);transition:all .2s;opacity:0.4">
+            ⚡ Tampilkan di Peta
+          </button>
+
+          <!-- Daftar layer DXF yang sudah dimuat -->
+          <div id="dxf-layers-list" style="margin-top:12px;display:none">
+            <div style="font-family:var(--mono);font-size:9px;font-weight:700;color:var(--mute);text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px">Layer DXF Aktif</div>
+            <div id="dxf-layers-items"></div>
+            <button onclick="dxfClearAll()" style="width:100%;margin-top:8px;font-family:var(--mono);font-size:10px;padding:6px;border-radius:var(--rs);background:transparent;border:1px solid rgba(255,68,68,0.3);color:var(--red);cursor:pointer">🗑 Hapus Semua Layer DXF</button>
           </div>
         </div>
 
@@ -9986,20 +10082,137 @@ function petaInit() {
     { attribution: '\u00a9 OpenStreetMap &mdash; Humanitarian OSM Team', subdomains: 'abc', maxZoom: 19, crossOrigin: true }
   );
 
+  /* ── Basemap tambahan ── */
+  var osmCycle = L.tileLayer(
+    'https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png',
+    { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &mdash; CyclOSM', subdomains: 'abc', maxZoom: 20, crossOrigin: true }
+  );
+
+  var esriStreet = L.tileLayer(
+    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+    { attribution: 'Tiles &copy; Esri &mdash; Esri, HERE, Garmin, FAO, NOAA', maxZoom: 19, crossOrigin: true }
+  );
+
+  var esriNatGeo = L.tileLayer(
+    'https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{z}/{y}/{x}',
+    { attribution: 'Tiles &copy; Esri &mdash; National Geographic, Esri, DeLorme, NAVTEQ', maxZoom: 16, crossOrigin: true }
+  );
+
+  var esriGray = L.tileLayer(
+    'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+    { attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ', maxZoom: 16, crossOrigin: true }
+  );
+
+  var esriDarkGray = L.tileLayer(
+    'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+    { attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme', maxZoom: 16, crossOrigin: true }
+  );
+
+  var esriUsgsImageryTopo = L.tileLayer(
+    'https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/{z}/{y}/{x}',
+    { attribution: 'Tiles courtesy of the <a href="https://usgs.gov/">U.S. Geological Survey</a>', maxZoom: 20, crossOrigin: true }
+  );
+
+  var stadiaSmooth = L.tileLayer(
+    'https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png',
+    { attribution: '&copy; <a href="https://stadiamaps.com/">Stadia Maps</a>, &copy; <a href="https://openmaptiles.org/">OpenMapTiles</a> &copy; OpenStreetMap', maxZoom: 20, crossOrigin: true }
+  );
+
+  var stadiaDark = L.tileLayer(
+    'https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png',
+    { attribution: '&copy; <a href="https://stadiamaps.com/">Stadia Maps</a>', maxZoom: 20, crossOrigin: true }
+  );
+
+  var stadiaOutdoor = L.tileLayer(
+    'https://tiles.stadiamaps.com/tiles/outdoors/{z}/{x}/{y}{r}.png',
+    { attribution: '&copy; <a href="https://stadiamaps.com/">Stadia Maps</a>', maxZoom: 20, crossOrigin: true }
+  );
+
+  var stadiaStamenTerrain = L.tileLayer(
+    'https://tiles.stadiamaps.com/tiles/stamen_terrain/{z}/{x}/{y}{r}.png',
+    { attribution: '&copy; <a href="https://stadiamaps.com/">Stadia Maps</a> &copy; <a href="https://stamen.com/">Stamen Design</a>', maxZoom: 18, crossOrigin: true }
+  );
+
+  var stadiaStamenWatercolor = L.tileLayer(
+    'https://tiles.stadiamaps.com/tiles/stamen_watercolor/{z}/{x}/{y}.jpg',
+    { attribution: '&copy; <a href="https://stadiamaps.com/">Stadia Maps</a> &copy; <a href="https://stamen.com/">Stamen Design</a>', maxZoom: 16, crossOrigin: true }
+  );
+
+  var osmFr = L.tileLayer(
+    'https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png',
+    { attribution: '&copy; OpenStreetMap France &mdash; &copy; OSM contributors', subdomains: 'abc', maxZoom: 20, crossOrigin: true }
+  );
+
+  var inarupa = L.tileLayer(
+    'https://tiled.big.go.id/arcgis/rest/services/Rupabumi/RBI50K/MapServer/tile/{z}/{y}/{x}',
+    { attribution: '&copy; <a href="https://big.go.id/">BIG</a> — INARUPA / RBI 1:50.000', maxZoom: 15, minZoom: 3, crossOrigin: true }
+  );
+
+  var googleSat = L.tileLayer(
+    'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
+    { attribution: '&copy; Google', maxZoom: 20, crossOrigin: true }
+  );
+
+  var googleHybrid = L.tileLayer(
+    'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+    { attribution: '&copy; Google', maxZoom: 20, crossOrigin: true }
+  );
+
+  var googleTerrain = L.tileLayer(
+    'https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}',
+    { attribution: '&copy; Google', maxZoom: 20, crossOrigin: true }
+  );
+
+  var googleRoad = L.tileLayer(
+    'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
+    { attribution: '&copy; Google', maxZoom: 20, crossOrigin: true }
+  );
+
+  var esriOceanLabel = L.layerGroup([
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}',
+      { attribution: 'Tiles &copy; Esri &mdash; Esri, GEBCO, NOAA', maxZoom: 13, crossOrigin: true }),
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Reference/MapServer/tile/{z}/{y}/{x}',
+      { maxZoom: 13, crossOrigin: true })
+  ]);
+
   L.control.layers(
     {
+      /* ── OSM / Open ── */
       '\uD83D\uDDFA\uFE0F OSM Standard': osm,
-      '\uD83D\uDEF0\uFE0F Satelit (Esri)': sat,
-      '\uD83D\uDEF0\uFE0F Satelit + Label': satLabels,
-      '\uD83C\uDFD4\uFE0F Topografi (OTM)': topo,
-      '\uD83D\uDDFE Topografi (Esri)': esriTopo,
-      '\u26F0\uFE0F Terrain (Esri)': esriTerrain,
-      '\uD83C\uDF04 Shaded Relief': esriShaded,
-      '\uD83C\uDF0A Laut & Oseanografi': esriOcean,
+      '\uD83D\uDD06 OSM France': osmFr,
+      '\uD83D\uDEB4 OSM CyclOSM (Kontur)': osmCycle,
+      '\uD83E\uDE7A Humanitarian (HOT)': humanitarian,
+      /* ── Google ── */
+      '\uD83C\uDF10 Google Satellite': googleSat,
+      '\uD83C\uDF10 Google Hybrid (Sat+Jalan)': googleHybrid,
+      '\uD83C\uDF10 Google Terrain': googleTerrain,
+      '\uD83C\uDF10 Google Road': googleRoad,
+      /* ── Esri / ArcGIS ── */
+      '\uD83D\uDEF0\uFE0F Satelit Esri': sat,
+      '\uD83D\uDEF0\uFE0F Satelit Esri + Label': satLabels,
+      '\uD83D\uDDFE Topografi Esri': esriTopo,
+      '\u26F0\uFE0F Terrain Esri': esriTerrain,
+      '\uD83C\uDF04 Shaded Relief Esri': esriShaded,
+      '\uD83C\uDFD9\uFE0F Street Map Esri': esriStreet,
+      '\uD83C\uDF0E National Geographic Esri': esriNatGeo,
+      '\u2B1C Esri Gray Canvas': esriGray,
+      '\u2B1B Esri Dark Gray Canvas': esriDarkGray,
+      '\uD83C\uDF0A Laut & Oseanografi Esri': esriOcean,
+      '\uD83C\uDF0A Laut + Label Esri': esriOceanLabel,
+      /* ── Topo ── */
+      '\uD83C\uDFD4\uFE0F Topografi (OpenTopoMap)': topo,
+      '\uD83D\uDDFB USGS Imagery Topo': esriUsgsImageryTopo,
+      '\uD83C\uDF3F Stadia Outdoors': stadiaOutdoor,
+      '\uD83C\uDFDE\uFE0F Stamen Terrain (Stadia)': stadiaStamenTerrain,
+      /* ── Stadia / Carto ── */
       '\u2601\uFE0F Carto Light': cartoLight,
-      '\uD83C\uDF11 Carto Dark': cartoDark,
       '\uD83D\uDCCB Carto (Tanpa Label)': cartoNoLabel,
-      '\uD83E\uDE7A Humanitarian (HOT)': humanitarian
+      '\uD83C\uDF11 Carto Dark': cartoDark,
+      '\uD83E\uDEE7 Stadia Smooth Light': stadiaSmooth,
+      '\uD83C\uDF11 Stadia Smooth Dark': stadiaDark,
+      '\uD83C\uDFA8 Stamen Watercolor (Stadia)': stadiaStamenWatercolor,
+      /* ── Indonesia ── */
+      '\uD83C\uDDEE\uD83C\uDDE9 INARUPA BIG (RBI 1:50K)': inarupa
     },
     {},
     { position: 'topright', collapsed: true }
@@ -10166,7 +10379,8 @@ document.addEventListener('keydown', function(e) {
    SHP UPLOAD — drag & drop .shp + .dbf + .prj ke peta Leaflet
    ══════════════════════════════════════════════════════════════ */
 
-var _shpFiles      = { shp: null, dbf: null, prj: null };
+var _shpFiles      = { shp: null, dbf: null, prj: null }; // legacy (unused, replaced by _shpQueue)
+var _shpQueue      = []; // [{baseName, shp, dbf, prj, type}]
 var _shpLayers     = []; // [{id, name, color, layer, count}]
 var _shpColorPalette = ['#f5c030','#e07b54','#a78bfa','#34d399','#f472b6','#38bdf8','#fb923c','#a3e635'];
 var _shpColorIdx   = 0;
@@ -10196,38 +10410,131 @@ function shpFilePicked(e) {
   e.target.value = '';
 }
 
-/* ── Proses file yang dipilih/di-drop ── */
+/* ── Multi-SHP Queue System ──
+   _shpQueue: [{baseName, shp, dbf, prj}]  — satu entri per set SHP
+   File di-group berdasarkan nama dasar (tanpa ekstensi).
+   ZIP: diekstrak dulu menggunakan JSZip, lalu diproses sebagai buffer langsung.
+*/
+/* Kelompokkan file mentah ke dalam _shpQueue berdasarkan baseName */
 function shpProcessFiles(files) {
+  var zipFiles = [];
+  var byBase = {}; // baseName_lower -> {displayName, shp,dbf,prj}
+
   files.forEach(function(f) {
-    var ext = f.name.split('.').pop().toLowerCase();
-    if (ext === 'shp') { _shpFiles.shp = f; shpUpdateSlot('shp', f.name); }
-    else if (ext === 'dbf') { _shpFiles.dbf = f; shpUpdateSlot('dbf', f.name); }
-    else if (ext === 'prj') { _shpFiles.prj = f; shpUpdateSlot('prj', f.name); }
-    else if (ext === 'shx') { /* shx tidak wajib untuk shpjs */ }
+    var parts = f.name.split('.');
+    var ext = parts.pop().toLowerCase();
+    // baseName: gabungkan sisa (handle nama file dengan titik di tengah)
+    var base = parts.join('.').toLowerCase();
+    if (!base) return; // abaikan file tanpa nama dasar
+    if (ext === 'zip') { zipFiles.push(f); return; }
+    if (!byBase[base]) byBase[base] = { baseName: parts.join('.'), shp: null, dbf: null, prj: null };
+    if (ext === 'shp') byBase[base].shp = f;
+    else if (ext === 'dbf') byBase[base].dbf = f;
+    else if (ext === 'prj') byBase[base].prj = f;
+    // .shx diabaikan
   });
-  shpCheckReady();
+
+  Object.keys(byBase).forEach(function(base) {
+    var entry = byBase[base];
+    if (!entry.shp) return; // tidak ada .shp, skip
+    _shpQueue.push({
+      baseName: entry.baseName,
+      shp: entry.shp,
+      dbf: entry.dbf,   // boleh null — shpParseAndRender akan handle
+      prj: entry.prj || null,
+      type: 'file',
+      noDB: !entry.dbf
+    });
+  });
+
+  // Proses ZIP secara async (jika ada)
+  if (zipFiles.length) {
+    var zipPromises = zipFiles.map(function(zf) {
+      return shpExtractZip(zf).then(function(entries) {
+        entries.forEach(function(e) { _shpQueue.push(e); });
+      }).catch(function(err) {
+        toast('ZIP gagal dibaca: ' + zf.name + ' — ' + err.message, 'err');
+      });
+    });
+    Promise.all(zipPromises).then(function() {
+      shpRenderQueue();
+      shpCheckReady();
+    });
+  } else {
+    shpRenderQueue();
+    shpCheckReady();
+  }
 }
 
-function shpUpdateSlot(ext, filename) {
-  var nameEl = document.getElementById('shp-name-' + ext);
-  var iconEl = document.getElementById('shp-icon-' + ext);
-  var slotEl = document.getElementById('shp-slot-' + ext);
-  if (nameEl) nameEl.textContent = filename;
-  if (iconEl) { iconEl.textContent = '✓'; iconEl.className = 'slot-ok'; }
-  if (slotEl) slotEl.classList.add('has-file');
+/* Ekstrak ZIP → array [{baseName, shp:ArrayBuffer, dbf:ArrayBuffer, prj:string, type:'buffer'}] */
+function shpExtractZip(zipFile) {
+  return new Promise(function(resolve, reject) {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      JSZip.loadAsync(e.target.result).then(function(zip) {
+        var byBase = {};
+        var tasks = [];
+        zip.forEach(function(path, file) {
+          if (file.dir) return;
+          var fname = path.split('/').pop();
+          var ext = fname.split('.').pop().toLowerCase();
+          var base = fname.slice(0, fname.length - ext.length - 1).toLowerCase();
+          if (['shp','dbf','prj'].indexOf(ext) < 0) return;
+          if (!byBase[base]) byBase[base] = { baseName: base, shp: null, dbf: null, prj: null, type: 'buffer' };
+          var entry = byBase[base];
+          if (ext === 'prj') {
+            tasks.push(file.async('string').then(function(txt) { entry.prj = txt; }));
+          } else {
+            tasks.push(file.async('arraybuffer').then(function(buf) { entry[ext] = buf; }));
+          }
+        });
+        Promise.all(tasks).then(function() {
+          var valid = Object.keys(byBase).map(function(k){ return byBase[k]; })
+            .filter(function(e){ return e.shp && e.dbf; });
+          resolve(valid);
+        });
+      }).catch(reject);
+    };
+    reader.onerror = function() { reject(new Error('Gagal membaca ZIP')); };
+    reader.readAsArrayBuffer(zipFile);
+  });
+}
+
+/* Render antrian ke panel UI */
+function shpRenderQueue() {
+  var el = document.getElementById('shp-queue-list');
+  if (!el) return;
+  if (!_shpQueue.length) { el.innerHTML = ''; return; }
+
+  el.innerHTML = _shpQueue.map(function(entry, i) {
+    var warn = entry.noDB ? ' <span style="color:#f5c030;font-size:8px">⚠ tanpa .dbf</span>' : '';
+    var badge = entry.type === 'buffer' ? ' <span style="font-size:8px;color:#60aef0">ZIP</span>' : '';
+    return '<div class="shp-file-slot" style="' + (entry.noDB ? 'opacity:.55' : '') + '">' +
+      '<span class="slot-ext" style="background:rgba(245,192,48,0.15);color:#f5c030">.SHP</span>' +
+      '<span class="slot-name" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + entry.baseName + '">' + entry.baseName + badge + warn + '</span>' +
+      '<button onclick="shpQueueRemove(' + i + ')" style="background:none;border:none;color:var(--mute);cursor:pointer;font-size:11px;padding:2px 4px" title="Hapus dari antrian">✕</button>' +
+    '</div>';
+  }).join('');
+}
+
+function shpQueueRemove(i) {
+  _shpQueue.splice(i, 1);
+  shpRenderQueue();
+  shpCheckReady();
 }
 
 function shpCheckReady() {
   var btn = document.getElementById('shp-load-btn');
   if (!btn) return;
-  var ready = !!_shpFiles.shp && !!_shpFiles.dbf;
+  var ready = _shpQueue.length > 0;
   btn.disabled = !ready;
   btn.style.opacity = ready ? '1' : '0.4';
   btn.style.cursor = ready ? 'pointer' : 'default';
   if (ready) {
-    shpSetStatus('File siap — klik "Tampilkan di Peta"', '#1ab0a6');
-  } else if (_shpFiles.shp && !_shpFiles.dbf) {
-    shpSetStatus('Tambahkan file .dbf untuk atribut nama sungai', '#f5c030');
+    var noDbCount = _shpQueue.filter(function(e){ return e.noDB; }).length;
+    var msg = _shpQueue.length + ' set SHP siap — klik "Tampilkan di Peta"';
+    if (noDbCount) msg += ' (' + noDbCount + ' tanpa .dbf)';
+    shpSetStatus(msg, '#1ab0a6');
   } else {
     shpSetStatus('', '');
   }
@@ -10248,39 +10555,195 @@ function shpSetProgress(pct) {
 
 /* ── Load & render ke peta ── */
 function shpLoadFiles() {
-  if (!_shpFiles.shp || !_shpFiles.dbf) return;
+  var valid = _shpQueue.slice(); // proses semua, termasuk yang tanpa .dbf
+  if (!valid.length) return;
   if (!_map) { toast('Peta belum terbuka — buka tab Pemetaan dulu', 'err'); return; }
 
   var btn = document.getElementById('shp-load-btn');
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ Memproses...'; }
-  shpSetStatus('Membaca file...', 'var(--mute)');
-  shpSetProgress(10);
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Memproses ' + valid.length + ' SHP...'; }
+  shpSetStatus('Memproses antrian...', 'var(--mute)');
+  shpSetProgress(5);
 
-  // Baca semua file sebagai ArrayBuffer
-  var readers = {};
-  var exts = ['shp', 'dbf'];
-  if (_shpFiles.prj) exts.push('prj');
-  var done = 0;
+  var total = valid.length, done = 0;
 
-  exts.forEach(function(ext) {
-    var reader = new FileReader();
-    reader.onload = function(e) {
-      readers[ext] = e.target.result;
-      done++;
-      shpSetProgress(10 + (done / exts.length) * 40);
-      if (done === exts.length) shpParseAndRender(readers);
-    };
-    if (ext === 'prj') {
-      reader.readAsText(_shpFiles[ext]);
-    } else {
-      reader.readAsArrayBuffer(_shpFiles[ext]);
+  function processNext(i) {
+    if (i >= valid.length) {
+      // Selesai semua
+      _shpQueue = [];
+      shpRenderQueue();
+      shpCheckReady();
+      shpSetProgress(100);
+      if (btn) { btn.disabled = true; btn.textContent = '⚡ Tampilkan di Peta'; btn.style.opacity = '0.4'; }
+      shpSetStatus('✓ Semua SHP berhasil dimuat', '#1ab0a6');
+      return;
     }
+    var entry = valid[i];
+    shpSetStatus('(' + (i+1) + '/' + total + ') Membaca ' + entry.baseName + '...', 'var(--mute)');
+    shpSetProgress(5 + (i / total) * 90);
+    shpReadEntry(entry).then(function(buffers) {
+      shpParseAndRender(buffers, entry.baseName, function() {
+        done++;
+        processNext(i + 1);
+      });
+    }).catch(function(err) {
+      toast('❌ ' + entry.baseName + ': ' + err.message, 'err');
+      processNext(i + 1);
+    });
+  }
+  processNext(0);
+}
+
+/* Baca entry (file atau buffer) → Promise<{shp, dbf, prj}> */
+function shpReadEntry(entry) {
+  if (entry.type === 'buffer') {
+    // Sudah jadi ArrayBuffer (dari ZIP)
+    return Promise.resolve({ shp: entry.shp, dbf: entry.dbf, prj: entry.prj || null });
+  }
+  // File object — baca dengan FileReader
+  return new Promise(function(resolve, reject) {
+    var readers = {}, doneCount = 0;
+    var exts = ['shp', 'dbf'];
+    if (entry.prj) exts.push('prj');
+    exts.forEach(function(ext) {
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        readers[ext] = e.target.result;
+        doneCount++;
+        if (doneCount === exts.length) resolve(readers);
+      };
+      reader.onerror = function() { reject(new Error('Gagal membaca ' + ext)); };
+      if (ext === 'prj') reader.readAsText(entry[ext]);
+      else reader.readAsArrayBuffer(entry[ext]);
+    });
   });
 }
 
-/* Tentukan warna sebuah fitur SHP: kalau colorMode='attribute' & field terpilih,
-   warna diambil dari colorMap berdasarkan nilai atribut fitur itu; selain itu pakai warna tunggal. */
-/* Ambil nilai atribut suatu fitur sbg string kunci (utk pencocokan style-map) */
+
+/* ── Parse GeoJSON → auto-split per tipe geometri → render ──
+   Kalau ada campuran Point+Line+Polygon dalam satu SHP, tiap tipe
+   dijadikan layerObj terpisah dengan suffix _Titik/_Garis/_Area.
+   callback() dipanggil setelah semua sub-layer selesai dirender.
+*/
+function shpParseAndRender(buffers, baseName, callback) {
+  callback = callback || function(){};
+
+  // Gunakan pola Promise.all yang sama dengan versi asli shpjs
+  var parsePromise;
+  if (buffers.dbf) {
+    parsePromise = Promise.all([
+      Promise.resolve(shp.parseShp(buffers.shp, buffers.prj || null)),
+      Promise.resolve(shp.parseDbf(buffers.dbf))
+    ]).then(function(results) {
+      return shp.combine(results);
+    });
+  } else {
+    // tanpa DBF: parse geometri saja, buat properties kosong
+    parsePromise = Promise.resolve(shp.parseShp(buffers.shp, buffers.prj || null))
+      .then(function(geoms) {
+        var feats = (Array.isArray(geoms) ? geoms : []).map(function(g) {
+          return { type: 'Feature', geometry: g, properties: {} };
+        });
+        return { type: 'FeatureCollection', features: feats };
+      });
+  }
+  parsePromise.then(function(geojson) {
+    var features = geojson.features || [];
+    if (!features.length) {
+      toast('⚠ ' + baseName + ' — tidak ada fitur', 'warn');
+      callback(); return;
+    }
+
+    /* Kelompokkan fitur per tipe geometri utama */
+    var groups = { Point: [], Line: [], Polygon: [] };
+    features.forEach(function(f) {
+      var t = f.geometry ? f.geometry.type : '';
+      if (t === 'Point' || t === 'MultiPoint')             groups.Point.push(f);
+      else if (t === 'LineString' || t === 'MultiLineString') groups.Line.push(f);
+      else if (t === 'Polygon' || t === 'MultiPolygon')    groups.Polygon.push(f);
+      else { /* GeometryCollection atau null: coba split rekursif */ 
+        if (f.geometry && f.geometry.type === 'GeometryCollection') {
+          (f.geometry.geometries || []).forEach(function(g) {
+            var clone = Object.assign({}, f, { geometry: g });
+            var gt = g.type;
+            if (gt === 'Point' || gt === 'MultiPoint') groups.Point.push(clone);
+            else if (gt === 'LineString' || gt === 'MultiLineString') groups.Line.push(clone);
+            else if (gt === 'Polygon' || gt === 'MultiPolygon') groups.Polygon.push(clone);
+          });
+        }
+      }
+    });
+
+    /* Hitung berapa grup yang aktif */
+    var activeGroups = Object.keys(groups).filter(function(k){ return groups[k].length > 0; });
+    var multiType = activeGroups.length > 1;
+
+    /* Nama-suffix dan ikon per tipe */
+    var META = {
+      Point:   { suffix: multiType ? ' — Titik'  : '', icon: '●', baseWeight: 0,   baseFillOp: 90 },
+      Line:    { suffix: multiType ? ' — Garis'  : '', icon: '╱', baseWeight: 2.5, baseFillOp: 0  },
+      Polygon: { suffix: multiType ? ' — Area'   : '', icon: '▭', baseWeight: 2.0, baseFillOp: 22 }
+    };
+
+    /* Render tiap grup */
+    var bounds = L.latLngBounds([]);
+    var layersAdded = 0;
+
+    activeGroups.forEach(function(geomType) {
+      var feats = groups[geomType];
+      var meta  = META[geomType];
+      var layerName = baseName + meta.suffix;
+      var color = _shpColorPalette[_shpColorIdx % _shpColorPalette.length];
+      _shpColorIdx++;
+
+      var fc = { type: 'FeatureCollection', features: feats };
+      var layerId = 'shp_' + Date.now() + '_' + geomType;
+
+      var layerObj = {
+        id: layerId, name: layerName, color: color,
+        layer: null, count: feats.length, features: feats,
+        geomType: geomType,              /* simpan tipe untuk referensi */
+        fillStyle: 'solid',
+        fillOpacity: meta.baseFillOp,
+        fillBaseColor: color,
+        lineStyle: 'solid',
+        weight: meta.baseWeight || 2.2,
+        opacity: 85,
+        outlineColorMode: 'single', outlineColorField: null, outlineStyleMap: {},
+        fillColorMode: 'single',   fillColorField: null,   fillStyleMap: {},
+        labelField: null, labelFontSize: 11, labelColor: '#1a1a1a',
+        labelVisible: true, labelLayer: null
+      };
+
+      layerObj.layer = _shpBuildLeafletLayer(fc, layerObj, layerName);
+      layerObj.layer.addTo(_map);
+
+      try {
+        var lb = L.geoJSON(fc).getBounds();
+        if (lb.isValid()) bounds.extend(lb);
+      } catch(e) {}
+
+      _shpLayers.push(layerObj);
+      layersAdded++;
+
+      toast('✓ ' + layerName + ' — ' + feats.length.toLocaleString() + ' fitur', 'ok');
+    });
+
+    if (layersAdded > 0) {
+      if (typeof _layerOrderSync === 'function') _layerOrderSync();
+      shpUpdateLayerList();
+      try { if (bounds.isValid()) _map.fitBounds(bounds, { padding: [30, 30] }); } catch(e) {}
+    }
+
+    callback();
+  }).catch(function(err) {
+    console.error('SHP parse error:', err);
+    toast('❌ Gagal membaca ' + baseName + ': ' + err.message, 'err');
+    callback();
+  });
+}
+
+
+
 function _shpAttrVal(feature, field) {
   var val = (feature && feature.properties) ? feature.properties[field] : undefined;
   return (val === undefined || val === null || val === '') ? '(kosong)' : String(val);
@@ -10522,87 +10985,795 @@ function shpToggleLabelVisible(id) {
   _persist();
 }
 
+var _rebuildRafId = {};
 function _shpRebuildLayer(layerObj) {
-  if (layerObj.layer && _map && _map.hasLayer(layerObj.layer)) _map.removeLayer(layerObj.layer);
-  var geojson = { type:'FeatureCollection', features: layerObj.features || [] };
-  layerObj.layer = _shpBuildLeafletLayer(geojson, layerObj, layerObj.name);
-  if (_map) layerObj.layer.addTo(_map);
-  if (typeof _layerOrderApply === 'function') _layerOrderApply();
+  // Gunakan requestAnimationFrame agar rapid calls (slider drag) hanya render sekali per frame
+  if (_rebuildRafId[layerObj.id]) cancelAnimationFrame(_rebuildRafId[layerObj.id]);
+  _rebuildRafId[layerObj.id] = requestAnimationFrame(function() {
+    delete _rebuildRafId[layerObj.id];
+    if (layerObj.layer && _map && _map.hasLayer(layerObj.layer)) _map.removeLayer(layerObj.layer);
+    var geojson = { type:'FeatureCollection', features: layerObj.features || [] };
+    layerObj.layer = _shpBuildLeafletLayer(geojson, layerObj, layerObj.name);
+    if (_map) layerObj.layer.addTo(_map);
+    if (typeof _layerOrderApply === 'function') _layerOrderApply();
+  });
 }
 
-function shpParseAndRender(buffers) {
-  shpSetStatus('Mengurai geometri SHP...', 'var(--mute)');
-  shpSetProgress(55);
+/* ══════════════════════════════════════════════════════════════
+   KMZ / KML UPLOAD — Google Earth format → GeoJSON → Leaflet
+   ══════════════════════════════════════════════════════════════ */
 
-  // shpjs: parse dari ArrayBuffer
-  Promise.all([
-    Promise.resolve(shp.parseShp(buffers.shp, buffers.prj || null)),
-    Promise.resolve(shp.parseDbf(buffers.dbf))
-  ]).then(function(results) {
-    return shp.combine(results);
-  })
-    .then(function(geojson) {
-      shpSetProgress(80);
-      shpSetStatus('Merender ke peta...', 'var(--mute)');
+var _kmzFile = null;
+var _kmzLayers = []; // layer KMZ terpisah dari _shpLayers
+var _kmzColorPalette = ['#34d399','#fb923c','#f472b6','#38bdf8','#a3e635','#f5c030','#a78bfa','#e07b54'];
+var _kmzColorIdx = 0;
 
-      var count = geojson.features ? geojson.features.length : 0;
-      var layerName = _shpFiles.shp.name.replace(/\.shp$/i, '');
+function petaToggleKmzPanel() {
+  var panel = document.getElementById('kmz-upload-panel');
+  if (!panel) return;
+  var isVisible = panel.style.display !== 'none';
+  panel.style.display = isVisible ? 'none' : 'block';
+}
+
+/* ── Drag & Drop KMZ ── */
+function kmzDragOver(e) { e.preventDefault(); document.getElementById('kmz-drop-zone').classList.add('drag-over'); }
+function kmzDragLeave(e) { document.getElementById('kmz-drop-zone').classList.remove('drag-over'); }
+function kmzDrop(e) {
+  e.preventDefault();
+  document.getElementById('kmz-drop-zone').classList.remove('drag-over');
+  var files = Array.from(e.dataTransfer.files);
+  if (files.length) kmzProcessFile(files[0]);
+}
+function kmzFilePicked(e) {
+  if (e.target.files.length) kmzProcessFile(e.target.files[0]);
+  e.target.value = '';
+}
+function kmzProcessFile(file) {
+  var ext = file.name.split('.').pop().toLowerCase();
+  if (ext !== 'kmz' && ext !== 'kml') {
+    toast('Format tidak didukung — pilih file .kmz atau .kml', 'err');
+    return;
+  }
+  _kmzFile = file;
+  // Update slot display
+  var nameEl = document.getElementById('kmz-name-file');
+  var iconEl = document.getElementById('kmz-icon-file');
+  var slotEl = document.getElementById('kmz-slot-file');
+  var extEl = slotEl ? slotEl.querySelector('.slot-ext') : null;
+  if (nameEl) nameEl.textContent = file.name;
+  if (iconEl) { iconEl.textContent = '✓'; iconEl.className = 'slot-ok'; }
+  if (slotEl) slotEl.classList.add('has-file');
+  if (extEl) extEl.textContent = '.' + ext.toUpperCase();
+  // Enable load button
+  var btn = document.getElementById('kmz-load-btn');
+  if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.style.cursor = 'pointer'; }
+  kmzSetStatus('File siap — klik "Tampilkan di Peta"', '#34d399');
+}
+
+function kmzSetStatus(msg, color) {
+  var el = document.getElementById('kmz-status-txt');
+  if (el) { el.textContent = msg; el.style.color = color || 'var(--mute)'; }
+}
+function kmzSetProgress(pct) {
+  var wrap = document.getElementById('kmz-progress-wrap');
+  var fill = document.getElementById('kmz-progress-fill');
+  if (!wrap || !fill) return;
+  wrap.style.display = (pct > 0 && pct < 100) ? 'block' : 'none';
+  fill.style.width = pct + '%';
+}
+
+/* ── Load & render ── */
+function kmzLoadFile() {
+  if (!_kmzFile) return;
+  if (!_map) { toast('Peta belum terbuka — buka tab Pemetaan dulu', 'err'); return; }
+  var btn = document.getElementById('kmz-load-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Memproses...'; }
+  kmzSetStatus('Membaca file...', 'var(--mute)');
+  kmzSetProgress(10);
+
+  var ext = _kmzFile.name.split('.').pop().toLowerCase();
+  var reader = new FileReader();
+
+  if (ext === 'kmz') {
+    reader.onload = function(e) {
+      kmzSetProgress(30);
+      kmzSetStatus('Mengekstrak KMZ...', 'var(--mute)');
+      // KMZ adalah ZIP — gunakan JSZip yang sudah ada
+      JSZip.loadAsync(e.target.result).then(function(zip) {
+        // Cari file .kml di dalam zip
+        var kmlFile = null;
+        zip.forEach(function(path, file) {
+          if (!kmlFile && path.toLowerCase().endsWith('.kml') && !file.dir) kmlFile = file;
+        });
+        if (!kmlFile) throw new Error('Tidak ada file .kml di dalam KMZ');
+        return kmlFile.async('string');
+      }).then(function(kmlText) {
+        kmzSetProgress(60);
+        kmzSetStatus('Mengurai KML...', 'var(--mute)');
+        kmzParseAndRender(kmlText, _kmzFile.name);
+      }).catch(function(err) {
+        console.error('KMZ parse error:', err);
+        kmzSetStatus('❌ Gagal membaca KMZ: ' + err.message, 'var(--red)');
+        kmzSetProgress(0);
+        if (btn) { btn.disabled = false; btn.textContent = '⚡ Tampilkan di Peta'; btn.style.opacity = '1'; }
+        toast('Gagal membaca KMZ — ' + err.message, 'err');
+      });
+    };
+    reader.readAsArrayBuffer(_kmzFile);
+  } else {
+    // File KML langsung
+    reader.onload = function(e) {
+      kmzSetProgress(50);
+      kmzSetStatus('Mengurai KML...', 'var(--mute)');
+      kmzParseAndRender(e.target.result, _kmzFile.name);
+    };
+    reader.readAsText(_kmzFile);
+  }
+}
+
+/* ── KML → GeoJSON converter (native, tanpa library tambahan) ── */
+function kmzParseAndRender(kmlText, fileName) {
+  try {
+    var parser = new DOMParser();
+    var kmlDoc = parser.parseFromString(kmlText, 'text/xml');
+    var parseErr = kmlDoc.querySelector('parsererror');
+    if (parseErr) throw new Error('KML tidak valid: ' + parseErr.textContent.slice(0, 100));
+
+    var features = [];
+    var placemarks = kmlDoc.querySelectorAll('Placemark');
+
+    placemarks.forEach(function(pm) {
+      var name = kmzText(pm, 'name') || '';
+      var description = kmzText(pm, 'description') || '';
+      var props = { name: name, description: description };
+
+      // Kumpulkan extended data
+      pm.querySelectorAll('Data, SimpleData').forEach(function(d) {
+        var k = d.getAttribute('name') || d.tagName;
+        var v = kmzText(d, 'value') || d.textContent.trim();
+        if (k) props[k] = v;
+      });
+
+      // Coba semua tipe geometri
+      var geom = kmzGeom(pm);
+      if (geom) features.push({ type: 'Feature', geometry: geom, properties: props });
+    });
+
+    if (!features.length) throw new Error('Tidak ada fitur (Placemark) yang dapat dibaca dari file KML ini');
+
+    var geojson = { type: 'FeatureCollection', features: features };
+
+    kmzSetProgress(80);
+    kmzSetStatus('Merender ke peta...', 'var(--mute)');
+
+    var layerName = fileName.replace(/\.(kmz|kml)$/i, '');
+    var color = _kmzColorPalette[_kmzColorIdx % _kmzColorPalette.length];
+    _kmzColorIdx++;
+
+    // Gunakan pipeline _shpBuildLeafletLayer yang sudah ada
+    var layerId = 'kmz_' + Date.now();
+    var layerObj = {
+      id: layerId, name: layerName, color: color, layer: null, count: features.length,
+      features: features,
+      fillStyle: 'solid', fillOpacity: 22, fillBaseColor: color,
+      lineStyle: 'solid', weight: 2.2, opacity: 85,
+      outlineColorMode: 'single', outlineColorField: null, outlineStyleMap: {},
+      fillColorMode: 'single', fillColorField: null, fillStyleMap: {},
+      labelField: 'name', labelFontSize: 11, labelColor: '#1a1a1a', labelVisible: true, labelLayer: null
+    };
+    layerObj.layer = _shpBuildLeafletLayer(geojson, layerObj, layerName);
+    layerObj.layer.addTo(_map);
+
+    // Fit bounds
+    try {
+      var bounds = L.geoJSON(geojson).getBounds();
+      if (bounds.isValid()) _map.fitBounds(bounds, { padding: [30, 30] });
+    } catch(e) {}
+
+    // Tambah ke _shpLayers agar terkelola oleh sistem layer yang sudah ada
+    _shpLayers.push(layerObj);
+    _kmzLayers.push(layerObj);
+    if (typeof _layerOrderSync === 'function') _layerOrderSync();
+    if (typeof shpUpdateLayerList === 'function') shpUpdateLayerList();
+    kmzUpdateLayerList();
+
+    kmzSetProgress(100);
+    kmzSetStatus('✓ ' + features.length.toLocaleString() + ' fitur berhasil ditampilkan', '#34d399');
+
+    // Reset
+    _kmzFile = null;
+    var nameEl = document.getElementById('kmz-name-file');
+    var iconEl = document.getElementById('kmz-icon-file');
+    var slotEl = document.getElementById('kmz-slot-file');
+    if (nameEl) nameEl.textContent = 'Belum dipilih';
+    if (iconEl) { iconEl.textContent = '○'; iconEl.className = 'slot-miss'; }
+    if (slotEl) slotEl.classList.remove('has-file');
+    var btn = document.getElementById('kmz-load-btn');
+    if (btn) { btn.disabled = true; btn.textContent = '⚡ Tampilkan di Peta'; btn.style.opacity = '0.4'; }
+
+    toast('✓ ' + layerName + ' — ' + features.length.toLocaleString() + ' fitur dimuat', 'ok');
+
+  } catch(err) {
+    console.error('KML parse error:', err);
+    kmzSetStatus('❌ ' + err.message, 'var(--red)');
+    kmzSetProgress(0);
+    var btn = document.getElementById('kmz-load-btn');
+    if (btn) { btn.disabled = false; btn.textContent = '⚡ Tampilkan di Peta'; btn.style.opacity = '1'; }
+    toast('Gagal membaca KML — ' + err.message, 'err');
+  }
+}
+
+/* ── Helper: ambil teks dalam elemen pertama yang cocok ── */
+function kmzText(el, tag) {
+  var child = el.querySelector(tag);
+  return child ? child.textContent.trim() : null;
+}
+
+/* ── Helper: parse koordinat "lon,lat[,alt] lon,lat..." → array [[lon,lat],...] ── */
+function kmzCoords(el, tag) {
+  var coordEl = el.querySelector(tag || 'coordinates');
+  if (!coordEl) return null;
+  var raw = coordEl.textContent.trim();
+  var pairs = raw.split(/\s+/).filter(Boolean);
+  var coords = pairs.map(function(p) {
+    var parts = p.split(',');
+    var lon = parseFloat(parts[0]);
+    var lat = parseFloat(parts[1]);
+    return isNaN(lon) || isNaN(lat) ? null : [lon, lat];
+  }).filter(Boolean);
+  return coords.length ? coords : null;
+}
+
+/* ── Helper: ekstrak geometri dari Placemark ── */
+function kmzGeom(pm) {
+  // Point
+  var pt = pm.querySelector('Point coordinates');
+  if (pt) {
+    var parts = pt.textContent.trim().split(',');
+    var lon = parseFloat(parts[0]), lat = parseFloat(parts[1]);
+    if (!isNaN(lon) && !isNaN(lat)) return { type: 'Point', coordinates: [lon, lat] };
+  }
+
+  // LineString
+  var ls = pm.querySelector('LineString');
+  if (ls) {
+    var coords = kmzCoords(ls);
+    if (coords && coords.length >= 2) return { type: 'LineString', coordinates: coords };
+  }
+
+  // LinearRing (as Polygon)
+  var lr = pm.querySelector('LinearRing');
+  if (lr && !pm.querySelector('Polygon')) {
+    var coords = kmzCoords(lr);
+    if (coords && coords.length >= 3) return { type: 'Polygon', coordinates: [coords] };
+  }
+
+  // Polygon
+  var poly = pm.querySelector('Polygon');
+  if (poly) {
+    var outer = poly.querySelector('outerBoundaryIs coordinates') ||
+                poly.querySelector('outerBoundaryIs LinearRing coordinates');
+    if (!outer) outer = poly.querySelector('coordinates');
+    if (outer) {
+      var rawO = outer.textContent.trim().split(/\s+/).filter(Boolean).map(function(p){
+        var parts = p.split(','); return [parseFloat(parts[0]), parseFloat(parts[1])];
+      }).filter(function(c){ return !isNaN(c[0]) && !isNaN(c[1]); });
+      if (rawO.length >= 3) {
+        var rings = [rawO];
+        poly.querySelectorAll('innerBoundaryIs coordinates').forEach(function(inner) {
+          var rawI = inner.textContent.trim().split(/\s+/).filter(Boolean).map(function(p){
+            var parts = p.split(','); return [parseFloat(parts[0]), parseFloat(parts[1])];
+          }).filter(function(c){ return !isNaN(c[0]) && !isNaN(c[1]); });
+          if (rawI.length >= 3) rings.push(rawI);
+        });
+        return { type: 'Polygon', coordinates: rings };
+      }
+    }
+  }
+
+  // MultiGeometry — rekursif (ambil geometri pertama yang valid)
+  var multi = pm.querySelector('MultiGeometry');
+  if (multi) {
+    var childGeoms = [];
+    ['Point','LineString','Polygon'].forEach(function(tag) {
+      multi.querySelectorAll(tag).forEach(function(child) {
+        // Buat Placemark tiruan untuk dipanggil rekursif
+        var dummy = document.createElement('Placemark');
+        dummy.appendChild(child.cloneNode(true));
+        var g = kmzGeom(dummy);
+        if (g) childGeoms.push(g);
+      });
+    });
+    if (childGeoms.length === 1) return childGeoms[0];
+    if (childGeoms.length > 1) return { type: 'GeometryCollection', geometries: childGeoms };
+  }
+
+  return null;
+}
+
+/* ── Update daftar layer KMZ di panel ── */
+function kmzUpdateLayerList() {
+  var listDiv = document.getElementById('kmz-layers-list');
+  var itemsDiv = document.getElementById('kmz-layers-items');
+  if (!listDiv || !itemsDiv) return;
+  if (!_kmzLayers.length) { listDiv.style.display = 'none'; return; }
+  listDiv.style.display = 'block';
+  itemsDiv.innerHTML = _kmzLayers.map(function(l) {
+    var isVisible = !!(_map && l.layer && _map.hasLayer(l.layer));
+    return '<div class="shp-layer-item" style="margin-bottom:4px;flex-wrap:wrap">' +
+      '<input type="color" value="'+l.color+'" onchange="shpChangeColor(\'' + l.id + '\',this.value)" title="Warna outline/garis" style="width:20px;height:20px;flex-shrink:0;padding:0;border:1.5px solid rgba(255,255,255,0.25);border-radius:50%;cursor:pointer">' +
+      '<div class="shp-layer-info">' +
+        '<div class="shp-layer-name">' + _e(l.name) + '</div>' +
+        '<div class="shp-layer-meta">' + l.count.toLocaleString() + ' fitur</div>' +
+      '</div>' +
+      '<span class="shp-layer-badge '+(isVisible?'visible':'hidden')+'" onclick="shpToggleLayer(\'' + l.id + '\')" style="cursor:pointer">' +
+        (isVisible ? '👁' : '○') +
+      '</span>' +
+      '<button onclick="petaToggleFillPanel(\'shp-fill-'+l.id+'\')" title="Warna &amp; arsiran" style="background:none;border:none;color:var(--mute);cursor:pointer;font-size:12px;padding:0 2px">🎨</button>' +
+      '<button onclick="kmzRemoveLayer(\'' + l.id + '\')" style="background:none;border:none;color:var(--mute);cursor:pointer;font-size:11px;padding:2px 4px" title="Hapus layer">✕</button>' +
+      '<div id="shp-fill-'+l.id+'" style="display:none;width:100%;margin-top:6px;padding:8px;background:var(--card2);border-radius:6px;border:1px solid var(--brd2)">' +
+        '<div style="font-family:var(--mono);font-size:8px;color:var(--mute);margin-bottom:6px">⚙ Buka panel Layer Aktif (tombol SHP di atas) untuk kontrol styling lengkap — warna, arsiran, label, transparansi</div>' +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+          '<label style="font-family:var(--mono);font-size:8.5px;color:var(--mute);display:flex;align-items:center;gap:4px">' +
+            'Outline <input type="color" value="'+l.color+'" onchange="shpChangeColor(\''+l.id+'\',this.value)" style="width:22px;height:18px;padding:0;border:none;cursor:pointer">' +
+          '</label>' +
+          '<label style="font-family:var(--mono);font-size:8.5px;color:var(--mute);display:flex;align-items:center;gap:4px">' +
+            'Isi <input type="color" value="'+(l.fillBaseColor||l.color)+'" onchange="shpChangeFillBaseColor(\''+l.id+'\',this.value)" style="width:22px;height:18px;padding:0;border:none;cursor:pointer">' +
+          '</label>' +
+          '<label style="font-family:var(--mono);font-size:8.5px;color:var(--mute);display:flex;align-items:center;gap:4px">' +
+            'Tebal <input type="range" min="0.5" max="8" step="0.5" value="'+(l.weight||2.2)+'" oninput="shpChangeWeight(\''+l.id+'\',parseFloat(this.value))" style="width:60px">' +
+          '</label>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function kmzRemoveLayer(id) {
+  var idx = _kmzLayers.findIndex(function(l){ return l.id === id; });
+  if (idx < 0) return;
+  var l = _kmzLayers[idx];
+  if (l.layer && _map && _map.hasLayer(l.layer)) _map.removeLayer(l.layer);
+  _kmzLayers.splice(idx, 1);
+  // Juga hapus dari _shpLayers
+  var si = _shpLayers.findIndex(function(x){ return x.id === id; });
+  if (si >= 0) _shpLayers.splice(si, 1);
+  if (typeof shpUpdateLayerList === 'function') shpUpdateLayerList();
+  kmzUpdateLayerList();
+}
+
+function kmzClearAll() {
+  _kmzLayers.slice().forEach(function(l){ kmzRemoveLayer(l.id); });
+}
+
+/* ══════════════════════════════════════════════════════════════
+   DXF UPLOAD — konversi DXF (CAD) → GeoJSON, render pakai builder SHP
+   ══════════════════════════════════════════════════════════════ */
+
+var _dxfFile = null;
+
+function petaToggleDxfPanel() {
+  var panel = document.getElementById('dxf-upload-panel');
+  if (!panel) return;
+  var isVisible = panel.style.display !== 'none';
+  panel.style.display = isVisible ? 'none' : 'block';
+}
+
+document.addEventListener('change', function(e){
+  if (e.target && e.target.id === 'dxf-crs-select') {
+    var wrap = document.getElementById('dxf-utm-zone-wrap');
+    if (wrap) wrap.style.display = (e.target.value === 'wgs84') ? 'none' : 'block';
+  }
+});
+
+/* ── Drag & Drop handlers ── */
+function dxfDragOver(e) {
+  e.preventDefault();
+  document.getElementById('dxf-drop-zone').classList.add('drag-over');
+}
+function dxfDragLeave(e) {
+  document.getElementById('dxf-drop-zone').classList.remove('drag-over');
+}
+function dxfDrop(e) {
+  e.preventDefault();
+  document.getElementById('dxf-drop-zone').classList.remove('drag-over');
+  dxfProcessFiles(Array.from(e.dataTransfer.files));
+}
+function dxfFilePicked(e) {
+  dxfProcessFiles(Array.from(e.target.files));
+  e.target.value = '';
+}
+function dxfProcessFiles(files) {
+  var f = files.find(function(x){ return x.name.toLowerCase().endsWith('.dxf'); });
+  if (!f) { toast('Pilih file dengan ekstensi .dxf', 'err'); return; }
+  _dxfFile = f;
+  var nameEl = document.getElementById('dxf-name-dxf');
+  var iconEl = document.getElementById('dxf-icon-dxf');
+  var slotEl = document.getElementById('dxf-slot-dxf');
+  if (nameEl) nameEl.textContent = f.name;
+  if (iconEl) { iconEl.textContent = '✓'; iconEl.className = 'slot-ok'; }
+  if (slotEl) slotEl.classList.add('has-file');
+  dxfSetStatus('File siap — klik "Tampilkan di Peta"', '#1ab0a6');
+  var btn = document.getElementById('dxf-load-btn');
+  if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.style.cursor = 'pointer'; }
+}
+
+function dxfSetStatus(msg, color) {
+  var el = document.getElementById('dxf-status-txt');
+  if (el) { el.textContent = msg; el.style.color = color || 'var(--mute)'; }
+}
+function dxfSetProgress(pct) {
+  var wrap = document.getElementById('dxf-progress-wrap');
+  var fill = document.getElementById('dxf-progress-fill');
+  if (!wrap || !fill) return;
+  wrap.style.display = (pct > 0 && pct < 100) ? 'block' : 'none';
+  fill.style.width = pct + '%';
+}
+
+/* Konversi koordinat UTM → Lon/Lat (WGS84)
+   Menggunakan rumus Transverse Mercator inverse standar.
+   x = Easting (meter), y = Northing (meter), zone = 46–54, isSouth = true untuk Indonesia
+   Referensi: Bowring 1983 / Karney 2011 (disederhanakan untuk keperluan pemetaan) */
+function _utmToLonLat(easting, northing, zone, isSouth) {
+  var a  = 6378137.0;          // semi-major axis WGS84
+  var f  = 1 / 298.257223563;  // flattening
+  var b  = a * (1 - f);
+  var e2 = 2*f - f*f;          // eccentricity squared
+  var e  = Math.sqrt(e2);
+  var k0 = 0.9996;
+
+  var x = easting  - 500000.0;               // buat relatif ke central meridian
+  var y = isSouth  ? northing - 10000000.0   // belahan selatan
+                   : northing;
+
+  var M  = y / k0;
+  var mu = M / (a * (1 - e2/4 - 3*e2*e2/64 - 5*e2*e2*e2/256));
+
+  var e1  = (1 - Math.sqrt(1-e2)) / (1 + Math.sqrt(1-e2));
+  var phi1 = mu
+    + (3*e1/2 - 27*e1*e1*e1/32) * Math.sin(2*mu)
+    + (21*e1*e1/16 - 55*e1*e1*e1*e1/32) * Math.sin(4*mu)
+    + (151*e1*e1*e1/96) * Math.sin(6*mu)
+    + (1097*e1*e1*e1*e1/512) * Math.sin(8*mu);
+
+  var sinPhi1 = Math.sin(phi1), cosPhi1 = Math.cos(phi1), tanPhi1 = Math.tan(phi1);
+  var N1 = a / Math.sqrt(1 - e2*sinPhi1*sinPhi1);
+  var T1 = tanPhi1 * tanPhi1;
+  var C1 = e2 / (1-e2) * cosPhi1 * cosPhi1;
+  var R1 = a * (1-e2) / Math.pow(1 - e2*sinPhi1*sinPhi1, 1.5);
+  var D  = x / (N1 * k0);
+  var D2 = D*D, D3 = D2*D, D4 = D3*D, D5 = D4*D, D6 = D5*D;
+
+  var lat = phi1
+    - (N1 * tanPhi1 / R1) * (
+        D2/2
+      - (5 + 3*T1 + 10*C1 - 4*C1*C1 - 9*e2/(1-e2)) * D4/24
+      + (61 + 90*T1 + 298*C1 + 45*T1*T1 - 252*e2/(1-e2) - 3*C1*C1) * D6/720
+    );
+
+  var lon0 = (6 * zone - 183) * Math.PI / 180; // central meridian radian
+  var lon  = lon0 + (1/cosPhi1) * (
+        D
+      - (1 + 2*T1 + C1) * D3/6
+      + (5 - 2*C1 + 28*T1 - 3*C1*C1 + 8*e2/(1-e2) + 24*T1*T1) * D5/120
+    );
+
+  return [lon * 180/Math.PI, lat * 180/Math.PI]; // [longitude, latitude]
+}
+
+/* _dxfEntityToFeatures: konversi entity dxf-parser v1.1.2 → GeoJSON Feature array
+   Semua titik via xform(x,y) → [lon,lat] (identity untuk WGS84, UTM→LL untuk UTM) */
+function _dxfEntityToFeatures(entity, xform) {
+  var feats = [];
+  var type  = entity.type;
+
+  // Helper: ambil [lon,lat] dari object {x,y} hasil parsePoint
+  function pt(v) { return xform(v.x || 0, v.y || 0); }
+
+  /* ── LINE: vertices = [{x,y}, {x,y}] ── */
+  if (type === 'LINE') {
+    var verts = entity.vertices || [];
+    if (verts.length >= 2) {
+      feats.push({ type:'Feature', properties:{ layer: entity.layer||'', type:'LINE' },
+        geometry:{ type:'LineString', coordinates: verts.map(pt) } });
+    }
+
+  /* ── LWPOLYLINE: vertices = [{x,y,bulge?}] ── */
+  } else if (type === 'LWPOLYLINE') {
+    var lv = entity.vertices || [];
+    if (lv.length >= 2) {
+      var coords = lv.map(pt);
+      var closed = !!(entity.shape || entity.closed);
+      if (closed) {
+        if (coords.length && (coords[0][0] !== coords[coords.length-1][0] || coords[0][1] !== coords[coords.length-1][1]))
+          coords.push(coords[0]);
+        feats.push({ type:'Feature', properties:{ layer: entity.layer||'', type:'LWPOLYLINE' },
+          geometry:{ type:'Polygon', coordinates:[coords] } });
+      } else {
+        feats.push({ type:'Feature', properties:{ layer: entity.layer||'', type:'LWPOLYLINE' },
+          geometry:{ type:'LineString', coordinates: coords } });
+      }
+    }
+
+  /* ── POLYLINE: vertices = [{x,y,z}] (dari VertexParser) ── */
+  } else if (type === 'POLYLINE') {
+    var pv = (entity.vertices || []).filter(function(v){ return !v.curveFitTangent && !v.splineControlPoint; });
+    if (pv.length >= 2) {
+      var pcoords = pv.map(function(v){ return xform(v.x||0, v.y||0); });
+      var pclosed = !!(entity.shape || entity.closed);
+      if (pclosed) {
+        if (pcoords.length && (pcoords[0][0] !== pcoords[pcoords.length-1][0] || pcoords[0][1] !== pcoords[pcoords.length-1][1]))
+          pcoords.push(pcoords[0]);
+        feats.push({ type:'Feature', properties:{ layer: entity.layer||'', type:'POLYLINE' },
+          geometry:{ type:'Polygon', coordinates:[pcoords] } });
+      } else {
+        feats.push({ type:'Feature', properties:{ layer: entity.layer||'', type:'POLYLINE' },
+          geometry:{ type:'LineString', coordinates: pcoords } });
+      }
+    }
+
+  /* ── CIRCLE: center {x,y}, radius ── */
+  } else if (type === 'CIRCLE' && entity.center) {
+    var cx = entity.center.x||0, cy = entity.center.y||0, cr = entity.radius||0;
+    var ring = [];
+    for (var i=0; i<=64; i++) {
+      var ang = i / 64 * 2 * Math.PI;
+      ring.push(xform(cx + cr*Math.cos(ang), cy + cr*Math.sin(ang)));
+    }
+    feats.push({ type:'Feature', properties:{ layer: entity.layer||'', type:'CIRCLE' },
+      geometry:{ type:'Polygon', coordinates:[ring] } });
+
+  /* ── ARC: center {x,y}, radius, startAngle/endAngle sudah dalam RADIAN (library sudah konversi) ── */
+  } else if (type === 'ARC' && entity.center) {
+    var ax = entity.center.x||0, ay = entity.center.y||0, ar = entity.radius||0;
+    var sa = entity.startAngle||0, ea = entity.endAngle||0;
+    // Pastikan ea > sa (ARC di DXF selalu counter-clockwise)
+    if (ea <= sa) ea += 2 * Math.PI;
+    var steps = 48;
+    var aPts = [];
+    for (var ai=0; ai<=steps; ai++) {
+      var ta = sa + (ea - sa) * (ai / steps);
+      aPts.push(xform(ax + ar*Math.cos(ta), ay + ar*Math.sin(ta)));
+    }
+    feats.push({ type:'Feature', properties:{ layer: entity.layer||'', type:'ARC' },
+      geometry:{ type:'LineString', coordinates: aPts } });
+
+  /* ── POINT: position {x,y} ── */
+  } else if (type === 'POINT' && entity.position) {
+    feats.push({ type:'Feature', properties:{ layer: entity.layer||'', type:'POINT' },
+      geometry:{ type:'Point', coordinates: pt(entity.position) } });
+
+  /* ── SPLINE: controlPoints atau fitPoints [{x,y,z}] ── */
+  } else if (type === 'SPLINE') {
+    var spts = entity.controlPoints || entity.fitPoints || [];
+    if (spts.length >= 2) {
+      var sclosed = !!(entity.closed || entity.periodic);
+      var scoords = spts.map(pt);
+      if (sclosed && scoords.length) scoords.push(scoords[0]);
+      feats.push({ type:'Feature', properties:{ layer: entity.layer||'', type:'SPLINE' },
+        geometry:{ type:'LineString', coordinates: scoords } });
+    }
+
+  /* ── INSERT: titik referensi blok (ditampilkan sebagai Point) ── */
+  } else if (type === 'INSERT' && entity.position) {
+    feats.push({ type:'Feature', properties:{ layer: entity.layer||'', type:'INSERT', block: entity.name||'' },
+      geometry:{ type:'Point', coordinates: pt(entity.position) } });
+
+  /* ── TEXT / MTEXT: titik posisi teks ── */
+  } else if ((type === 'TEXT' || type === 'MTEXT') && entity.position) {
+    feats.push({ type:'Feature', properties:{ layer: entity.layer||'', type: type, text: entity.text||entity.value||'' },
+      geometry:{ type:'Point', coordinates: pt(entity.position) } });
+  }
+
+  return feats;
+}
+
+function dxfLoadFile() {
+  if (!_dxfFile) return;
+  if (!_map) { toast('Peta belum terbuka — buka tab Pemetaan dulu', 'err'); return; }
+  if (typeof DxfParser === 'undefined') { toast('Pustaka DXF gagal dimuat — cek koneksi internet', 'err'); return; }
+
+  var btn = document.getElementById('dxf-load-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Memproses...'; }
+  dxfSetStatus('Membaca file...', 'var(--mute)');
+  dxfSetProgress(15);
+
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      dxfSetStatus('Mengurai entitas DXF...', 'var(--mute)');
+      dxfSetProgress(45);
+      var parser = new DxfParser();
+      var dxf = parser.parseSync(e.target.result);
+
+      var crsMode = (document.getElementById('dxf-crs-select') || {}).value || 'wgs84';
+      var zone = parseInt((document.getElementById('dxf-utm-zone') || {}).value || '49', 10);
+      var isSouth = crsMode === 'utm-s';
+      var xform;
+      if (crsMode === 'wgs84') {
+        xform = function(x, y) { return [x, y]; };
+      } else {
+        xform = function(x, y) { return _utmToLonLat(x, y, zone, isSouth); };
+      }
+
+      var entities = (dxf && dxf.entities) || [];
+      var features = [];
+      entities.forEach(function(ent) {
+        features = features.concat(_dxfEntityToFeatures(ent, xform));
+      });
+
+      if (!features.length) {
+        dxfSetStatus('❌ Tidak ada entitas yang bisa dibaca. Tipe entitas di file: ' +
+          [...new Set((dxf.entities||[]).map(function(e){return e.type;}))] .join(', '), 'var(--red)');
+        dxfSetProgress(0);
+        if (btn) { btn.disabled = false; btn.textContent = '⚡ Tampilkan di Peta'; btn.style.opacity = '1'; }
+        toast('DXF tidak berisi entitas yang didukung', 'err');
+        return;
+      }
+
+      // Validasi: apakah koordinat masuk akal untuk Lon/Lat Indonesia?
+      // Jika CRS=wgs84 tapi koordinat di luar [-180,180] x [-90,90] → kemungkinan UTM tidak terdeteksi
+      if (crsMode === 'wgs84') {
+        var sampleCoords = [];
+        features.slice(0, 5).forEach(function(f) {
+          var g = f.geometry;
+          if (!g) return;
+          var c = g.coordinates;
+          if (g.type === 'Point') sampleCoords.push(c);
+          else if (g.type === 'LineString' && c.length) sampleCoords.push(c[0]);
+          else if (g.type === 'Polygon' && c[0] && c[0].length) sampleCoords.push(c[0][0]);
+        });
+        var outOfRange = sampleCoords.some(function(c) {
+          return Math.abs(c[0]) > 180 || Math.abs(c[1]) > 90;
+        });
+        if (outOfRange) {
+          dxfSetStatus('⚠ Koordinat tampak bukan Lon/Lat — mungkin UTM? Pilih sistem koordinat yang sesuai di atas.', '#f5c030');
+          toast('⚠ Koordinat DXF di luar rentang Lon/Lat — coba pilih UTM', 'warn');
+        }
+      }
+
+      dxfSetStatus('Merender ke peta...', 'var(--mute)');
+      dxfSetProgress(80);
+
+      var geojson = { type: 'FeatureCollection', features: features };
+      var layerName = _dxfFile.name.replace(/\.dxf$/i, '');
       var color = _shpColorPalette[_shpColorIdx % _shpColorPalette.length];
       _shpColorIdx++;
 
       var layerId = 'shp_' + Date.now();
       var layerObj = {
-        id: layerId, name: layerName, color: color, layer: null, count: count, features: geojson.features || [],
+        id: layerId, name: layerName, color: color, layer: null, count: features.length, features: features,
         fillStyle: 'solid', fillOpacity: 22, fillBaseColor: color,
         lineStyle: 'solid', weight: 2.2, opacity: 85,
         outlineColorMode: 'single', outlineColorField: null, outlineStyleMap: {},
         fillColorMode: 'single', fillColorField: null, fillStyleMap: {},
-        labelField: null, labelFontSize: 11, labelColor: '#1a1a1a', labelVisible: true, labelLayer: null
+        labelField: null, labelFontSize: 11, labelColor: '#1a1a1a', labelVisible: true, labelLayer: null,
+        sourceType: 'dxf'
       };
       layerObj.layer = _shpBuildLeafletLayer(geojson, layerObj, layerName);
       layerObj.layer.addTo(_map);
 
-      // Fit bounds
       try {
         var bounds = L.geoJSON(geojson).getBounds();
         if (bounds.isValid()) _map.fitBounds(bounds, { padding: [30, 30] });
       } catch(e) {}
 
-      // Simpan ke daftar layer (termasuk features untuk tabel atribut)
       _shpLayers.push(layerObj);
       if (typeof _layerOrderSync === 'function') _layerOrderSync();
       shpUpdateLayerList();
+      dxfUpdateLayerList();
 
-      shpSetProgress(100);
-      shpSetStatus('✓ ' + count.toLocaleString() + ' fitur berhasil ditampilkan', '#1ab0a6');
+      dxfSetProgress(100);
+      dxfSetStatus('✓ ' + features.length.toLocaleString() + ' entitas berhasil ditampilkan', '#1ab0a6');
 
-      // Reset file slots
-      _shpFiles = { shp: null, dbf: null, prj: null };
-      ['shp','dbf','prj'].forEach(function(ext) {
-        var nameEl = document.getElementById('shp-name-' + ext);
-        var iconEl = document.getElementById('shp-icon-' + ext);
-        var slotEl = document.getElementById('shp-slot-' + ext);
-        if (nameEl) nameEl.textContent = 'Belum dipilih';
-        if (iconEl) { iconEl.textContent = '○'; iconEl.className = 'slot-miss'; }
-        if (slotEl) slotEl.classList.remove('has-file');
-      });
-
-      var btn = document.getElementById('shp-load-btn');
+      // Reset slot
+      _dxfFile = null;
+      var nameEl = document.getElementById('dxf-name-dxf');
+      var iconEl = document.getElementById('dxf-icon-dxf');
+      var slotEl = document.getElementById('dxf-slot-dxf');
+      if (nameEl) nameEl.textContent = 'Belum dipilih';
+      if (iconEl) { iconEl.textContent = '○'; iconEl.className = 'slot-miss'; }
+      if (slotEl) slotEl.classList.remove('has-file');
       if (btn) { btn.disabled = true; btn.textContent = '⚡ Tampilkan di Peta'; btn.style.opacity = '0.4'; }
 
-      toast('✓ ' + layerName + ' — ' + count.toLocaleString() + ' fitur dimuat', 'ok');
-    })
-    .catch(function(err) {
-      console.error('SHP parse error:', err);
-      shpSetStatus('❌ Gagal membaca file: ' + err.message, 'var(--red)');
-      shpSetProgress(0);
-      var btn = document.getElementById('shp-load-btn');
+      toast('✓ ' + layerName + ' — ' + features.length.toLocaleString() + ' entitas dimuat', 'ok');
+    } catch(err) {
+      console.error('DXF parse error:', err);
+      dxfSetStatus('❌ Gagal membaca file: ' + err.message, 'var(--red)');
+      dxfSetProgress(0);
       if (btn) { btn.disabled = false; btn.textContent = '⚡ Tampilkan di Peta'; btn.style.opacity = '1'; }
-      toast('Gagal membaca SHP — pastikan file .shp dan .dbf dari sumber yang sama', 'err');
-    });
+      toast('Gagal membaca DXF — pastikan file valid dan berisi koordinat', 'err');
+    }
+  };
+  reader.readAsText(_dxfFile);
+}
+
+/* ── Daftar layer DXF aktif ── */
+var _dxfLayers = [];
+
+function dxfUpdateLayerList() {
+  var listDiv  = document.getElementById('dxf-layers-list');
+  var itemsDiv = document.getElementById('dxf-layers-items');
+  if (!listDiv || !itemsDiv) return;
+  // Sinkron _dxfLayers dari _shpLayers (filter sourceType=dxf)
+  _dxfLayers = _shpLayers.filter(function(l){ return l.sourceType === 'dxf'; });
+  if (!_dxfLayers.length) { listDiv.style.display = 'none'; return; }
+  listDiv.style.display = 'block';
+  itemsDiv.innerHTML = _dxfLayers.map(function(l) {
+    var isVisible = !!(_map && l.layer && _map.hasLayer(l.layer));
+    return '<div class="shp-layer-item" style="margin-bottom:4px;flex-wrap:wrap">' +
+      '<input type="color" value="'+l.color+'" onchange="shpChangeColor(''+l.id+'',this.value)" title="Warna outline/garis" style="width:20px;height:20px;flex-shrink:0;padding:0;border:1.5px solid rgba(255,255,255,0.25);border-radius:50%;cursor:pointer">' +
+      '<div class="shp-layer-info">' +
+        '<div class="shp-layer-name" title="'+_e(l.name)+'">'+_e(l.name)+'</div>' +
+        '<div class="shp-layer-meta">'+l.count.toLocaleString()+' entitas</div>' +
+      '</div>' +
+      '<span class="shp-layer-badge '+(isVisible?'visible':'hidden')+'" onclick="shpToggleLayer(''+l.id+'')" style="cursor:pointer">'+(isVisible?'👁':'○')+'</span>' +
+      '<button onclick="petaToggleFillPanel('shp-fill-'+l.id+'')" title="Warna &amp; arsiran" style="background:none;border:none;color:var(--mute);cursor:pointer;font-size:12px;padding:0 2px">🎨</button>' +
+      '<button onclick="shpRemoveLayer(''+l.id+'')" style="background:none;border:none;color:var(--mute);cursor:pointer;font-size:11px;padding:2px 4px" title="Hapus layer">✕</button>' +
+      /* Panel styling inline (compact) — referensikan ke shp-fill-{id} yang dirender shpUpdateLayerList */
+      '<div id="shp-fill-'+l.id+'" style="display:none;width:100%;margin-top:6px;padding:8px;background:var(--card2);border-radius:6px;border:1px solid var(--brd2)">' +
+        _dxfInlineStylePanel(l) +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function _dxfInlineStylePanel(l) {
+  /* Panel styling ringkas: warna outline, warna isi, gaya garis, ketebalan, transparansi, arsiran isi */
+  var lineStyle = l.lineStyle || 'solid';
+  var weight = (l.weight != null ? l.weight : 2.2);
+  var opacity = (l.opacity != null ? l.opacity : 85);
+  var fillBaseColor = l.fillBaseColor || l.color;
+  var fillStyle = l.fillStyle || 'solid';
+  var fillOpacity = (l.fillOpacity != null ? l.fillOpacity : 22);
+  return '' +
+    /* Warna & garis */
+    '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">' +
+      '<label style="font-family:var(--mono);font-size:8.5px;color:var(--mute);display:flex;align-items:center;gap:4px">Outline ' +
+        '<input type="color" value="'+l.color+'" onchange="shpChangeColor(''+l.id+'',this.value)" style="width:22px;height:18px;padding:0;border:none;cursor:pointer">' +
+      '</label>' +
+      '<label style="font-family:var(--mono);font-size:8.5px;color:var(--mute);display:flex;align-items:center;gap:4px">Isi ' +
+        '<input type="color" value="'+fillBaseColor+'" onchange="shpChangeFillBaseColor(''+l.id+'',this.value)" style="width:22px;height:18px;padding:0;border:none;cursor:pointer">' +
+      '</label>' +
+    '</div>' +
+    /* Ketebalan */
+    '<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">' +
+      '<span style="font-family:var(--mono);font-size:8px;color:var(--mute);width:58px;flex-shrink:0">Ketebalan</span>' +
+      '<input type="range" min="0.5" max="8" step="0.5" value="'+weight+'" oninput="shpChangeWeight(''+l.id+'',parseFloat(this.value));this.nextElementSibling.textContent=this.value" style="flex:1">' +
+      '<span style="font-family:var(--mono);font-size:8px;color:var(--txt2);width:24px;text-align:right">'+weight+'</span>' +
+    '</div>' +
+    /* Transparansi outline */
+    '<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">' +
+      '<span style="font-family:var(--mono);font-size:8px;color:var(--mute);width:58px;flex-shrink:0">Transparansi</span>' +
+      '<input type="range" min="10" max="100" value="'+opacity+'" oninput="shpChangeOpacity(''+l.id+'',parseInt(this.value));this.nextElementSibling.textContent=this.value+'%'" style="flex:1">' +
+      '<span style="font-family:var(--mono);font-size:8px;color:var(--txt2);width:28px;text-align:right">'+opacity+'%</span>' +
+    '</div>' +
+    /* Tipe garis */
+    '<div style="font-family:var(--mono);font-size:8px;color:var(--mute);margin-bottom:3px">Tipe garis</div>' +
+    _lineStyleSelectHtmlNoArrow('dxf-linestyle-'+l.id, lineStyle).replace(
+      'id="dxf-linestyle-'+l.id+'"',
+      'id="dxf-linestyle-'+l.id+'" onchange="shpChangeLineStyle(''+l.id+'',this.value)"') +
+    /* Arsiran isi */
+    '<div style="font-family:var(--mono);font-size:8px;color:var(--mute);margin-top:6px;margin-bottom:3px">Arsiran isi area</div>' +
+    _fillStyleSelectHtml('dxf-fillstyle-'+l.id, fillStyle).replace(
+      'id="dxf-fillstyle-'+l.id+'"',
+      'id="dxf-fillstyle-'+l.id+'" onchange="shpChangeFillStyle(''+l.id+'',this.value)" style="width:100%;padding:5px 7px;background:var(--inp);border:1px solid var(--brd);border-radius:3px;color:var(--txt);font-family:'Inter',sans-serif;font-size:10.5px;outline:none"') +
+    /* Transparansi isi */
+    '<div style="display:flex;align-items:center;gap:6px;margin-top:5px">' +
+      '<span style="font-family:var(--mono);font-size:8px;color:var(--mute);width:58px;flex-shrink:0">Transparansi isi</span>' +
+      '<input type="range" min="0" max="100" value="'+fillOpacity+'" oninput="shpChangeFillOpacity(''+l.id+'',parseInt(this.value));this.nextElementSibling.textContent=this.value+'%'" style="flex:1">' +
+      '<span style="font-family:var(--mono);font-size:8px;color:var(--txt2);width:28px;text-align:right">'+fillOpacity+'%</span>' +
+    '</div>';
+}
+
+function dxfClearAll() {
+  _shpLayers.filter(function(l){ return l.sourceType === 'dxf'; })
+    .forEach(function(l){ shpRemoveLayer(l.id); });
+  dxfUpdateLayerList();
 }
 
 /* ── Daftar layer aktif ── */
+var _shpLayerListHash = '';
 function shpUpdateLayerList() {
   var listWrap = document.getElementById('shp-layers-list');
   var listEl   = document.getElementById('shp-layers-items');
@@ -10615,6 +11786,22 @@ function shpUpdateLayerList() {
     return;
   }
   if (listWrap) listWrap.style.display = 'block';
+
+  // Skip full DOM rebuild jika struktur layer tidak berubah (hanya style update)
+  var _newHash = _shpLayers.map(function(l){ return l.id+'|'+l.name+'|'+(l.layer&&_map&&_map.hasLayer(l.layer)?'1':'0'); }).join(',');
+  if (_newHash === _shpLayerListHash && listEl.children.length > 0) {
+    // Hanya update legenda (ringan) tanpa rebuild HTML layer items
+    if (legendEl) {
+      legendEl.innerHTML = _shpLayers.map(function(l) {
+        return '<div style="display:flex;align-items:center;gap:6px;margin-top:3px">' +
+          '<div style="width:20px;height:2px;background:'+l.color+';border-radius:2px"></div>' +
+          '<span style="font-family:var(--mono);font-size:8.5px;color:var(--txt2)">'+_e(l.name)+'</span>' +
+        '</div>';
+      }).join('');
+    }
+    return;
+  }
+  _shpLayerListHash = _newHash;
 
   listEl.innerHTML = _shpLayers.map(function(l) {
     var isVisible = !!(_map && l.layer && _map.hasLayer(l.layer));
@@ -10636,7 +11823,13 @@ function shpUpdateLayerList() {
       '</div>' +
       '<input type="color" value="'+l.color+'" onchange="shpChangeColor(\''+l.id+'\',this.value)" title="Warna dasar outline/garis" style="width:22px;height:22px;flex-shrink:0;padding:0;border:1.5px solid rgba(255,255,255,0.25);border-radius:50%;cursor:pointer;background:'+l.color+'">' +
       '<div class="shp-layer-info">' +
-        '<div class="shp-layer-name" title="'+_e(l.name)+'">'+_e(l.name)+'</div>' +
+        '<div class="shp-layer-name" title="'+_e(l.name)+'">'+_e(l.name)+
+          (l.sourceType === 'dxf' ? ' <span style="font-size:8px;font-family:var(--mono);background:rgba(167,139,250,0.18);color:#a78bfa;border-radius:3px;padding:1px 4px">DXF</span>' :
+           l.id && l.id.startsWith('kmz_') ? ' <span style="font-size:8px;font-family:var(--mono);background:rgba(52,211,153,0.18);color:#34d399;border-radius:3px;padding:1px 4px">KMZ</span>' :
+           l.geomType === 'Point' ? ' <span style="font-size:8px;font-family:var(--mono);background:rgba(245,192,48,0.15);color:#f5c030;border-radius:3px;padding:1px 4px">●Titik</span>' :
+           l.geomType === 'Line'  ? ' <span style="font-size:8px;font-family:var(--mono);background:rgba(68,136,255,0.15);color:#4488ff;border-radius:3px;padding:1px 4px">/Garis</span>' :
+           l.geomType === 'Polygon' ? ' <span style="font-size:8px;font-family:var(--mono);background:rgba(26,176,166,0.15);color:#1ab0a6;border-radius:3px;padding:1px 4px">▭Area</span>' : '') +
+        '</div>' +
         '<div class="shp-layer-meta">'+l.count.toLocaleString()+' fitur</div>' +
       '</div>' +
       '<span class="shp-layer-badge '+(isVisible?'visible':'hidden')+'" onclick="shpToggleLayer(\''+l.id+'\')">' +
@@ -10664,7 +11857,10 @@ function shpUpdateLayerList() {
         '</div>' +
         '<div style="display:flex;align-items:center;gap:6px;margin-top:8px;border-top:1px solid var(--brd2);padding-top:6px">' +
           '<input type="color" value="'+fillBaseColor+'" onchange="shpChangeFillBaseColor(\''+l.id+'\',this.value)" title="Warna dasar isi area" style="width:18px;height:18px;flex-shrink:0;padding:0;border:1px solid rgba(255,255,255,0.25);border-radius:3px;cursor:pointer;background:'+fillBaseColor+'">' +
-          '<span style="font-family:var(--mono);font-size:8.5px;color:var(--mute)">Gaya isi area (poligon dalam SHP)</span>' +
+          '<span style="font-family:var(--mono);font-size:8.5px;color:var(--mute)">Gaya isi area (poligon)' +
+            (l.sourceType==='dxf'?' — berlaku untuk entitas LWPOLYLINE/CIRCLE':
+             l.id&&l.id.startsWith('kmz_')?' — berlaku untuk geometri Polygon KML':'') +
+          '</span>' +
         '</div>' +
         _fillStyleSelectHtml('shp-fillstyle-'+l.id, fillStyle).replace('id="shp-fillstyle-'+l.id+'"', 'id="shp-fillstyle-'+l.id+'" onchange="shpChangeFillStyle(\''+l.id+'\',this.value)" style="width:100%;padding:6px 8px;background:var(--inp);border:1px solid var(--brd);border-radius:3px;color:var(--txt);font-family:\'Inter\',sans-serif;font-size:11px;outline:none;margin-top:6px"') +
         '<div style="display:flex;align-items:center;gap:6px;margin-top:6px">' +
@@ -10757,6 +11953,7 @@ function shpChangeColor(id, newColor) {
   var layerObj = _shpLayers.find(function(l){ return l.id === id; });
   if (!layerObj) return;
   layerObj.color = newColor;
+  layerObj.fillBaseColor = layerObj.fillBaseColor || newColor; // sync fill color jika belum diubah manual
   _shpRebuildLayer(layerObj);
 
   // Update dot warna di UI (tanpa re-render seluruh list)
@@ -10776,6 +11973,7 @@ function shpChangeColor(id, newColor) {
       '</div>';
     }).join('');
   }
+  _shpLayerListHash = ''; // reset agar shpUpdateLayerList rebuild legenda
   _persist();
 }
 
@@ -14428,20 +15626,111 @@ function genInit() {
     { attribution: '\u00a9 OpenStreetMap &mdash; Humanitarian OSM Team', subdomains: 'abc', maxZoom: 19, crossOrigin: true }
   );
 
+  /* ── Basemap tambahan (gen map) ── */
+  var genOsmCycle = L.tileLayer(
+    'https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png',
+    { attribution: '&copy; OpenStreetMap &mdash; CyclOSM', subdomains: 'abc', maxZoom: 20, crossOrigin: true }
+  );
+  var genEsriStreet = L.tileLayer(
+    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+    { attribution: 'Tiles &copy; Esri', maxZoom: 19, crossOrigin: true }
+  );
+  var genEsriNatGeo = L.tileLayer(
+    'https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{z}/{y}/{x}',
+    { attribution: 'Tiles &copy; Esri &mdash; National Geographic', maxZoom: 16, crossOrigin: true }
+  );
+  var genEsriGray = L.tileLayer(
+    'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+    { attribution: 'Tiles &copy; Esri', maxZoom: 16, crossOrigin: true }
+  );
+  var genEsriDarkGray = L.tileLayer(
+    'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+    { attribution: 'Tiles &copy; Esri', maxZoom: 16, crossOrigin: true }
+  );
+  var genStadiaSmooth = L.tileLayer(
+    'https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png',
+    { attribution: '&copy; Stadia Maps', maxZoom: 20, crossOrigin: true }
+  );
+  var genStadiaDark = L.tileLayer(
+    'https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png',
+    { attribution: '&copy; Stadia Maps', maxZoom: 20, crossOrigin: true }
+  );
+  var genStadiaOutdoor = L.tileLayer(
+    'https://tiles.stadiamaps.com/tiles/outdoors/{z}/{x}/{y}{r}.png',
+    { attribution: '&copy; Stadia Maps', maxZoom: 20, crossOrigin: true }
+  );
+  var genStadiaStamenTerrain = L.tileLayer(
+    'https://tiles.stadiamaps.com/tiles/stamen_terrain/{z}/{x}/{y}{r}.png',
+    { attribution: '&copy; Stadia Maps &copy; Stamen Design', maxZoom: 18, crossOrigin: true }
+  );
+  var genStadiaWatercolor = L.tileLayer(
+    'https://tiles.stadiamaps.com/tiles/stamen_watercolor/{z}/{x}/{y}.jpg',
+    { attribution: '&copy; Stadia Maps &copy; Stamen Design', maxZoom: 16, crossOrigin: true }
+  );
+  var genGoogleSat = L.tileLayer(
+    'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
+    { attribution: '&copy; Google', maxZoom: 20, crossOrigin: true }
+  );
+  var genGoogleHybrid = L.tileLayer(
+    'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+    { attribution: '&copy; Google', maxZoom: 20, crossOrigin: true }
+  );
+  var genGoogleTerrain = L.tileLayer(
+    'https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}',
+    { attribution: '&copy; Google', maxZoom: 20, crossOrigin: true }
+  );
+  var genGoogleRoad = L.tileLayer(
+    'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
+    { attribution: '&copy; Google', maxZoom: 20, crossOrigin: true }
+  );
+  var genInarupa = L.tileLayer(
+    'https://tiled.big.go.id/arcgis/rest/services/Rupabumi/RBI50K/MapServer/tile/{z}/{y}/{x}',
+    { attribution: '&copy; BIG — INARUPA / RBI 1:50.000', maxZoom: 15, crossOrigin: true }
+  );
+  var genEsriOceanLabel = L.layerGroup([
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}',
+      { attribution: 'Tiles &copy; Esri', maxZoom: 13, crossOrigin: true }),
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Reference/MapServer/tile/{z}/{y}/{x}',
+      { maxZoom: 13, crossOrigin: true })
+  ]);
+
   L.control.layers(
     {
+      /* ── OSM / Open ── */
       '\uD83D\uDDFA\uFE0F OSM Standard': genOsm,
-      '\uD83D\uDEF0\uFE0F Satelit (Esri)': genSat,
-      '\uD83D\uDEF0\uFE0F Satelit + Label': genSatLabels,
-      '\uD83C\uDFD4\uFE0F Topografi (OTM)': genTopo,
-      '\uD83D\uDDFE Topografi (Esri)': genEsriTopo,
-      '\u26F0\uFE0F Terrain (Esri)': genEsriTerrain,
-      '\uD83C\uDF04 Shaded Relief': genEsriShaded,
-      '\uD83C\uDF0A Laut & Oseanografi': genEsriOcean,
+      '\uD83D\uDD06 OSM France': L.tileLayer('https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap France', subdomains: 'abc', maxZoom: 20, crossOrigin: true }),
+      '\uD83D\uDEB4 OSM CyclOSM (Kontur)': genOsmCycle,
+      '\uD83E\uDE7A Humanitarian (HOT)': genHumanitarian,
+      /* ── Google ── */
+      '\uD83C\uDF10 Google Satellite': genGoogleSat,
+      '\uD83C\uDF10 Google Hybrid (Sat+Jalan)': genGoogleHybrid,
+      '\uD83C\uDF10 Google Terrain': genGoogleTerrain,
+      '\uD83C\uDF10 Google Road': genGoogleRoad,
+      /* ── Esri / ArcGIS ── */
+      '\uD83D\uDEF0\uFE0F Satelit Esri': genSat,
+      '\uD83D\uDEF0\uFE0F Satelit Esri + Label': genSatLabels,
+      '\uD83D\uDDFE Topografi Esri': genEsriTopo,
+      '\u26F0\uFE0F Terrain Esri': genEsriTerrain,
+      '\uD83C\uDF04 Shaded Relief Esri': genEsriShaded,
+      '\uD83C\uDFD9\uFE0F Street Map Esri': genEsriStreet,
+      '\uD83C\uDF0E National Geographic Esri': genEsriNatGeo,
+      '\u2B1C Esri Gray Canvas': genEsriGray,
+      '\u2B1B Esri Dark Gray Canvas': genEsriDarkGray,
+      '\uD83C\uDF0A Laut & Oseanografi Esri': genEsriOcean,
+      '\uD83C\uDF0A Laut + Label Esri': genEsriOceanLabel,
+      /* ── Topo ── */
+      '\uD83C\uDFD4\uFE0F Topografi (OpenTopoMap)': genTopo,
+      '\uD83C\uDF3F Stadia Outdoors': genStadiaOutdoor,
+      '\uD83C\uDFDE\uFE0F Stamen Terrain (Stadia)': genStadiaStamenTerrain,
+      /* ── Stadia / Carto ── */
       '\u2601\uFE0F Carto Light': genCartoLight,
-      '\uD83C\uDF11 Carto Dark': genCartoDark,
       '\uD83D\uDCCB Carto (Tanpa Label)': genCartoNoLabel,
-      '\uD83E\uDE7A Humanitarian (HOT)': genHumanitarian
+      '\uD83C\uDF11 Carto Dark': genCartoDark,
+      '\uD83E\uDEE7 Stadia Smooth Light': genStadiaSmooth,
+      '\uD83C\uDF11 Stadia Smooth Dark': genStadiaDark,
+      '\uD83C\uDFA8 Stamen Watercolor (Stadia)': genStadiaWatercolor,
+      /* ── Indonesia ── */
+      '\uD83C\uDDEE\uD83C\uDDE9 INARUPA BIG (RBI 1:50K)': genInarupa
     },
     {},
     { position: 'topright', collapsed: true }

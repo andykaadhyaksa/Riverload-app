@@ -11293,39 +11293,81 @@ function kmzGeom(pm) {
 
 /* ── Update daftar layer KMZ di panel ── */
 function kmzUpdateLayerList() {
-  var listDiv = document.getElementById('kmz-layers-list');
+  var listDiv  = document.getElementById('kmz-layers-list');
   var itemsDiv = document.getElementById('kmz-layers-items');
   if (!listDiv || !itemsDiv) return;
   if (!_kmzLayers.length) { listDiv.style.display = 'none'; return; }
   listDiv.style.display = 'block';
   itemsDiv.innerHTML = _kmzLayers.map(function(l) {
     var isVisible = !!(_map && l.layer && _map.hasLayer(l.layer));
-    return '<div class="shp-layer-item" style="margin-bottom:4px;flex-wrap:wrap">' +
-      '<input type="color" value="'+l.color+'" onchange="shpChangeColor(\'' + l.id + '\',this.value)" title="Warna outline/garis" style="width:20px;height:20px;flex-shrink:0;padding:0;border:1.5px solid rgba(255,255,255,0.25);border-radius:50%;cursor:pointer">' +
-      '<div class="shp-layer-info">' +
-        '<div class="shp-layer-name">' + _e(l.name) + '</div>' +
-        '<div class="shp-layer-meta">' + l.count.toLocaleString() + ' fitur</div>' +
-      '</div>' +
-      '<span class="shp-layer-badge '+(isVisible?'visible':'hidden')+'" onclick="shpToggleLayer(\'' + l.id + '\')" style="cursor:pointer">' +
-        (isVisible ? '👁' : '○') +
-      '</span>' +
-      '<button onclick="petaToggleFillPanel(\'shp-fill-'+l.id+'\')" title="Warna &amp; arsiran" style="background:none;border:none;color:var(--mute);cursor:pointer;font-size:12px;padding:0 2px">🎨</button>' +
-      '<button onclick="kmzRemoveLayer(\'' + l.id + '\')" style="background:none;border:none;color:var(--mute);cursor:pointer;font-size:11px;padding:2px 4px" title="Hapus layer">✕</button>' +
-      '<div id="shp-fill-'+l.id+'" style="display:none;width:100%;margin-top:6px;padding:8px;background:var(--card2);border-radius:6px;border:1px solid var(--brd2)">' +
-        '<div style="font-family:var(--mono);font-size:8px;color:var(--mute);margin-bottom:6px">⚙ Buka panel Layer Aktif (tombol SHP di atas) untuk kontrol styling lengkap — warna, arsiran, label, transparansi</div>' +
-        '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
-          '<label style="font-family:var(--mono);font-size:8.5px;color:var(--mute);display:flex;align-items:center;gap:4px">' +
-            'Outline <input type="color" value="'+l.color+'" onchange="shpChangeColor(\''+l.id+'\',this.value)" style="width:22px;height:18px;padding:0;border:none;cursor:pointer">' +
-          '</label>' +
-          '<label style="font-family:var(--mono);font-size:8.5px;color:var(--mute);display:flex;align-items:center;gap:4px">' +
-            'Isi <input type="color" value="'+(l.fillBaseColor||l.color)+'" onchange="shpChangeFillBaseColor(\''+l.id+'\',this.value)" style="width:22px;height:18px;padding:0;border:none;cursor:pointer">' +
-          '</label>' +
-          '<label style="font-family:var(--mono);font-size:8.5px;color:var(--mute);display:flex;align-items:center;gap:4px">' +
-            'Tebal <input type="range" min="0.5" max="8" step="0.5" value="'+(l.weight||2.2)+'" oninput="shpChangeWeight(\''+l.id+'\',parseFloat(this.value))" style="width:60px">' +
-          '</label>' +
-        '</div>' +
-      '</div>' +
-    '</div>';
+    var fbc = l.fillBaseColor || l.color;
+    var w   = l.weight != null ? l.weight : 2.2;
+    var op  = l.opacity != null ? l.opacity : 85;
+    var fop = l.fillOpacity != null ? l.fillOpacity : 22;
+    var fst = l.fillStyle || 'solid';
+    var lid = l.id;
+    var panelId = 'shp-fill-' + lid;
+    return [
+      '<div class="shp-layer-item" style="margin-bottom:4px;flex-wrap:wrap">',
+        '<input type="color" value="' + l.color + '"',
+          ' onchange="shpChangeColor(\'' + lid + '\',this.value)"',
+          ' title="Warna outline/garis"',
+          ' style="width:20px;height:20px;flex-shrink:0;padding:0;border:1.5px solid rgba(255,255,255,0.25);border-radius:50%;cursor:pointer">',
+        '<div class="shp-layer-info">',
+          '<div class="shp-layer-name">' + _e(l.name) + '</div>',
+          '<div class="shp-layer-meta">' + l.count.toLocaleString() + ' fitur</div>',
+        '</div>',
+        '<span class="shp-layer-badge ' + (isVisible ? 'visible' : 'hidden') + '"',
+          ' onclick="shpToggleLayer(\'' + lid + '\')" style="cursor:pointer">',
+          (isVisible ? '👁' : '○'),
+        '</span>',
+        '<button onclick="petaToggleFillPanel(\'' + panelId + '\')"',
+          ' title="Warna &amp; arsiran"',
+          ' style="background:none;border:none;color:var(--mute);cursor:pointer;font-size:12px;padding:0 2px">🎨</button>',
+        '<button onclick="kmzRemoveLayer(\'' + lid + '\')"',
+          ' style="background:none;border:none;color:var(--mute);cursor:pointer;font-size:11px;padding:2px 4px"',
+          ' title="Hapus layer">✕</button>',
+        '<div id="' + panelId + '" style="display:none;width:100%;margin-top:6px;padding:8px;background:var(--card2);border-radius:6px;border:1px solid var(--brd2)">',
+          '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">',
+            '<label style="font-family:var(--mono);font-size:8.5px;color:var(--mute);display:flex;align-items:center;gap:4px">',
+              'Outline <input type="color" value="' + l.color + '"',
+                ' onchange="shpChangeColor(\'' + lid + '\',this.value)"',
+                ' style="width:22px;height:18px;padding:0;border:none;cursor:pointer">',
+            '</label>',
+            '<label style="font-family:var(--mono);font-size:8.5px;color:var(--mute);display:flex;align-items:center;gap:4px">',
+              'Isi <input type="color" value="' + fbc + '"',
+                ' onchange="shpChangeFillBaseColor(\'' + lid + '\',this.value)"',
+                ' style="width:22px;height:18px;padding:0;border:none;cursor:pointer">',
+            '</label>',
+          '</div>',
+          '<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">',
+            '<span style="font-family:var(--mono);font-size:8px;color:var(--mute);width:70px;flex-shrink:0">Ketebalan</span>',
+            '<input type="range" min="0.5" max="8" step="0.5" value="' + w + '"',
+              ' oninput="shpChangeWeight(\'' + lid + '\',parseFloat(this.value));this.nextElementSibling.textContent=this.value"',
+              ' style="flex:1">',
+            '<span style="font-family:var(--mono);font-size:8px;color:var(--txt2);width:24px;text-align:right">' + w + '</span>',
+          '</div>',
+          '<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">',
+            '<span style="font-family:var(--mono);font-size:8px;color:var(--mute);width:70px;flex-shrink:0">Transparansi</span>',
+            '<input type="range" min="10" max="100" value="' + op + '"',
+              ' oninput="shpChangeOpacity(\'' + lid + '\',parseInt(this.value));this.nextElementSibling.textContent=this.value+\'%\'"',
+              ' style="flex:1">',
+            '<span style="font-family:var(--mono);font-size:8px;color:var(--txt2);width:28px;text-align:right">' + op + '%</span>',
+          '</div>',
+          '<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">',
+            '<span style="font-family:var(--mono);font-size:8px;color:var(--mute);width:70px;flex-shrink:0">Isi area</span>',
+            '<input type="range" min="0" max="100" value="' + fop + '"',
+              ' oninput="shpChangeFillOpacity(\'' + lid + '\',parseInt(this.value));this.nextElementSibling.textContent=this.value+\'%\'"',
+              ' style="flex:1">',
+            '<span style="font-family:var(--mono);font-size:8px;color:var(--txt2);width:28px;text-align:right">' + fop + '%</span>',
+          '</div>',
+          _fillStyleSelectHtml('kmz-fill-' + lid, fst).replace(
+            'id="kmz-fill-' + lid + '"',
+            'id="kmz-fill-' + lid + '" onchange="shpChangeFillStyle(\'' + lid + '\',this.value)" style="width:100%;padding:5px 7px;background:var(--inp);border:1px solid var(--brd);border-radius:3px;color:var(--txt);font-size:10.5px;outline:none;margin-top:2px"'
+          ),
+        '</div>',
+      '</div>'
+    ].join('');
   }).join('');
 }
 
@@ -11695,75 +11737,93 @@ function dxfUpdateLayerList() {
   var listDiv  = document.getElementById('dxf-layers-list');
   var itemsDiv = document.getElementById('dxf-layers-items');
   if (!listDiv || !itemsDiv) return;
-  // Sinkron _dxfLayers dari _shpLayers (filter sourceType=dxf)
   _dxfLayers = _shpLayers.filter(function(l){ return l.sourceType === 'dxf'; });
   if (!_dxfLayers.length) { listDiv.style.display = 'none'; return; }
   listDiv.style.display = 'block';
   itemsDiv.innerHTML = _dxfLayers.map(function(l) {
     var isVisible = !!(_map && l.layer && _map.hasLayer(l.layer));
-    return '<div class="shp-layer-item" style="margin-bottom:4px;flex-wrap:wrap">' +
-      '<input type="color" value="'+l.color+'" onchange="shpChangeColor(''+l.id+'',this.value)" title="Warna outline/garis" style="width:20px;height:20px;flex-shrink:0;padding:0;border:1.5px solid rgba(255,255,255,0.25);border-radius:50%;cursor:pointer">' +
-      '<div class="shp-layer-info">' +
-        '<div class="shp-layer-name" title="'+_e(l.name)+'">'+_e(l.name)+'</div>' +
-        '<div class="shp-layer-meta">'+l.count.toLocaleString()+' entitas</div>' +
-      '</div>' +
-      '<span class="shp-layer-badge '+(isVisible?'visible':'hidden')+'" onclick="shpToggleLayer(''+l.id+'')" style="cursor:pointer">'+(isVisible?'👁':'○')+'</span>' +
-      '<button onclick="petaToggleFillPanel('shp-fill-'+l.id+'')" title="Warna &amp; arsiran" style="background:none;border:none;color:var(--mute);cursor:pointer;font-size:12px;padding:0 2px">🎨</button>' +
-      '<button onclick="shpRemoveLayer(''+l.id+'')" style="background:none;border:none;color:var(--mute);cursor:pointer;font-size:11px;padding:2px 4px" title="Hapus layer">✕</button>' +
-      /* Panel styling inline (compact) — referensikan ke shp-fill-{id} yang dirender shpUpdateLayerList */
-      '<div id="shp-fill-'+l.id+'" style="display:none;width:100%;margin-top:6px;padding:8px;background:var(--card2);border-radius:6px;border:1px solid var(--brd2)">' +
-        _dxfInlineStylePanel(l) +
-      '</div>' +
-    '</div>';
+    var fbc = l.fillBaseColor || l.color;
+    var w   = l.weight != null ? l.weight : 2.2;
+    var op  = l.opacity != null ? l.opacity : 85;
+    var fop = l.fillOpacity != null ? l.fillOpacity : 22;
+    var fst = l.fillStyle || 'solid';
+    var lst = l.lineStyle || 'solid';
+    var lid = l.id;
+    var panelId = 'shp-fill-' + lid;
+    return [
+      '<div class="shp-layer-item" style="margin-bottom:4px;flex-wrap:wrap">',
+        '<input type="color" value="' + l.color + '"',
+          ' onchange="shpChangeColor(\'' + lid + '\',this.value)"',
+          ' title="Warna outline/garis"',
+          ' style="width:20px;height:20px;flex-shrink:0;padding:0;border:1.5px solid rgba(255,255,255,0.25);border-radius:50%;cursor:pointer">',
+        '<div class="shp-layer-info">',
+          '<div class="shp-layer-name">' + _e(l.name) + '</div>',
+          '<div class="shp-layer-meta">' + l.count.toLocaleString() + ' entitas</div>',
+        '</div>',
+        '<span class="shp-layer-badge ' + (isVisible ? 'visible' : 'hidden') + '"',
+          ' onclick="shpToggleLayer(\'' + lid + '\')" style="cursor:pointer">',
+          (isVisible ? '👁' : '○'),
+        '</span>',
+        '<button onclick="petaToggleFillPanel(\'' + panelId + '\')"',
+          ' title="Warna &amp; arsiran"',
+          ' style="background:none;border:none;color:var(--mute);cursor:pointer;font-size:12px;padding:0 2px">🎨</button>',
+        '<button onclick="shpRemoveLayer(\'' + lid + '\')"',
+          ' style="background:none;border:none;color:var(--mute);cursor:pointer;font-size:11px;padding:2px 4px"',
+          ' title="Hapus layer">✕</button>',
+        '<div id="' + panelId + '" style="display:none;width:100%;margin-top:6px;padding:8px;background:var(--card2);border-radius:6px;border:1px solid var(--brd2)">',
+          /* Warna */
+          '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">',
+            '<label style="font-family:var(--mono);font-size:8.5px;color:var(--mute);display:flex;align-items:center;gap:4px">',
+              'Outline <input type="color" value="' + l.color + '"',
+                ' onchange="shpChangeColor(\'' + lid + '\',this.value)"',
+                ' style="width:22px;height:18px;padding:0;border:none;cursor:pointer">',
+            '</label>',
+            '<label style="font-family:var(--mono);font-size:8.5px;color:var(--mute);display:flex;align-items:center;gap:4px">',
+              'Isi <input type="color" value="' + fbc + '"',
+                ' onchange="shpChangeFillBaseColor(\'' + lid + '\',this.value)"',
+                ' style="width:22px;height:18px;padding:0;border:none;cursor:pointer">',
+            '</label>',
+          '</div>',
+          /* Ketebalan */
+          '<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">',
+            '<span style="font-family:var(--mono);font-size:8px;color:var(--mute);width:70px;flex-shrink:0">Ketebalan</span>',
+            '<input type="range" min="0.5" max="8" step="0.5" value="' + w + '"',
+              ' oninput="shpChangeWeight(\'' + lid + '\',parseFloat(this.value));this.nextElementSibling.textContent=this.value"',
+              ' style="flex:1">',
+            '<span style="font-family:var(--mono);font-size:8px;color:var(--txt2);width:24px;text-align:right">' + w + '</span>',
+          '</div>',
+          /* Transparansi garis */
+          '<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">',
+            '<span style="font-family:var(--mono);font-size:8px;color:var(--mute);width:70px;flex-shrink:0">Transparansi</span>',
+            '<input type="range" min="10" max="100" value="' + op + '"',
+              ' oninput="shpChangeOpacity(\'' + lid + '\',parseInt(this.value));this.nextElementSibling.textContent=this.value+\'%\'"',
+              ' style="flex:1">',
+            '<span style="font-family:var(--mono);font-size:8px;color:var(--txt2);width:28px;text-align:right">' + op + '%</span>',
+          '</div>',
+          /* Tipe garis */
+          '<div style="font-family:var(--mono);font-size:8px;color:var(--mute);margin-bottom:3px">Tipe garis</div>',
+          _lineStyleSelectHtmlNoArrow('dxf-ls-' + lid, lst).replace(
+            'id="dxf-ls-' + lid + '"',
+            'id="dxf-ls-' + lid + '" onchange="shpChangeLineStyle(\'' + lid + '\',this.value)"'
+          ),
+          /* Arsiran isi */
+          '<div style="font-family:var(--mono);font-size:8px;color:var(--mute);margin-top:6px;margin-bottom:3px">Arsiran isi area</div>',
+          _fillStyleSelectHtml('dxf-fs-' + lid, fst).replace(
+            'id="dxf-fs-' + lid + '"',
+            'id="dxf-fs-' + lid + '" onchange="shpChangeFillStyle(\'' + lid + '\',this.value)" style="width:100%;padding:5px 7px;background:var(--inp);border:1px solid var(--brd);border-radius:3px;color:var(--txt);font-size:10.5px;outline:none"'
+          ),
+          /* Transparansi isi */
+          '<div style="display:flex;align-items:center;gap:6px;margin-top:5px">',
+            '<span style="font-family:var(--mono);font-size:8px;color:var(--mute);width:70px;flex-shrink:0">Isi area</span>',
+            '<input type="range" min="0" max="100" value="' + fop + '"',
+              ' oninput="shpChangeFillOpacity(\'' + lid + '\',parseInt(this.value));this.nextElementSibling.textContent=this.value+\'%\'"',
+              ' style="flex:1">',
+            '<span style="font-family:var(--mono);font-size:8px;color:var(--txt2);width:28px;text-align:right">' + fop + '%</span>',
+          '</div>',
+        '</div>',
+      '</div>'
+    ].join('');
   }).join('');
-}
-
-function _dxfInlineStylePanel(l) {
-  /* Panel styling ringkas: warna outline, warna isi, gaya garis, ketebalan, transparansi, arsiran isi */
-  var lineStyle = l.lineStyle || 'solid';
-  var weight = (l.weight != null ? l.weight : 2.2);
-  var opacity = (l.opacity != null ? l.opacity : 85);
-  var fillBaseColor = l.fillBaseColor || l.color;
-  var fillStyle = l.fillStyle || 'solid';
-  var fillOpacity = (l.fillOpacity != null ? l.fillOpacity : 22);
-  return '' +
-    /* Warna & garis */
-    '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">' +
-      '<label style="font-family:var(--mono);font-size:8.5px;color:var(--mute);display:flex;align-items:center;gap:4px">Outline ' +
-        '<input type="color" value="'+l.color+'" onchange="shpChangeColor(''+l.id+'',this.value)" style="width:22px;height:18px;padding:0;border:none;cursor:pointer">' +
-      '</label>' +
-      '<label style="font-family:var(--mono);font-size:8.5px;color:var(--mute);display:flex;align-items:center;gap:4px">Isi ' +
-        '<input type="color" value="'+fillBaseColor+'" onchange="shpChangeFillBaseColor(''+l.id+'',this.value)" style="width:22px;height:18px;padding:0;border:none;cursor:pointer">' +
-      '</label>' +
-    '</div>' +
-    /* Ketebalan */
-    '<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">' +
-      '<span style="font-family:var(--mono);font-size:8px;color:var(--mute);width:58px;flex-shrink:0">Ketebalan</span>' +
-      '<input type="range" min="0.5" max="8" step="0.5" value="'+weight+'" oninput="shpChangeWeight(''+l.id+'',parseFloat(this.value));this.nextElementSibling.textContent=this.value" style="flex:1">' +
-      '<span style="font-family:var(--mono);font-size:8px;color:var(--txt2);width:24px;text-align:right">'+weight+'</span>' +
-    '</div>' +
-    /* Transparansi outline */
-    '<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">' +
-      '<span style="font-family:var(--mono);font-size:8px;color:var(--mute);width:58px;flex-shrink:0">Transparansi</span>' +
-      '<input type="range" min="10" max="100" value="'+opacity+'" oninput="shpChangeOpacity(''+l.id+'',parseInt(this.value));this.nextElementSibling.textContent=this.value+'%'" style="flex:1">' +
-      '<span style="font-family:var(--mono);font-size:8px;color:var(--txt2);width:28px;text-align:right">'+opacity+'%</span>' +
-    '</div>' +
-    /* Tipe garis */
-    '<div style="font-family:var(--mono);font-size:8px;color:var(--mute);margin-bottom:3px">Tipe garis</div>' +
-    _lineStyleSelectHtmlNoArrow('dxf-linestyle-'+l.id, lineStyle).replace(
-      'id="dxf-linestyle-'+l.id+'"',
-      'id="dxf-linestyle-'+l.id+'" onchange="shpChangeLineStyle(''+l.id+'',this.value)"') +
-    /* Arsiran isi */
-    '<div style="font-family:var(--mono);font-size:8px;color:var(--mute);margin-top:6px;margin-bottom:3px">Arsiran isi area</div>' +
-    _fillStyleSelectHtml('dxf-fillstyle-'+l.id, fillStyle).replace(
-      'id="dxf-fillstyle-'+l.id+'"',
-      'id="dxf-fillstyle-'+l.id+'" onchange="shpChangeFillStyle(''+l.id+'',this.value)" style="width:100%;padding:5px 7px;background:var(--inp);border:1px solid var(--brd);border-radius:3px;color:var(--txt);font-family:'Inter',sans-serif;font-size:10.5px;outline:none"') +
-    /* Transparansi isi */
-    '<div style="display:flex;align-items:center;gap:6px;margin-top:5px">' +
-      '<span style="font-family:var(--mono);font-size:8px;color:var(--mute);width:58px;flex-shrink:0">Transparansi isi</span>' +
-      '<input type="range" min="0" max="100" value="'+fillOpacity+'" oninput="shpChangeFillOpacity(''+l.id+'',parseInt(this.value));this.nextElementSibling.textContent=this.value+'%'" style="flex:1">' +
-      '<span style="font-family:var(--mono);font-size:8px;color:var(--txt2);width:28px;text-align:right">'+fillOpacity+'%</span>' +
-    '</div>';
 }
 
 function dxfClearAll() {

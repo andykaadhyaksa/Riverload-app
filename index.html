@@ -8401,6 +8401,8 @@ if (document.readyState === 'loading') {
             <div class="rl-dd-item" onclick="petaAddMode('outfall')"><span class="rl-dd-icon" style="color:#f5a623">●</span> Titik Outfall</div>
             <div class="rl-dd-item" onclick="petaAddMode('hulu')"><span class="rl-dd-icon" style="color:#4488ff">●</span> Titik Pantau Hulu</div>
             <div class="rl-dd-item" onclick="petaAddMode('hilir')"><span class="rl-dd-icon" style="color:#9b59b6">●</span> Titik Pantau Hilir</div>
+            <div style="border-top:1px solid var(--brd);margin:4px 0"></div>
+            <div class="rl-dd-item" onclick="petaShowCustomMarkerModal()" style="color:var(--accent)"><span class="rl-dd-icon">✏️</span> Input Manual…</div>
           </div>
         </div>
         <button class="btn btn-outline btn-sm" onclick="petaAddMode('garis')" style="color:#4488ff;border-color:rgba(68,136,255,.4)" title="Gambar garis manual di peta">／ Garis</button>
@@ -8416,9 +8418,76 @@ if (document.readyState === 'loading') {
       </div>
     </div>
 
+    <!-- Modal Input Manual Titik Kustom -->
+    <div id="peta-custom-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.45);align-items:center;justify-content:center">
+      <div style="background:var(--card);border:1px solid var(--brd);border-radius:12px;padding:22px 24px;width:340px;max-width:92vw;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+        <div style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--accent);letter-spacing:.8px;text-transform:uppercase;margin-bottom:16px">✏️ Titik Kustom</div>
+
+        <div style="margin-bottom:12px">
+          <label style="font-family:var(--mono);font-size:9px;color:var(--mute);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px">Nama Tipe Titik *</label>
+          <input id="custom-marker-type-name" type="text" placeholder="cth: Titik Kontrol, BM-01, IPA Intake…"
+            style="width:100%;box-sizing:border-box;padding:8px 10px;font-family:var(--mono);font-size:12px;background:var(--inp);border:1px solid var(--brd);border-radius:6px;color:var(--txt);outline:none"
+            onkeydown="if(event.key==='Enter')petaConfirmCustomMarker();if(event.key==='Escape')petaHideCustomMarkerModal()">
+        </div>
+
+        <div style="margin-bottom:12px">
+          <label style="font-family:var(--mono);font-size:9px;color:var(--mute);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px">Warna Titik</label>
+          <div style="display:flex;align-items:center;gap:10px">
+            <input id="custom-marker-color" type="color" value="#f04e7c"
+              style="width:36px;height:30px;padding:2px;border:1px solid var(--brd);border-radius:6px;cursor:pointer;background:var(--inp)">
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <span onclick="document.getElementById('custom-marker-color').value='#f04e7c'" style="width:18px;height:18px;border-radius:50%;background:#f04e7c;cursor:pointer;border:2px solid transparent" title="#f04e7c"></span>
+              <span onclick="document.getElementById('custom-marker-color').value='#f5a623'" style="width:18px;height:18px;border-radius:50%;background:#f5a623;cursor:pointer" title="#f5a623"></span>
+              <span onclick="document.getElementById('custom-marker-color').value='#10b981'" style="width:18px;height:18px;border-radius:50%;background:#10b981;cursor:pointer" title="#10b981"></span>
+              <span onclick="document.getElementById('custom-marker-color').value='#3b82f6'" style="width:18px;height:18px;border-radius:50%;background:#3b82f6;cursor:pointer" title="#3b82f6"></span>
+              <span onclick="document.getElementById('custom-marker-color').value='#a855f7'" style="width:18px;height:18px;border-radius:50%;background:#a855f7;cursor:pointer" title="#a855f7"></span>
+              <span onclick="document.getElementById('custom-marker-color').value='#ef4444'" style="width:18px;height:18px;border-radius:50%;background:#ef4444;cursor:pointer" title="#ef4444"></span>
+              <span onclick="document.getElementById('custom-marker-color').value='#f59e0b'" style="width:18px;height:18px;border-radius:50%;background:#f59e0b;cursor:pointer" title="#f59e0b"></span>
+              <span onclick="document.getElementById('custom-marker-color').value='#06b6d4'" style="width:18px;height:18px;border-radius:50%;background:#06b6d4;cursor:pointer" title="#06b6d4"></span>
+              <span onclick="document.getElementById('custom-marker-color').value='#64748b'" style="width:18px;height:18px;border-radius:50%;background:#64748b;cursor:pointer" title="#64748b"></span>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-bottom:18px">
+          <label style="font-family:var(--mono);font-size:9px;color:var(--mute);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px">Nama Titik Ini (opsional)</label>
+          <input id="custom-marker-point-name" type="text" placeholder="kosongkan = isi via popup saat klik peta"
+            style="width:100%;box-sizing:border-box;padding:8px 10px;font-family:var(--mono);font-size:12px;background:var(--inp);border:1px solid var(--brd);border-radius:6px;color:var(--txt);outline:none"
+            onkeydown="if(event.key==='Enter')petaConfirmCustomMarker();if(event.key==='Escape')petaHideCustomMarkerModal()">
+          <div style="font-family:var(--mono);font-size:8.5px;color:var(--mute);margin-top:4px">Jika diisi, klik peta langsung simpan tanpa popup</div>
+        </div>
+
+        <div style="display:flex;gap:8px">
+          <button onclick="petaHideCustomMarkerModal()"
+            style="flex:1;padding:9px;font-family:var(--mono);font-size:11px;font-weight:700;border-radius:6px;border:1px solid var(--brd);background:transparent;color:var(--mute);cursor:pointer">
+            Batal
+          </button>
+          <button onclick="petaConfirmCustomMarker()" id="custom-marker-confirm-btn"
+            style="flex:2;padding:9px;font-family:var(--mono);font-size:11px;font-weight:700;border-radius:6px;border:none;background:var(--accent);color:var(--accent-fg);cursor:pointer">
+            Klik Peta untuk Letakkan →
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Mode bar -->
-    <div id="peta-mode-bar" style="display:none;margin-bottom:12px;padding:9px 16px;border-radius:var(--rs);font-family:var(--mono);font-size:10.5px;font-weight:600;background:rgba(26,176,166,0.08);border:1px solid var(--brd);align-items:center;gap:10px">
+    <div id="peta-mode-bar" style="display:none;margin-bottom:12px;padding:9px 16px;border-radius:var(--rs);font-family:var(--mono);font-size:10.5px;font-weight:600;background:rgba(26,176,166,0.08);border:1px solid var(--brd);align-items:center;gap:10px;flex-wrap:wrap">
       <span id="peta-mode-txt"></span><span id="peta-mode-live" style="color:var(--accent)"></span>
+      <!-- Input nama titik — hanya muncul untuk mode titik, bukan garis/polygon/ruler -->
+      <div id="peta-mode-name-wrap" style="display:none;display:flex;align-items:center;gap:6px;flex:1;min-width:180px">
+        <span style="font-size:9.5px;color:var(--mute);white-space:nowrap">Nama titik:</span>
+        <input id="peta-mode-name-input" type="text" placeholder="kosongkan = isi via popup…"
+          style="flex:1;padding:4px 8px;font-family:var(--mono);font-size:10.5px;background:var(--inp);border:1px solid var(--brd);border-radius:4px;color:var(--txt);outline:none;min-width:0"
+          onkeydown="if(event.key==='Escape'){petaCancelMode();event.preventDefault();}"
+          title="Ketik nama titik di sini — klik peta untuk meletakkan. Biarkan kosong untuk mengisi via popup.">
+        <select id="peta-mode-status-input"
+          style="padding:4px 6px;font-family:var(--mono);font-size:10px;background:var(--inp);border:1px solid var(--brd);border-radius:4px;color:var(--mute);outline:none;flex-shrink:0"
+          title="Status baku mutu (opsional)">
+          <option value="">— Status BM —</option>
+          <option value="ok">✓ Memenuhi BM</option>
+          <option value="ng">✗ Melebihi BM</option>
+        </select>
+      </div>
       <button id="peta-mode-undo-btn" onclick="petaUndoLastPoint()" title="Hapus titik terakhir (Backspace)" style="display:none;background:none;border:1px solid var(--brd);border-radius:var(--rs);color:var(--mute);cursor:pointer;font-family:var(--mono);font-size:10px;padding:3px 10px">↩ Undo Titik</button>
       <button id="peta-mode-finish-btn" onclick="petaFinishShape()" title="Selesai (Enter)" style="display:none;background:rgba(26,176,166,0.15);border:1px solid rgba(26,176,166,0.4);border-radius:var(--rs);color:var(--accent);cursor:pointer;font-family:var(--mono);font-size:10px;font-weight:700;padding:3px 12px">✓ Selesai</button>
       <button onclick="petaCancelMode()" title="Batal (Esc)" style="margin-left:auto;background:none;border:1px solid var(--brd);border-radius:var(--rs);color:var(--mute);cursor:pointer;font-family:var(--mono);font-size:10px;padding:3px 10px">✕ Batal</button>
@@ -9526,6 +9595,75 @@ var PETA_PT_TYPES = {
 };
 var PETA_PT_ORDER = ['sampling','inlet','outlet','outfall','hulu','hilir'];
 function _ptType(type) { return PETA_PT_TYPES[type] || PETA_PT_TYPES.sampling; }
+
+/* ─── Titik Kustom — Input Manual ─────────────────────────────────────── */
+var _customMarkerTypeName  = '';
+var _customMarkerColor     = '#f04e7c';
+var _customMarkerPointName = '';
+
+function petaShowCustomMarkerModal() {
+  var modal = document.getElementById('peta-custom-modal');
+  if (!modal) return;
+  modal.style.display = 'flex';
+  // Reset fields
+  var tn = document.getElementById('custom-marker-type-name');
+  var pn = document.getElementById('custom-marker-point-name');
+  var co = document.getElementById('custom-marker-color');
+  if (tn) { tn.value = _customMarkerTypeName || ''; setTimeout(function(){ tn.focus(); tn.select(); }, 80); }
+  if (pn) pn.value = '';
+  if (co) co.value = _customMarkerColor;
+}
+
+function petaHideCustomMarkerModal() {
+  var modal = document.getElementById('peta-custom-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+function petaConfirmCustomMarker() {
+  var tn = document.getElementById('custom-marker-type-name');
+  var pn = document.getElementById('custom-marker-point-name');
+  var co = document.getElementById('custom-marker-color');
+  var typeName  = tn ? tn.value.trim() : '';
+  var pointName = pn ? pn.value.trim() : '';
+  var color     = co ? co.value : '#f04e7c';
+
+  if (!typeName) {
+    if (tn) { tn.style.borderColor = '#ef4444'; tn.focus(); }
+    toast('Isi nama tipe titik terlebih dahulu', 'err');
+    return;
+  }
+  if (tn) tn.style.borderColor = '';
+
+  // Simpan ke variabel global
+  _customMarkerTypeName  = typeName;
+  _customMarkerColor     = color;
+  _customMarkerPointName = pointName;
+
+  // Daftarkan sebagai tipe sementara di PETA_PT_TYPES
+  var typeKey = 'custom_' + typeName.toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 20);
+  PETA_PT_TYPES[typeKey] = { label: typeName, short: typeName, color: color, useUbmName: false, isCustom: true };
+
+  petaHideCustomMarkerModal();
+
+  // Masuk mode titik kustom
+  petaAddMode(typeKey);
+
+  // Jika ada nama titik spesifik, isi ke mode bar input
+  if (pointName) {
+    var nameInput = document.getElementById('peta-mode-name-input');
+    if (nameInput) { nameInput.value = pointName; }
+  }
+
+  toast('✏️ Mode ' + typeName + ' aktif — klik peta untuk letakkan titik', 'ok');
+}
+
+// Tutup modal kalau klik backdrop
+document.addEventListener('click', function(e) {
+  var modal = document.getElementById('peta-custom-modal');
+  if (modal && modal.style.display === 'flex' && e.target === modal) {
+    petaHideCustomMarkerModal();
+  }
+});
 function _hexToRgba(hex, alpha) {
   var h = hex.replace('#','');
   var r = parseInt(h.substring(0,2),16), g = parseInt(h.substring(2,4),16), b = parseInt(h.substring(4,6),16);
@@ -10153,10 +10291,32 @@ function petaInit() {
     { attribution: '&copy; Google', maxZoom: 20, crossOrigin: true }
   );
 
+  /* Retina/HiDPI: tile 512px (scale=2), maxNativeZoom=19 agar tidak upscale berlebih */
+  var googleSatHD = L.tileLayer(
+    'https://mt1.google.com/vt/lyrs=s&scale=2&x={x}&y={y}&z={z}',
+    { attribution: '&copy; Google', maxZoom: 20, maxNativeZoom: 19,
+      tileSize: 512, zoomOffset: -1, crossOrigin: true }
+  );
+
   var googleHybrid = L.tileLayer(
     'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
     { attribution: '&copy; Google', maxZoom: 20, crossOrigin: true }
   );
+
+  var googleHybridHD = L.tileLayer(
+    'https://mt1.google.com/vt/lyrs=y&scale=2&x={x}&y={y}&z={z}',
+    { attribution: '&copy; Google', maxZoom: 20, maxNativeZoom: 19,
+      tileSize: 512, zoomOffset: -1, crossOrigin: true }
+  );
+
+  /* Sat + OSM road overlay — jalan tajam di zoom tinggi */
+  var googleSatOSM = L.layerGroup([
+    L.tileLayer('https://mt1.google.com/vt/lyrs=s&scale=2&x={x}&y={y}&z={z}',
+      { attribution: '&copy; Google + OpenStreetMap', maxZoom: 20, maxNativeZoom: 19,
+        tileSize: 512, zoomOffset: -1, crossOrigin: true }),
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png',
+      { subdomains: 'abcd', maxZoom: 20, opacity: 0.85, crossOrigin: true })
+  ]);
 
   var googleTerrain = L.tileLayer(
     'https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}',
@@ -10184,6 +10344,9 @@ function petaInit() {
       '\uD83E\uDE7A Humanitarian (HOT)': humanitarian,
       /* ── Google ── */
       '\uD83C\uDF10 Google Satellite': googleSat,
+      '\u2728 Google Satellite HD (Retina)': googleSatHD,
+      '\u2728 Google Hybrid HD (Retina)': googleHybridHD,
+      '\uD83D\uDDFA\uFE0F Google Sat HD + Label OSM': googleSatOSM,
       '\uD83C\uDF10 Google Hybrid (Sat+Jalan)': googleHybrid,
       '\uD83C\uDF10 Google Terrain': googleTerrain,
       '\uD83C\uDF10 Google Road': googleRoad,
@@ -10249,7 +10412,28 @@ function petaInit() {
     } else if (_mode === 'ruler') {
       _rulerAddPoint(lat, lng);
     } else {
-      _addPopup(latlng, _mode);
+      // Ambil nama dan status dari mode bar input (jika diisi)
+      var _modeNameEl   = document.getElementById('peta-mode-name-input');
+      var _modeStatusEl = document.getElementById('peta-mode-status-input');
+      var _modeName     = _modeNameEl   ? _modeNameEl.value.trim() : '';
+      var _modeStatus   = _modeStatusEl ? _modeStatusEl.value      : '';
+      if (_modeName) {
+        // Nama sudah diisi di mode bar — simpan langsung tanpa popup
+        var _mQuick = {
+          id: 'mk_'+(_uid++), type: _mode,
+          name: _modeName,
+          lat: lat, lng: lng,
+          status: _modeStatus, note: ''
+        };
+        petaCancelMode();
+        _markers.push(_mQuick);
+        _addLeafletMarker(_mQuick);
+        _renderList(); _renderTable(); _persist();
+        toast('📍 ' + _mQuick.name + ' ditambahkan');
+      } else {
+        // Nama kosong → buka popup seperti biasa
+        _addPopup(latlng, _mode);
+      }
     }
   });
 
@@ -10290,10 +10474,19 @@ function petaAddMode(mode) {
     circle:   'klik titik pusat, lalu klik tepi utk menentukan radius (2 titik) — selesai otomatis',
     ruler:    'klik titik-titik utk mengukur, jarak terlihat live, lalu "Selesai" (Enter)'
   };
-  txt.textContent = (icons[mode]||'📍')+' Mode '+label+' — '+(hint[mode] || 'klik lokasi di peta');
+  var isPointMode = ['sampling','inlet','outlet','outfall','hulu','hilir'].indexOf(mode) >= 0
+                 || (mode && mode.startsWith('custom_'));
+  txt.textContent = (icons[mode]||'📍')+' Mode '+label+' — '+(hint[mode] || (isPointMode ? 'ketik nama lalu klik peta' : 'klik lokasi di peta'));
   if (live) live.textContent = '';
   if (finishBtn) finishBtn.style.display = (mode === 'garis' || mode === 'polygon' || mode === 'ruler') ? 'inline-block' : 'none';
   if (undoBtn) undoBtn.style.display = 'none';
+  // Tampilkan input nama hanya untuk mode titik
+  var nameWrap = document.getElementById('peta-mode-name-wrap');
+  var nameInput = document.getElementById('peta-mode-name-input');
+  var statusInput = document.getElementById('peta-mode-status-input');
+  if (nameWrap) nameWrap.style.display = isPointMode ? 'flex' : 'none';
+  if (nameInput) { nameInput.value = ''; setTimeout(function(){ nameInput.focus(); }, 80); }
+  if (statusInput) statusInput.value = '';
   _map.getContainer().style.cursor = 'crosshair';
 }
 
@@ -10305,6 +10498,10 @@ function petaCancelMode() {
   _rulerClear();
   var bar = document.getElementById('peta-mode-bar');
   if (bar) bar.style.display = 'none';
+  var nameInput = document.getElementById('peta-mode-name-input');
+  var nameWrap  = document.getElementById('peta-mode-name-wrap');
+  if (nameInput) nameInput.value = '';
+  if (nameWrap)  nameWrap.style.display = 'none';
   if (_map) _map.getContainer().style.cursor = '';
 }
 
@@ -15731,10 +15928,27 @@ function genInit() {
     'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
     { attribution: '&copy; Google', maxZoom: 20, crossOrigin: true }
   );
+  var genGoogleSatHD = L.tileLayer(
+    'https://mt1.google.com/vt/lyrs=s&scale=2&x={x}&y={y}&z={z}',
+    { attribution: '&copy; Google', maxZoom: 20, maxNativeZoom: 19,
+      tileSize: 512, zoomOffset: -1, crossOrigin: true }
+  );
   var genGoogleHybrid = L.tileLayer(
     'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
     { attribution: '&copy; Google', maxZoom: 20, crossOrigin: true }
   );
+  var genGoogleHybridHD = L.tileLayer(
+    'https://mt1.google.com/vt/lyrs=y&scale=2&x={x}&y={y}&z={z}',
+    { attribution: '&copy; Google', maxZoom: 20, maxNativeZoom: 19,
+      tileSize: 512, zoomOffset: -1, crossOrigin: true }
+  );
+  var genGoogleSatOSM = L.layerGroup([
+    L.tileLayer('https://mt1.google.com/vt/lyrs=s&scale=2&x={x}&y={y}&z={z}',
+      { attribution: '&copy; Google + OpenStreetMap', maxZoom: 20, maxNativeZoom: 19,
+        tileSize: 512, zoomOffset: -1, crossOrigin: true }),
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png',
+      { subdomains: 'abcd', maxZoom: 20, opacity: 0.85, crossOrigin: true })
+  ]);
   var genGoogleTerrain = L.tileLayer(
     'https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}',
     { attribution: '&copy; Google', maxZoom: 20, crossOrigin: true }
@@ -15763,6 +15977,9 @@ function genInit() {
       '\uD83E\uDE7A Humanitarian (HOT)': genHumanitarian,
       /* ── Google ── */
       '\uD83C\uDF10 Google Satellite': genGoogleSat,
+      '\u2728 Google Satellite HD (Retina)': genGoogleSatHD,
+      '\u2728 Google Hybrid HD (Retina)': genGoogleHybridHD,
+      '\uD83D\uDDFA\uFE0F Google Sat HD + Label OSM': genGoogleSatOSM,
       '\uD83C\uDF10 Google Hybrid (Sat+Jalan)': genGoogleHybrid,
       '\uD83C\uDF10 Google Terrain': genGoogleTerrain,
       '\uD83C\uDF10 Google Road': genGoogleRoad,
@@ -15950,7 +16167,11 @@ function genRenderLegend(skipEditor) {
   var hiddenPtTypes = (_genState.legendHiddenPtTypes || {});
 
   // TITIK PENAATAN — bulat penuh, sama seperti simbol titik di peta
-  var ptHtml = PETA_PT_ORDER.filter(function(t){
+  // Gabungkan tipe standar + tipe kustom yang dipakai di markers
+  var _allPtTypes = PETA_PT_ORDER.concat(
+    Object.keys(PETA_PT_TYPES).filter(function(k){ return k.startsWith('custom_') && PETA_PT_ORDER.indexOf(k) < 0; })
+  );
+  var ptHtml = _allPtTypes.filter(function(t){
     return _markers.some(function(m){ return m.type === t; }) && !hiddenPtTypes[t];
   }).map(function(t){
     var pt = _ptType(t);
@@ -16006,7 +16227,10 @@ function genRenderLegendEditor() {
   var hiddenPtTypes = (_genState.legendHiddenPtTypes || {});
 
   // Titik Penaatan (per jenis titik, bukan per titik individual)
-  PETA_PT_ORDER.filter(function(t){ return _markers.some(function(m){ return m.type === t; }); }).forEach(function(t) {
+  var _allPtTypesSidebar = PETA_PT_ORDER.concat(
+    Object.keys(PETA_PT_TYPES).filter(function(k){ return k.startsWith('custom_') && PETA_PT_ORDER.indexOf(k) < 0; })
+  );
+  _allPtTypesSidebar.filter(function(t){ return _markers.some(function(m){ return m.type === t; }); }).forEach(function(t) {
     var pt = _ptType(t);
     var nm = (_genState.legendPtNames && _genState.legendPtNames[t]) || pt.label;
     var hidden = !!hiddenPtTypes[t];

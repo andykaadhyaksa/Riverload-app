@@ -1233,6 +1233,11 @@ input.inp-sm::placeholder {
 
     <div class="rl-tb-sep"></div>
 
+    <!-- Autosave status indicator -->
+    <div id="rl-save-indicator" title="Status penyimpanan otomatis lokal (browser)" style="font-size:11px;color:var(--mute);white-space:nowrap;padding:0 4px">✓ Tersimpan otomatis</div>
+
+    <div class="rl-tb-sep"></div>
+
     <!-- Site Switcher -->
     <div class="rl-nav-group" style="height:auto" id="site-switcher">
       <button class="btn btn-outline btn-sm" id="site-switcher-btn" style="font-size:11.5px;display:flex;align-items:center;gap:6px;max-width:200px">
@@ -4942,7 +4947,28 @@ function sitesRenderSwitcher(){
 function _e_s(s){ return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 let _st;
+let _rlDirty = false;
+let _rlLastSaved = null;
+
+function _rlUpdateSaveIndicator(status){
+  var el = document.getElementById('rl-save-indicator');
+  if(!el) return;
+  if(status==='saving'){
+    el.textContent = '● Menyimpan…';
+    el.style.color = 'var(--mute)';
+  } else if(status==='saved'){
+    var t = _rlLastSaved ? _rlLastSaved.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'}) : '';
+    el.textContent = '✓ Tersimpan otomatis '+t;
+    el.style.color = 'var(--green,#2e9e5b)';
+  } else if(status==='dirty'){
+    el.textContent = '● Perubahan belum disimpan…';
+    el.style.color = 'var(--mute)';
+  }
+}
+
 function saveAuto(){
+  _rlDirty = true;
+  _rlUpdateSaveIndicator('dirty');
   clearTimeout(_st);
   _st=setTimeout(()=>{
     try{ localStorage.setItem(KEY, JSON.stringify(getState())); }
@@ -4952,8 +4978,52 @@ function saveAuto(){
       sitesPersist();
       sitesRenderSwitcher();
     }
+    _rlDirty = false;
+    _rlLastSaved = new Date();
+    _rlUpdateSaveIndicator('saved');
   }, 1500);
 }
+
+// ═══════════════════════════════════════════════════════════════
+// GLOBAL AUTOSAVE SAFETY NET
+// Menangkap SEMUA input/change di seluruh halaman (termasuk field
+// yang lupa diberi oninput/onchange manual) supaya tidak ada data
+// yang hilang saat browser tertutup/refresh tidak sengaja.
+// ═══════════════════════════════════════════════════════════════
+(function(){
+  var _rlDebounce;
+  function _rlTrigger(e){
+    var tag = e.target && e.target.tagName;
+    if(!tag) return;
+    if(tag!=='INPUT' && tag!=='TEXTAREA' && tag!=='SELECT') return;
+    clearTimeout(_rlDebounce);
+    _rlDebounce = setTimeout(function(){
+      if(typeof saveAuto==='function') saveAuto();
+    }, 300);
+  }
+  document.addEventListener('input', _rlTrigger, true);
+  document.addEventListener('change', _rlTrigger, true);
+
+  // Peringatkan jika ada perubahan yang belum tersimpan saat menutup/refresh tab
+  window.addEventListener('beforeunload', function(e){
+    if(_rlDirty){
+      e.preventDefault();
+      e.returnValue = '';
+      return '';
+    }
+  });
+
+  // Simpan segera saat tab disembunyikan (pindah tab/minimize/tutup) —
+  // lebih andal daripada menunggu debounce 1.5 detik
+  document.addEventListener('visibilitychange', function(){
+    if(document.visibilityState==='hidden' && _rlDirty){
+      try{ localStorage.setItem(KEY, JSON.stringify(getState())); }catch(e){}
+      if(typeof activeSiteId !== 'undefined' && activeSiteId){
+        try{ sitesSnapshotActive(); sitesPersist(); }catch(e){}
+      }
+    }
+  });
+})();
 
 function saveProject(){
   if(typeof sitesSnapshotActive==='function') sitesSnapshotActive();
@@ -13866,6 +13936,7 @@ function tifRenderLayer(georaster, fileName, colorScheme) {
   _tifLayers.push(layerObj);
   if (typeof _layerOrderSync === 'function') _layerOrderSync();
   tifUpdateLayerList();
+  if (typeof toast==='function') toast('⚠ Layer GeoTIFF/DEM tidak tersimpan otomatis — jika tab tertutup/refresh, upload ulang file ini','err');
 
   tifSetProgress(100);
   tifSetStatus('✓ Layer elevasi berhasil ditampilkan', '#1ab0a6');

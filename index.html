@@ -1767,6 +1767,17 @@ input.inp-sm::placeholder {
       <span style="font-family:var(--mono);font-size:10.5px;color:var(--mute)" id="isj-summary"></span>
       <button class="bpm-wiz-btn-next" onclick="isjSendToBPM()">⬆ Kirim ke Beban Pencemar →</button>
     </div>
+
+    <!-- ── Opsi 2: Kirim sebagai Parameter Air Limbah ke Usulan Baku Mutu ── -->
+    <div style="border-top:1px dashed var(--brd);margin-top:14px;padding-top:14px">
+      <div style="font-family:var(--mono);font-size:10px;color:var(--txt2);margin-bottom:8px">
+        <b style="color:var(--accent)">Opsi lain:</b> jadikan data ini sebagai <b>Parameter Air Limbah</b> di menu <b>Usulan Baku Mutu</b>. Sistem akan membuat sumber air limbah baru (jenis: <i>Custom</i>) di Step 2, lalu mengisi nilai konsentrasi tiap parameter yang tercentang ke kolom C sumber tersebut di Step Parameter. Baris <b>Debit</b> (bila tercentang) dipakai sebagai debit sumber (dikonversi ke m³/hari).
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input class="finput" id="isj-ubm-src-name" placeholder="Nama sumber air limbah (mis. Outlet IPAL 1)" style="font-size:12px;padding:6px 10px;min-width:260px;flex:1">
+        <button class="bpm-wiz-btn-next" onclick="isjSendToUBM()" style="background:linear-gradient(135deg,#7a4fd4,#4f6fd4)">💧 Kirim sebagai Air Limbah (Usulan BM) →</button>
+      </div>
+    </div>
   </div>
 
   <div class="empty" id="isj-empty">
@@ -3385,6 +3396,93 @@ function isjSendToBPM() {
   toast(msgParts.length ? `✓ ${msgParts.join(' & ')} dikirim ke Beban Pencemar` : '⚠ Tidak ada data yang dikirim', msgParts.length?'ok':'err');
   nav('bpm');
   bpmWizGoto(4);
+}
+
+// ─── Kirim hasil impor sebagai Parameter Air Limbah ke Usulan Baku Mutu ───
+// Membuat sumber air limbah baru (jenis "Custom") di Step 2 UBM, lalu mengisi
+// nilai konsentrasi tiap parameter tercentang ke kolom C sumber tsb di Step Parameter.
+function isjSendToUBM() {
+  const checks = document.querySelectorAll('.isj-row-check:checked');
+  if(!checks.length) { toast('⚠ Tidak ada parameter tercentang untuk dikirim','err'); return; }
+
+  let srcName = (document.getElementById('isj-ubm-src-name')?.value||'').trim();
+  if(!srcName) srcName = 'Air Limbah Custom';
+
+  const cls = document.getElementById('r-class')?.value || document.getElementById('ubm-class')?.value || '';
+
+  // 1) Buat sumber air limbah baru (jenis: Custom)
+  ubmSrcId++;
+  const newSrc = {id:ubmSrcId, name:srcName, qDay:'', typeId:null, typeLabel:'Custom'};
+  ubmSources.push(newSrc);
+
+  // Pastikan semua parameter lama punya slot cSrc utk sumber baru
+  ubmParams.forEach(p=>{ if(!p.cSrc) p.cSrc={}; if(p.cSrc[newSrc.id]===undefined) p.cSrc[newSrc.id]=''; });
+
+  let sent = 0, updated = 0, debitSent = false;
+  checks.forEach(cb=>{
+    const idx = parseInt(cb.dataset.idx,10);
+    const row = isjRows[idx];
+    if(!row) return;
+
+    const cleanVal = String(row.rawVal).replace(/^[<>≤≥•]\s*/,'').replace('.',',');
+
+    // Baris Debit → jadikan debit sumber (m³/s dari lab → m³/hari)
+    if(isjIsDebitRow(row.rawName)) {
+      const qSec = pNum(cleanVal);
+      if(qSec>0){
+        newSrc.qDay = String(fmtN(qSec*86400,2));
+        debitSent = true;
+      }
+      return;
+    }
+
+    const db = isjMatchParam(row.rawName);
+    if(!db) return;
+
+    // Cari / buat parameter di ubmParams
+    let p = ubmParams.find(x=>x.dbId===db.no);
+    if(!p){
+      ubmPId++;
+      const bm = cls ? numVal(getKVal(db, parseInt(cls))) : null;
+      const rawStr = cls ? String(getKVal(db, parseInt(cls))||'') : '';
+      const isRange = rawStr.includes('-') && !rawStr.startsWith('-');
+      p = {
+        id:ubmPId, dbId:db.no, name:db.name, unit:db.unit,
+        cHuluDry:'', cHuluWet:'', cSrc:{},
+        isPH:isRange,
+        bmVal:isRange?null:bm,
+        bmStr:(cls&&bm!=null&&!isRange)?fmtN(bm,4):(isRange?rawStr:'—'),
+        finalBM:'', usulanBMPerSrc:{}
+      };
+      ubmSources.forEach(s=>{ if(p.cSrc[s.id]===undefined) p.cSrc[s.id]=''; });
+      ubmParams.push(p);
+      sent++;
+    } else {
+      updated++;
+    }
+    if(!p.cSrc) p.cSrc = {};
+    p.cSrc[newSrc.id] = cleanVal;
+  });
+
+  if(!sent && !updated && !debitSent){
+    // Tidak ada data valid — batalkan sumber yang terlanjur dibuat
+    ubmSources = ubmSources.filter(s=>s.id!==newSrc.id);
+    toast('⚠ Tidak ada parameter yang dikenali untuk dikirim','err');
+    return;
+  }
+
+  ubmSave();
+
+  // 2) Arahkan ke menu Usulan Baku Mutu → Step 2 (Sumber Limbah)
+  nav('ubm');                 // nav() sudah memanggil ubmRenderSources/Params + sync
+  ubmWizGoto(2);
+  if(typeof _ubmCalcAndShowResults==='function') _ubmCalcAndShowResults();
+
+  const msgParts = [];
+  if(sent) msgParts.push(`${sent} parameter baru`);
+  if(updated) msgParts.push(`${updated} parameter diperbarui`);
+  if(debitSent) msgParts.push('debit sumber');
+  toast(`✓ Sumber "${srcName}" (Custom) dibuat — ${msgParts.join(', ')} terisi di Step Parameter`,'ok');
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -6067,6 +6165,7 @@ function ubmSrcChange(id,field,val){
 function ubmSrcTypeChange(id, typeId){
   const s=ubmSources.find(x=>x.id===id);
   if(!s) return;
+  if(typeId==='__custom'){ s.typeId=null; s.typeLabel='Custom'; ubmSave(); return; }
   s.typeId = typeId || null;
   const t = typeId ? BMALLDB.find(x=>x.id===typeId) : null;
   s.typeLabel = t ? t.label : null;
@@ -6109,7 +6208,9 @@ function ubmRenderSources(){
     .join('');
   list.innerHTML=ubmSources.map(function(s){
     var qDay=pNum(s.qDay),qHr=qDay/24,qSec=qDay/86400;
+    var isCustom = !s.typeId && s.typeLabel==='Custom';
     var selOpts='<option value="">— Jenis Limbah —</option>';
+    if(isCustom) selOpts+='<option value="__custom" selected>Custom</option>';
     var grouped=BMALLDB.reduce(function(g,t){(g[t.kategori]=g[t.kategori]||[]).push(t);return g;},{});
     Object.keys(grouped).forEach(function(kat){
       selOpts+='<optgroup label="'+esc(kat)+'">';

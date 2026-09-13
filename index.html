@@ -5754,6 +5754,11 @@ const CL_DESC={
 
 function pNum(s){if(typeof s==='number')return s;return parseFloat(String(s||'').replace(/\./g,'').replace(',','.'))||0;}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+// Escape HTML dasar — dipakai untuk menyisipkan teks user ke innerHTML dengan aman
+function _e(s){
+  return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
 function fmtN(v,dec){
   if(v==null||isNaN(v)) return '—';
   dec=dec??2;
@@ -6286,6 +6291,13 @@ function ubmRenderParams(){
     Object.keys(p.cSrc).forEach(k=>{
       if(!ubmSources.find(s=>s.id==k)) delete p.cSrc[k];
     });
+    // Bersihkan cSrc untuk sumber yang punya typeId tapi tidak ada BM Jenis untuk parameter ini
+    // — sumber tersebut ditampilkan "-" dan tidak boleh masuk perhitungan CR
+    ubmSources.forEach(s=>{
+      if(s.typeId && ubmGetBMJenisVal(p.name, s.typeId)===null){
+        p.cSrc[s.id]='';
+      }
+    });
   });
 
   // Shared grid definition - sumber diusulkan: dua kolom (C Maks hitung + Usulan BM input)
@@ -6368,6 +6380,8 @@ function ubmRenderParams(){
       // ── Kolom KONTRIBUSI: badge BM Jenis + input manual ───────────────
       const bmJenisVal = s.typeId ? ubmGetBMJenisVal(p.name, s.typeId) : null;
       const bmJenisStr = bmJenisVal!=null ? String(bmJenisVal).replace('.',',') : null;
+      // Jika sumber punya typeId tapi tidak ada BM Jenis untuk parameter ini → tampilkan "—" (exclude dari CR)
+      const noApplicableBM = s.typeId && bmJenisVal===null;
       const bmBadge = bmJenisStr!=null
         ? `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;background:rgba(26,176,166,0.08);border:1px solid rgba(26,176,166,0.25);border-radius:3px;padding:1px 4px 1px 5px">
             <span style="font-family:var(--mono);font-size:8.5px;color:var(--accent);font-weight:700">${bmJenisStr}</span>
@@ -6376,6 +6390,10 @@ function ubmRenderParams(){
         : s.typeId
           ? `<div style="margin-bottom:2px;padding:1px 5px;background:rgba(0,0,0,0.04);border:1px solid var(--brd2);border-radius:3px"><span style="font-family:var(--mono);font-size:8px;color:var(--mute)">— tdk ada di BM</span></div>`
           : `<div style="margin-bottom:2px;padding:1px 5px;background:rgba(0,0,0,0.03);border:1px dashed var(--brd2);border-radius:3px"><span style="font-family:var(--mono);font-size:8px;color:var(--mute)">pilih jenis di step 2</span></div>`;
+      // Jika tidak ada BM Jenis → tampilkan "—" non-editable (debit sumber ini tidak masuk perhitungan CR)
+      if(noApplicableBM){
+        return `<div>${bmBadge}<div style="text-align:center;font-family:var(--mono);font-size:11.5px;color:var(--mute);padding:4px 6px;background:rgba(0,0,0,0.03);border:1px solid var(--brd2);border-radius:3px;margin-top:0">—</div></div>`;
+      }
       return `<div><div>${bmBadge}</div><input id="ubm-csrc-${p.id}-${s.id}" ${INP} inputmode="decimal" value="${p.cSrc[s.id]||''}" placeholder="0,000" oninput="ubmPChange(${p.id},'cSrc',{srcId:${s.id},v:this.value})"></div>`;
     }).join('');
     const nameField=p.dbId
@@ -6458,6 +6476,17 @@ function ubmUpdateCmaksInPlace(){
 
 // Pisah: kalkulasi + render result tables (tidak rebuild input list)
 function _ubmCalcAndShowResults(){
+  // Bersihkan cSrc untuk sumber yang punya typeId tapi tidak ada BM Jenis untuk parameter tersebut
+  // agar nilai lama tidak masuk ke perhitungan CR maupun tampilan step 4
+  ubmParams.forEach(p=>{
+    ubmSources.forEach(s=>{
+      if(s.typeId && ubmGetBMJenisVal(p.name, s.typeId)===null){
+        // Tidak ada BM Jenis untuk parameter ini: cSrc selalu dikosongkan.
+        // Sumber diusulkan yang mengisi Usulan BM manual pakai p.usulanBMPerSrc, bukan cSrc.
+        p.cSrc[s.id]='';
+      }
+    });
+  });
   // Update C Maks in-place untuk sumber yang diusulkan (realtime saat Usulan BM berubah)
   ubmUpdateCmaksInPlace();
   // Update label Q sungai dari BPM page
@@ -6513,22 +6542,28 @@ function _ubmCalcAndShowResults(){
 
   // Hitung hasil per musim — gunakan C Hulu sesuai musim
   function calcSeason(Qs, seasonKey){
-    const denom=Qs+totalQi;
     return ubmParams.map(p=>{
       // Prioritas: cHuluDry/cHuluWet (baru), fallback ke cHulu (legacy)
       const cHuluRaw = seasonKey==='dry'
         ? (p.cHuluDry ?? p.cHulu ?? '')
         : (p.cHuluWet ?? p.cHulu ?? '');
       const cHulu=pNum(cHuluRaw);
-      let sumQiCi=0;
+      // Hanya sumber yang ada BM Jenisnya (atau tidak punya typeId) yang masuk perhitungan CR
+      let sumQiCi=0, activeQi=0;
       ubmSources.forEach(s=>{
         const Qi=pNum(s.qDay)/86400;
         const isProposed = ubmProposedSrcIds.has(s.id);
+        // Sumber dengan typeId tapi tidak ada BM Jenis untuk parameter ini → skip
+        const noApplicableBM = s.typeId && ubmGetBMJenisVal(p.name, s.typeId)===null;
         const ubmSrcRaw = isProposed ? (p.usulanBMPerSrc?.[s.id] ?? '') : '';
         const ubmSrcVal = ubmSrcRaw !== '' ? pNum(ubmSrcRaw) : null;
+        // Skip jika tidak ada BM Jenis, kecuali sumber diusulkan yang sudah mengisi Usulan BM
+        if(noApplicableBM && !(isProposed && ubmSrcVal!=null)) return;
+        activeQi+=Qi;
         const Ci = isProposed && ubmSrcVal!=null ? ubmSrcVal : pNum(p.cSrc[s.id]);
         sumQiCi+=Qi*Ci;
       });
+      const denom=Qs+activeQi;
       const cr=denom>0?(Qs*cHulu+sumQiCi)/denom:null;
       const bm=p.bmVal;
       // pH: rentang 6–9 — status berdasarkan apakah CR hilir masuk rentang
@@ -6539,8 +6574,8 @@ function _ubmCalcAndShowResults(){
         status = cr!=null&&bm!=null ? (cr<=bm?'ok':'ng') : null;
       }
       let cMax=null;
-      if(bm!=null&&totalQi>0){
-        cMax=(bm*denom-Qs*cHulu)/totalQi;
+      if(bm!=null&&activeQi>0){
+        cMax=(bm*denom-Qs*cHulu)/activeQi;
         if(cMax<0) cMax=0;
       }
       // usulanBMVal: null jika tidak ada sumber diusulkan, atau jika semua sumber diusulkan belum diisi
@@ -6554,7 +6589,7 @@ function _ubmCalcAndShowResults(){
         }
         return null;
       })();
-      return {p,cr,bm,status,cMax,totalQi,Qs,denom,cHulu,usulanBMVal};
+      return {p,cr,bm,status,cMax,totalQi:activeQi,Qs,denom,cHulu,usulanBMVal};
     });
   }
 
@@ -6626,8 +6661,11 @@ function _ubmCalcAndShowResults(){
     tbody.innerHTML = resArr.map(({p, cr, bm, status, cHulu}) => {
       const srcCols = ubmSources.map(s => {
         const isProposed = ubmProposedSrcIds.has(s.id);
+        const noApplicableBM = s.typeId && ubmGetBMJenisVal(p.name, s.typeId)===null;
         const ubmSrcRaw = isProposed ? (p.usulanBMPerSrc?.[s.id] ?? '') : '';
         const ubmSrcVal = ubmSrcRaw !== '' ? pNum(ubmSrcRaw) : null;
+        // Tampilkan "—" jika tidak ada BM Jenis, kecuali sumber diusulkan yang sudah mengisi Usulan BM
+        if(noApplicableBM && !(isProposed && ubmSrcVal!=null)) return TD('—', 'text-align:center;color:var(--mute);font-style:italic');
         const val = isProposed && ubmSrcVal!=null ? ubmSrcVal : (p.cSrc[s.id] ? pNum(p.cSrc[s.id]) : null);
         const disp = val!=null ? fmtN(val,4) : '—';
         const style = isProposed && ubmSrcVal!=null
@@ -6735,21 +6773,24 @@ function _ubmCalcAndShowResults(){
   // Hitung CR per parameter: sumber yang diusulkan (ubmProposedSrcId) pakai nilai
   // Usulan BM sebagai C_i, sedangkan sumber lain tetap pakai input C sumber dari Step 3 (p.cSrc).
   function calcSeasonUsulan(Qs, seasonKey) {
-    const denom = Qs + totalQi;
     return ubmParams.map(p => {
       const cHuluRaw = seasonKey==='dry'
         ? (p.cHuluDry ?? p.cHulu ?? '')
         : (p.cHuluWet ?? p.cHulu ?? '');
       const cHulu = pNum(cHuluRaw);
-      let sumQiCi = 0;
+      let sumQiCi = 0, activeQi = 0;
       ubmSources.forEach(s => {
         const Qi = pNum(s.qDay) / 86400;
         const isProposed = ubmProposedSrcIds.has(s.id);
+        const noApplicableBM = s.typeId && ubmGetBMJenisVal(p.name, s.typeId)===null;
         const ubmSrcRaw = isProposed ? (p.usulanBMPerSrc?.[s.id] ?? '') : '';
         const ubmSrcVal = ubmSrcRaw !== '' ? pNum(ubmSrcRaw) : null;
+        if(noApplicableBM && !(isProposed && ubmSrcVal!=null)) return;
+        activeQi += Qi;
         const Ci = isProposed && ubmSrcVal!=null ? ubmSrcVal : pNum(p.cSrc[s.id]);
         sumQiCi += Qi * Ci;
       });
+      const denom = Qs + activeQi;
       const cr = denom > 0 ? (Qs * cHulu + sumQiCi) / denom : null;
       const bm = p.bmVal;
       let status;
@@ -7143,12 +7184,12 @@ async function exportExcel(){
   // ═══════════════════════════════════════════════════════
   // STYLE HELPERS
   // ═══════════════════════════════════════════════════════
-  const font  = (bold,sz,color,name='Arial')=>({name,bold:!!bold,sz:sz||11,color:{rgb:'000000'}});
-  const fill  = hex=>undefined;
+  const font  = (bold,sz,color,name='Arial')=>({name:'Arial',bold:!!bold,sz:10,color:{rgb:color||'000000'}});
+  const fill  = hex=>hex?{patternType:'solid',fgColor:{rgb:hex},bgColor:{rgb:hex}}:undefined;
   const align = (h='left',v='center',wrap=false)=>({horizontal:h,vertical:v,wrapText:wrap});
-  const bdr   = (c='CBD5E1',style='thin')=>{ const s={style,color:{rgb:c}}; return {top:s,bottom:s,left:s,right:s}; };
+  const bdr   = (c='000000',style='thin')=>{ const s={style,color:{rgb:c}}; return {top:s,bottom:s,left:s,right:s}; };
   const bdrT  = (c,style='medium')=>bdr(c||C.teal2,style);
-  const bdrThick=(c)=>bdr(c||C.teal1,'thick');
+  const bdrThick=(c)=>bdr(c||C.teal1,'medium');
 
   // ─── Style presets ──────────────────────────────────────
   const S={
@@ -7159,9 +7200,9 @@ async function exportExcel(){
     bannerG: {font:font(true,17,C.white),fill:fill('1A4D2E'),alignment:align('center','center',true),border:bdrThick(C.grnMd)},
     bannerR: {font:font(true,17,C.white),fill:fill(C.redDk), alignment:align('center','center',true),border:bdrThick(C.redMd)},
     // Meta row (subtitle)
-    meta:    {font:font(false,9,C.muted), fill:fill(C.slateL), alignment:align('center','center',false),border:bdr()},
-    metaA:   {font:font(false,9,C.amb1),  fill:fill(C.ambBg2), alignment:align('center','center',false),border:bdr(C.amb3)},
-    metaB:   {font:font(false,9,C.blu1),  fill:fill(C.bluBg2), alignment:align('center','center',false),border:bdr(C.blu3)},
+    meta:    {font:font(false,10,C.muted), fill:fill(C.slateL), alignment:align('center','center',false),border:bdr()},
+    metaA:   {font:font(false,10,C.amb1),  fill:fill(C.ambBg2), alignment:align('center','center',false),border:bdr(C.amb3)},
+    metaB:   {font:font(false,10,C.blu1),  fill:fill(C.bluBg2), alignment:align('center','center',false),border:bdr(C.blu3)},
     // Section header
     secT:    {font:font(true,10,C.white),fill:fill(C.teal2),  alignment:align('center','center',false),border:bdr(C.teal1)},
     secA:    {font:font(true,10,C.white),fill:fill(C.amb2),   alignment:align('center','center',false),border:bdr(C.amb1)},
@@ -7175,20 +7216,20 @@ async function exportExcel(){
     hdrG:    {font:font(true,10,C.white),fill:fill(C.grnMd),  alignment:align('center','center',true), border:bdrT(C.grnDk)},
     hdrGold: {font:font(true,10,C.gldDk),fill:fill(C.gldBg), alignment:align('center','center',true), border:bdrT(C.gldDk)},
     // Data rows — alternating white / pale slate
-    dat:     {font:font(false,10,C.ink),  fill:fill(C.white),   alignment:align('left','center',true), border:bdr()},
+    dat:     {font:font(false,10,C.ink),  fill:fill(C.white),   alignment:align('left','center',false),border:bdr()},
     datC:    {font:font(false,10,C.ink),  fill:fill(C.white),   alignment:align('center','center',false),border:bdr()},
     datR:    {font:font(false,10,C.ink),  fill:fill(C.white),   alignment:align('right','center',false),border:bdr()},
-    datAlt:  {font:font(false,10,C.ink),  fill:fill(C.slateLL), alignment:align('left','center',true), border:bdr()},
+    datAlt:  {font:font(false,10,C.ink),  fill:fill(C.slateLL), alignment:align('left','center',false),border:bdr()},
     datAltC: {font:font(false,10,C.ink),  fill:fill(C.slateLL), alignment:align('center','center',false),border:bdr()},
     datAltR: {font:font(false,10,C.ink),  fill:fill(C.slateLL), alignment:align('right','center',false),border:bdr()},
     // Key value cells
     lbl:     {font:font(true,10,C.teal2), fill:fill(C.tealBg2), alignment:align('left','center',false), border:bdr(C.teal3)},
-    val:     {font:font(false,11,C.ink),  fill:fill(C.white),   alignment:align('left','center',false), border:bdr()},
-    valBig:  {font:font(true,14,C.teal2), fill:fill(C.tealBg),  alignment:align('center','center',false),border:bdrT()},
-    valA:    {font:font(true,14,C.amb2),  fill:fill(C.ambBg),   alignment:align('center','center',false),border:bdrT(C.amb2)},
-    valB:    {font:font(true,14,C.blu2),  fill:fill(C.bluBg),   alignment:align('center','center',false),border:bdrT(C.blu2)},
-    valGrn:  {font:font(true,14,C.grnMd), fill:fill(C.grnBg),  alignment:align('center','center',false),border:bdrT(C.grnMd)},
-    valRed:  {font:font(true,14,C.redMd), fill:fill(C.redBg),   alignment:align('center','center',false),border:bdrT(C.redMd)},
+    val:     {font:font(false,10,C.ink),  fill:fill(C.white),   alignment:align('left','center',false), border:bdr()},
+    valBig:  {font:font(true,13,C.teal2), fill:fill(C.tealBg),  alignment:align('center','center',false),border:bdrT()},
+    valA:    {font:font(true,13,C.amb2),  fill:fill(C.ambBg),   alignment:align('center','center',false),border:bdrT(C.amb2)},
+    valB:    {font:font(true,13,C.blu2),  fill:fill(C.bluBg),   alignment:align('center','center',false),border:bdrT(C.blu2)},
+    valGrn:  {font:font(true,13,C.grnMd), fill:fill(C.grnBg),  alignment:align('center','center',false),border:bdrT(C.grnMd)},
+    valRed:  {font:font(true,13,C.redMd), fill:fill(C.redBg),   alignment:align('center','center',false),border:bdrT(C.redMd)},
     // Status
     ok:      {font:font(true,10,C.grnDk), fill:fill(C.grnBg),   alignment:align('center','center',false),border:bdr(C.grnMd)},
     ng:      {font:font(true,10,C.redDk), fill:fill(C.redBg),   alignment:align('center','center',false),border:bdr(C.redMd)},
@@ -7205,20 +7246,76 @@ async function exportExcel(){
     totA:    {font:font(true,10,C.amb1),  fill:fill(C.ambBg),    alignment:align('center','center',false),border:bdrT(C.amb2)},
     totB:    {font:font(true,10,C.blu1),  fill:fill(C.bluBg),    alignment:align('center','center',false),border:bdrT(C.blu2)},
     // CR / UBM
-    cr:      {font:font(true,11,C.teal2), fill:fill(C.tealBg2),  alignment:align('right','center',false), border:bdrT()},
-    crNg:    {font:font(true,11,C.redDk), fill:fill(C.redBg),    alignment:align('right','center',false), border:bdrT(C.redMd)},
+    cr:      {font:font(true,10,C.teal2), fill:fill(C.tealBg2),  alignment:align('right','center',false), border:bdrT()},
+    crNg:    {font:font(true,10,C.redDk), fill:fill(C.redBg),    alignment:align('right','center',false), border:bdrT(C.redMd)},
     cmax:    {font:font(false,10,C.amb1), fill:fill(C.ambBg2),   alignment:align('right','center',false), border:bdr(C.amb3)},
     cmaxNeg: {font:font(true,10,C.redDk), fill:fill(C.redBg),    alignment:align('right','center',false), border:bdr(C.redMd)},
-    alok:    {font:font(true,11,C.gldDk), fill:fill(C.gldBg),    alignment:align('right','center',false), border:bdrT(C.gldMd)},
-    bmFin:   {font:font(true,11,C.teal1), fill:fill(C.tealBg),   alignment:align('right','center',false), border:bdrT()},
+    alok:    {font:font(true,10,C.gldDk), fill:fill(C.gldBg),    alignment:align('right','center',false), border:bdrT(C.gldMd)},
+    bmFin:   {font:font(true,10,C.teal1), fill:fill(C.tealBg),   alignment:align('right','center',false), border:bdrT()},
   };
 
   // ═══════════════════════════════════════════════════════
   // CELL & SHEET HELPERS
   // ═══════════════════════════════════════════════════════
   const mkCell = (v,style)=>({v:(v==null||v==='—'?null:v), t:typeof v==='number'?'n':'s', s:style});
-  const nCell  = (v,style)=>({v:(v==null?null:typeof v==='string'?parseFloat(v.replace(',','.'))||null:v), t:'n', s:style||S.datR});
-  const fCell  = (formula,style,cachedV)=>({f:formula, t:'n', s:style||S.datR, v:(cachedV!=null?cachedV:0)});
+  // nCell & fCell — tambah z (numFmt) ke style agar angka tampil rapi di Excel
+  // withFmt: tandai style dengan _fmt agar nCell/fCell bisa ekstrak ke root cell
+  const withFmt = (style, fmt)=>fmt?{...style, _fmt:fmt}:style;
+
+  // ─── Format number presets ───────────────────────────────
+  const FMT = {
+    conc:    '0.000',        // konsentrasi mg/L normal
+    sci:     '0.000E+00',    // scientific untuk nilai < 0.001
+    debitD:  '#,##0.00',     // debit m³/hari
+    debitJ:  '#,##0.000',    // debit m³/jam
+    debitS:  '0.000000',     // debit m³/det
+    beban:   '#,##0.000',    // BPM / BPA kg/jam, Alokasi kg/hari
+    rasio:   '0.000',        // Rasio BPA/BPM
+    pct:     '0%',           // persentase
+    int:     '0',            // bilangan bulat
+    bm:      '0.000',        // baku mutu
+  };
+
+  // autoFmt: pilih format otomatis berdasarkan nilai
+  // — nilai < 0.001 dan > 0 → scientific (0.000E+00)
+  // — nilai ≥ 0.001 atau 0 → format biasa (0.000)
+  const autoFmt = (v, normalFmt) => {
+    if(v==null||isNaN(v)||v===0) return normalFmt||FMT.conc;
+    const abs=Math.abs(v);
+    return (abs>0&&abs<0.001)?FMT.sci:(normalFmt||FMT.conc);
+  };
+
+  const nCell  = (v,style,fmt)=>{
+    const numV=(v==null?null:typeof v==='string'?parseFloat(v.replace(',','.'))||null:v);
+    // Jika fmt adalah FMT.conc atau FMT.bm, deteksi otomatis apakah perlu scientific
+    const resolvedFmt = (fmt===FMT.conc||fmt===FMT.bm||fmt===FMT.conc) ? autoFmt(numV,fmt) : fmt;
+    const s=withFmt(style||S.datR,resolvedFmt);
+    const {_fmt,...cleanS}=s||{};
+    const cell={v:numV, t:'n', s:cleanS};
+    if(_fmt) cell.z=_fmt;
+    return cell;
+  };
+
+  // injectFmt: terapkan numFmt ke cell object literal (untuk formula cell yang tidak pakai fCell)
+  const injectFmt = (cellObj, fmt, resolvedV) => {
+    if(!cellObj) return cellObj;
+    // Deteksi scientific untuk konsentrasi berdasarkan cached value
+    const v = resolvedV!=null?resolvedV:cellObj.v;
+    const finalFmt = (fmt===FMT.conc||fmt===FMT.bm) ? autoFmt(v,fmt) : fmt;
+    if(!finalFmt) return cellObj;
+    const {_fmt,...cleanS}=cellObj.s||{};
+    return {...cellObj, s:cleanS, z:finalFmt};
+  };
+
+  const fCell  = (formula,style,cachedV,fmt)=>{
+    // Untuk formula sel konsentrasi, gunakan cached value untuk deteksi scientific
+    const resolvedFmt = (fmt===FMT.conc||fmt===FMT.bm) ? autoFmt(cachedV,fmt) : fmt;
+    const s=withFmt(style||S.datR,resolvedFmt);
+    const {_fmt,...cleanS}=s||{};
+    const cell={f:formula, t:'n', s:cleanS, v:(cachedV!=null?cachedV:0)};
+    if(_fmt) cell.z=_fmt;
+    return cell;
+  };
   const blank  = (style)=>({v:null,t:'s',s:style||S.dat});
   // fmtV: TIDAK membulatkan/memotong nilai — hanya membersihkan noise floating-point
   // JS (mis. 0.1+0.2 -> 0.30000000000000004) tanpa mengubah angka bermakna apa pun.
@@ -7335,11 +7432,9 @@ async function exportExcel(){
   // ─── Auto-fit kolom: lebar = panjang konten terpanjang di kolom itu (+padding),
   //     tidak pernah lebih sempit dari lebar minimum yang sudah ditentukan manual ───
   function autoFitCols(aoa, maxC, manualWidths, merges){
-    const minW=4, maxW=60, padding=2.2;
+    const minW=4, maxW=40, padding=1.5;
     const widest=new Array(maxC+1).fill(0);
-    // Tandai sel mana saja yg merupakan AWAL dari merge horizontal (>1 kolom) —
-    // teks di sel itu (mis. judul banner) tidak boleh dipakai utk menghitung lebar kolom tunggal,
-    // sebab isinya memang sengaja melebar ke banyak kolom, bukan milik kolom pertama saja.
+    // Tandai sel merge horizontal — skip dari estimasi lebar kolom
     const wideMergeStart=new Set();
     (merges||[]).forEach(m=>{
       if(m.e.c>m.s.c) wideMergeStart.add(m.s.r+':'+m.s.c);
@@ -7347,25 +7442,32 @@ async function exportExcel(){
     aoa.forEach((row,r)=>{
       (row||[]).forEach((cell,c)=>{
         if(c>maxC) return;
-        if(wideMergeStart.has(r+':'+c)) return; // lewati teks banner/judul yg digabung lebar
+        if(wideMergeStart.has(r+':'+c)) return;
+        // Skip sel dengan wrapText — teksnya memang sengaja wrap ke bawah,
+        // bukan menjadi referensi lebar kolom (mis. header panjang, formula row)
+        if(cell&&typeof cell==='object'&&cell.s&&cell.s.alignment&&cell.s.alignment.wrapText) return;
         let text='';
         if(cell&&typeof cell==='object'){
           text = cell.v!=null ? String(cell.v) : '';
         } else if(cell!=null){
           text = String(cell);
         }
-        // Hapus emoji/simbol lebar-ganda kasar dari estimasi (supaya tdk terlalu lebar)
-        const cleanLen = text.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu,'  ').length;
-        // Baris dgn banyak baris teks (wrap) — ambil baris terpanjang saja
+        // Hapus emoji lebar-ganda dari estimasi
+        const cleanLen = text.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu,'').length;
+        // Untuk teks multi-baris, ambil baris terpanjang saja
         const lines = text.split('\n');
-        const longest = Math.max(...lines.map(l=>l.length), cleanLen>0?0:0);
-        if(longest>widest[c]) widest[c]=longest;
+        const longest = Math.max(...lines.map(l=>l.length), cleanLen);
+        // Angka desimal panjang (mis. 15,11838675) perlu faktor lebih kecil karena karakter sempit
+        const isNumeric = typeof cell?.v === 'number' || /^[\d,\.\-\+E]+$/.test(text);
+        const charFactor = isNumeric ? 0.9 : 1.0;
+        const effective = Math.ceil(longest * charFactor);
+        if(effective > widest[c]) widest[c] = effective;
       });
     });
     return widest.map((w,i)=>{
       const manual=(manualWidths&&manualWidths[i])||0;
       const fit=Math.min(maxW, Math.max(minW, w+padding));
-      return {wch: Math.max(manual, fit)};
+      return {wch: Math.max(manual, fit), bestFit: true};
     });
   }
 
@@ -7373,18 +7475,23 @@ async function exportExcel(){
   //     punya teks yg, relatif thd lebar kolom, butuh lebih dari satu baris tampil ───
   function autoFitRows(aoa, rowHeights, colWidths){
     return aoa.map((row,i)=>{
-      let h=(rowHeights&&rowHeights[i])||20;
+      const baseH=(rowHeights&&rowHeights[i])||14;
+      // Jika baris punya tinggi kecil (≤15 = banner/meta/kpi/data),
+      // gunakan langsung tanpa inflate dari wrap — teks sudah fit di 10pt
+      if(baseH<=15) return {hpt:baseH};
+      // Hanya baris header (hdr=28) yang boleh inflate untuk wrap teks panjang
+      let h=baseH;
       (row||[]).forEach((cell,c)=>{
         if(!cell||typeof cell!=='object') return;
         const wrap = cell.s && cell.s.alignment && cell.s.alignment.wrapText;
         if(!wrap) return;
         const text = cell.v!=null ? String(cell.v) : '';
         if(!text) return;
-        const colW = (colWidths&&colWidths[c]) || 16;
-        // Perkiraan kasar: ~1.7 karakter per satuan lebar kolom muat per baris
-        const charsPerLine = Math.max(8, colW*1.7);
+        const colW = (colWidths&&colWidths[c]) || 14;
+        const charsPerLine = Math.max(10, colW*2.0);
         const estLines = Math.ceil(text.length / charsPerLine);
-        const neededH = estLines * 15 + 6;
+        const clampedLines = Math.min(estLines, 3);
+        const neededH = clampedLines * 13 + 3;
         if(neededH>h) h=neededH;
       });
       return {hpt:h};
@@ -7392,7 +7499,7 @@ async function exportExcel(){
   }
 
   // Row-height helper: banner=40, meta=16, section=22, hdr=24, data=20, total=24, gap=10
-  const RH = { banner:40, meta:16, formula:14, sec:22, hdr:24, data:20, tot:24, gap:10, kpi:36 };
+  const RH = { banner:15, meta:14, formula:13, sec:15, hdr:28, data:14, tot:15, gap:0, kpi:15 };
 
   // ═══════════════════════════════════════════════════════
   // SHEET 1 — RINGKASAN EKSEKUTIF  (rich dashboard layout)
@@ -7416,7 +7523,7 @@ async function exportExcel(){
 
     const aoa=[
       // Row 0: main banner
-      [mkCell('RIVERLOAD  ·  LAPORAN ANALISIS BEBAN PENCEMARAN SUNGAI',{...S.banner,font:font(true,18,C.white)}),...Array(NC-1).fill(null)],
+      [mkCell('RIVERLOAD  ·  LAPORAN ANALISIS BEBAN PENCEMARAN SUNGAI',{...S.banner,font:font(true,10,C.white)}),...Array(NC-1).fill(null)],
       // Row 1: subtitle
       [mkCell(`PP No. 22 Tahun 2021 – Lampiran VI   ·   ${rn}   ·   Kelas ${clsRom}   ·   ${dateStr}`,S.meta),...Array(NC-1).fill(null)],
       // Row 2: gap
@@ -7426,19 +7533,19 @@ async function exportExcel(){
        mkCell('  RINGKASAN KEPATUHAN PARAMETER',{...S.secA,alignment:align('left')}),null,null,null],
       // Row 4: Nama | kpi kemarau ok
       [mkCell('Nama Sungai',S.lbl),mkCell(rn||'—',{...S.val,font:font(true,11,C.teal2)}),null,null,
-       mkCell('✓ Memenuhi — Kemarau',S.lbl),mkCell(okD,{...S.valGrn,font:font(true,22,C.grnMd)}),null,null],
+       mkCell('✓ Memenuhi — Kemarau',S.lbl),mkCell(okD,{...S.valGrn,font:font(true,10,C.grnMd)}),null,null],
       // Row 5: Kelas | kpi kemarau ng
       [mkCell('Kelas Sungai',S.lbl),mkCell('Kelas '+clsRom,S.val),null,null,
-       mkCell('✗ Melebihi — Kemarau',S.lbl),mkCell(ngD,{...S.valRed,font:font(true,22,C.redMd)}),null,null],
+       mkCell('✗ Melebihi — Kemarau',S.lbl),mkCell(ngD,{...S.valRed,font:font(true,10,C.redMd)}),null,null],
       // Row 6: Q Kemarau | kpi hujan ok
       [mkCell('Q Kemarau (m³/det)',S.lbl),mkCell(fmtV(qDry,4)||'—',{...S.val,font:font(true,11,C.amb3)}),null,null,
-       mkCell('✓ Memenuhi — Hujan',S.lbl),mkCell(okW,{...S.valGrn,font:font(true,22,C.grnMd)}),null,null],
+       mkCell('✓ Memenuhi — Hujan',S.lbl),mkCell(okW,{...S.valGrn,font:font(true,10,C.grnMd)}),null,null],
       // Row 7: Q Hujan | kpi hujan ng
       [mkCell('Q Hujan (m³/det)',S.lbl),mkCell(fmtV(qWet,4)||'—',{...S.val,font:font(true,11,C.blu3)}),null,null,
-       mkCell('✗ Melebihi — Hujan',S.lbl),mkCell(ngW,{...S.valRed,font:font(true,22,C.redMd)}),null,null],
+       mkCell('✗ Melebihi — Hujan',S.lbl),mkCell(ngW,{...S.valRed,font:font(true,10,C.redMd)}),null,null],
       // Row 8: Peruntukan | kepatuhan %
-      [mkCell('Peruntukan Sungai',S.lbl),mkCell(rc?CLASS_DESC[rc]:'—',{...S.val,font:font(false,9,C.muted)}),null,null,
-       mkCell('Total Parameter',S.lbl),mkCell(totalP,{...S.valBig,font:font(true,22,C.teal2)}),null,null],
+      [mkCell('Peruntukan Sungai',S.lbl),mkCell(rc?CLASS_DESC[rc]:'—',{...S.val,font:font(false,10,C.muted)}),null,null,
+       mkCell('Total Parameter',S.lbl),mkCell(totalP,{...S.valBig,font:font(true,10,C.teal2)}),null,null],
       // Row 9: gap
       Array(NC).fill(blank({...S.dat,fill:fill(C.slateL)})),
       // Row 10: compliance bar header
@@ -7499,14 +7606,14 @@ async function exportExcel(){
       const ubmCls=document.getElementById('ubm-class')?.value||rc;
       const ubmClsRom=ubmCls?['I','II','III','IV'][ubmCls-1]:clsRom;
       const totalQiDay=ubmSources.reduce((s,x)=>s+pNum(x.qDay),0);
-      aoa.push([nCell(ubmSources.length,S.datC),nCell(fmtV(totalQiDay,2),S.datR),nCell(fmtV(ubmTotalQi,6),S.datR),nCell(ubmParams.length,S.datC),mkCell('Kelas '+ubmClsRom,S.datC),mkCell(dateStr,S.datC),blank(S.dat),blank(S.dat)]);
+      aoa.push([nCell(ubmSources.length,S.datC),nCell(fmtV(totalQiDay,2),S.datR,FMT.debitD),nCell(fmtV(ubmTotalQi,6),S.datR,FMT.debitS),nCell(ubmParams.length,S.datC),mkCell('Kelas '+ubmClsRom,S.datC),mkCell(dateStr,S.datC),blank(S.dat),blank(S.dat)]);
       rh.push(RH.data);
     }
 
     // Baris penutup — footer ringkas agar sheet terlihat tuntas & tidak menggantung
     aoa.push(Array(NC).fill(blank({...S.dat,fill:fill(C.slateL)})));
     rh.push(RH.gap);
-    aoa.push([mkCell('Dibuat otomatis oleh RiverLoad v2.0  ·  '+dateStr,{...S.meta,font:font(false,8,C.muted)}),...Array(NC-1).fill(null)]);
+    aoa.push([mkCell('Dibuat otomatis oleh RiverLoad v2.0  ·  '+dateStr,{...S.meta,font:font(false,10,C.muted)}),...Array(NC-1).fill(null)]);
     rh.push(RH.meta);
 
     const merges=[
@@ -7526,7 +7633,7 @@ async function exportExcel(){
     ];
     // Merge baris footer terakhir juga (baris terakhir dari aoa, index dinamis)
     merges.push({s:{r:aoa.length-1,c:0},e:{r:aoa.length-1,c:NC-1}});
-    addSheet(WB,'📋 Ringkasan',aoa,[26,18,18,16,26,16,16,16],merges,rh,4);
+    addSheet(WB,'📋 Ringkasan',aoa,[16,14,14,12,16,12,12,12],merges,rh,4);
   }
 
   // ═══════════════════════════════════════════════════════
@@ -7555,20 +7662,20 @@ async function exportExcel(){
     const NC=9;
 
     // ── Kotak info Q & konstanta — ditata sebagai kartu KPI ringkas, terpisah dari tabel ──
-    const kpiLbl = {font:font(true,9,ACC1),fill:fill(ACC_BG2),alignment:align('center','center',true),border:bdr(ACC)};
-    const kpiVal = {font:font(true,14,ACC1),fill:fill(ACC_BG),alignment:align('center','center',false),border:bdrT(ACC)};
+    const kpiLbl = {font:font(true,10,ACC1),fill:fill(ACC_BG2),alignment:align('center','center',true),border:bdr(ACC)};
+    const kpiVal = {font:font(true,10,ACC1),fill:fill(ACC_BG),alignment:align('center','center',false),border:bdrT(ACC)};
 
     const aoa=[
       [mkCell(`BEBAN PENCEMARAN MAKSIMUM & AKTUAL  ·  ${seasonLabel.toUpperCase()}`,BNR),...Array(NC-1).fill(null)],
       [mkCell(`${rn}   ·   Kelas ${clsRom}   ·   Q = ${fmtS(Q,4)} m³/det   ·   ${okP} Memenuhi  /  ${ngP} Melebihi   ·   ${dateStr}`,META),...Array(NC-1).fill(null)],
-      [mkCell('Formula Excel aktif:  BPM = Q_sungai × Baku_Mutu × 3,6 (kg/jam)   ·   BPA = Q_sungai × C_Aktual × 3,6 (kg/jam)   ·   Rasio = BPA / BPM   ·   Status = otomatis dari perbandingan BPA vs BPM',{...S.meta,font:font(false,8,C.muted)}),...Array(NC-1).fill(null)],
+      [mkCell('Formula Excel aktif:  BPM = Q_sungai × Baku_Mutu × 3,6 (kg/jam)   ·   BPA = Q_sungai × C_Aktual × 3,6 (kg/jam)   ·   Rasio = BPA/BPM   ·   Status = IF(BPA<BPM)',{...S.meta,font:font(false,10,C.muted)}),...Array(NC-1).fill(null)],
       Array(NC).fill(null),
       [mkCell('Q SUNGAI',kpiLbl),mkCell('KONSTANTA',kpiLbl),mkCell('TOTAL BPM',kpiLbl),mkCell('TOTAL BPA',kpiLbl),mkCell('STATUS KESELURUHAN',{...kpiLbl,alignment:align('center','center',true)}),null,null,null,null],
       [mkCell(Q,kpiVal),mkCell(3.6,kpiVal),mkCell(round4(totalBPM),{...kpiVal,font:font(true,14,ACC1)}),mkCell(round4(totalBPA),{...kpiVal,font:font(true,14,totalBPA>totalBPM?C.redDk:C.grnDk),fill:fill(totalBPA>totalBPM?C.redBg:C.grnBg)}),mkCell((ngP===0?'✓ SEMUA MEMENUHI':ngP+' PARAMETER MELEBIHI'),{font:font(true,11,ngP===0?C.grnDk:C.redDk),fill:fill(ngP===0?C.grnBg:C.redBg),alignment:align('center','center',true),border:bdrT(ngP===0?C.grnMd:C.redMd)}),null,null,null,null],
       Array(NC).fill(null),
-      ['No','Parameter','Satuan','Baku Mutu (BM)','BPM (kg/jam)','C Aktual (mg/L)','BPA (kg/jam)','Status','Rasio BPA/BPM'].map(c=>mkCell(c,HDR)),
+      ['No','Parameter','Satuan','Baku Mutu\n(BM)','C Aktual\n(mg/L)','BPM\n(kg/jam)','BPA\n(kg/jam)','Status','Rasio\nBPA/BPM'].map(c=>mkCell(c,HDR)),
     ];
-    const rh=[RH.banner,RH.meta,RH.formula,8,RH.kpi-6,RH.kpi+6,8,RH.hdr];
+    const rh=[RH.banner,RH.meta,RH.formula,RH.gap,RH.kpi,RH.kpi,RH.gap,RH.hdr];
     const mergesKpi=[
       {s:{r:4,c:4},e:{r:4,c:8}},{s:{r:5,c:4},e:{r:5,c:8}},
     ];
@@ -7591,8 +7698,8 @@ async function exportExcel(){
 
       const excelRow = firstDataRow + i;
       const bmCellRef  = `D${excelRow}`;
-      const cCellRef   = `F${excelRow}`;
-      const bpmCellRef = `E${excelRow}`;
+      const cCellRef   = `E${excelRow}`;
+      const bpmCellRef = `F${excelRow}`;
       const bpaCellRef = `G${excelRow}`;
 
       // BM hanya dipakai sebagai formula jika benar-benar angka (mis. pH = "6-9" bukan angka, jadi tidak diformulakan)
@@ -7602,15 +7709,16 @@ async function exportExcel(){
         mkCell(i+1,baseC),
         mkCell(p.name||'—',base),
         mkCell(p.unit||'—',baseC),
-        bmNum!=null ? nCell(fmtV(bmNum,4),{...baseC,font:font(true,10,C.teal2)}) : mkCell(valStr(p.bm),{...baseC,font:font(true,10,C.teal2)}),
+        bmNum!=null ? nCell(fmtV(bmNum,4),{...baseC,font:font(true,10,C.teal2)},FMT.bm) : mkCell(valStr(p.bm),{...baseC,font:font(true,10,C.teal2)}),
+        // C Aktual — sekarang kolom E (sebelum BPM)
+        nCell(fmtV(pNum(c),4),baseR,FMT.conc),
         // BPM — formula Excel hidup hanya jika BM numerik; jika tidak (mis. pH), tampilkan nilai cache statis
         bmNum!=null
-          ? fCell(`${Q_REF}*${bmCellRef}*${K_REF}`,bpmSt,fmtV(bpm,4))
+          ? fCell(`${Q_REF}*${bmCellRef}*${K_REF}`,bpmSt,fmtV(bpm,4),FMT.beban)
           : mkCell(bpm!=null?round4(bpm):'—',bpmSt),
-        nCell(fmtV(pNum(c),4),baseR),
         // BPA — selalu numerik (C_Aktual selalu angka), aman diformulakan
         (pNum(c)!=null)
-          ? fCell(`${Q_REF}*${cCellRef}*${K_REF}`,bpaSt,fmtV(bpa,4))
+          ? fCell(`${Q_REF}*${cCellRef}*${K_REF}`,bpaSt,fmtV(bpa,4),FMT.beban)
           : mkCell('—',bpaSt),
         // Status — formula hanya jika kedua sel BPM & BPA berisi angka
         (bmNum!=null && pNum(c)!=null)
@@ -7618,7 +7726,7 @@ async function exportExcel(){
           : mkCell('—',S.na),
         // Rasio BPA/BPM
         (bmNum!=null && pNum(c)!=null)
-          ? {f:`IFERROR(${bpaCellRef}/${bpmCellRef},"")`,t:'n',s:ratioSt,v:(ratio!=null?ratio:0)}
+          ? injectFmt({f:`IFERROR(${bpaCellRef}/${bpmCellRef},"")`,t:'n',s:ratioSt,v:(ratio!=null?ratio:0)},FMT.rasio)
           : mkCell('—',baseR),
       ]);
       rh.push(RH.data);
@@ -7628,9 +7736,9 @@ async function exportExcel(){
     const lastDataRow = firstDataRow + params.length - 1;
     aoa.push([
       blank(TOT),mkCell('TOTAL / RERATA',{...TOT,alignment:align('center')}),blank(TOT),blank(TOT),
-      {f:`SUM(E${firstDataRow}:E${lastDataRow})`,t:'n',s:{...TOT,font:font(true,12,isDry?C.amb1:C.blu1)},v:fmtV(totalBPM,4)},
       blank(TOT),
-      {f:`SUM(G${firstDataRow}:G${lastDataRow})`,t:'n',s:{...TOT,font:font(true,12,totalBPA>totalBPM?C.redDk:C.grnDk)},v:fmtV(totalBPA,4)},
+      injectFmt({f:`SUM(F${firstDataRow}:F${lastDataRow})`,t:'n',s:{...TOT,font:font(true,10,isDry?C.amb1:C.blu1)},v:fmtV(totalBPM,4)},FMT.beban),
+      {f:`SUM(G${firstDataRow}:G${lastDataRow})`,t:'n',s:{...TOT,font:font(true,10,totalBPA>totalBPM?C.redDk:C.grnDk)},v:fmtV(totalBPA,4)},
       {f:`COUNTIF(H${firstDataRow}:H${lastDataRow},"✓ Memenuhi")&" Memenuhi  /  "&COUNTIF(H${firstDataRow}:H${lastDataRow},"✗ Melebihi")&" Melebihi"`,t:'s',s:{...TOT,alignment:align('center')},v:(okP+' Memenuhi  /  '+ngP+' Melebihi')},
       blank(TOT),
     ]);
@@ -7641,7 +7749,7 @@ async function exportExcel(){
       {s:{r:2,c:0},e:{r:2,c:NC-1}},
       ...mergesKpi,
     ];
-    addSheet(WB,sheetName,aoa,[5,30,9,13,14,14,14,14,13],merges,rh,firstDataRow-1);
+    addSheet(WB,sheetName,aoa,[4,16,7,9,10,9,10,9,8],merges,rh,firstDataRow-1);
   }
 
   if(params.length){
@@ -7654,8 +7762,6 @@ async function exportExcel(){
   // ═══════════════════════════════════════════════════════
   {
     const ubmTotalQi=ubmSources.reduce((s,x)=>s+pNum(x.qDay)/86400,0);
-    // Baris data pertama di sheet '💧 Sumber Air Limbah': banner+meta+formula+header = 4 baris, jadi data mulai baris 5
-    const SUMBER_SHEET_FIRST_DATA_ROW=5;
     const ubmCls=document.getElementById('ubm-class')?.value||rc;
     const ubmClsRom=ubmCls?['I','II','III','IV'][ubmCls-1]:clsRom;
     const ubmRiverName=document.getElementById('ubm-river')?.value?.trim()||rn;
@@ -7664,23 +7770,26 @@ async function exportExcel(){
       const QsDry=getQsDry(), QsWet=getQsWet();
 
       function calcUBMSeason(Qs, seasonKey){
-        const denom=Qs+ubmTotalQi;
         return ubmParams.map(p=>{
           const cHuluRaw=seasonKey==='dry'?(p.cHuluDry??p.cHulu??''):(p.cHuluWet??p.cHulu??'');
           const cHulu=pNum(cHuluRaw);
-          let sumQiCi=0;
+          let sumQiCi=0, activeQi=0;
           ubmSources.forEach(s=>{
             const Qi=pNum(s.qDay)/86400;
             const isP=ubmProposedSrcIds.has(s.id);
+            const noApplicableBM=s.typeId&&ubmGetBMJenisVal(p.name,s.typeId)===null;
             const ubmSrcRaw=isP?(p.usulanBMPerSrc?.[s.id]??''):'';
             const ubmSrcVal=ubmSrcRaw!==''?pNum(ubmSrcRaw):null;
+            if(noApplicableBM&&!(isP&&ubmSrcVal!=null)) return;
+            activeQi+=Qi;
             const Ci=isP&&ubmSrcVal!=null?ubmSrcVal:pNum(p.cSrc[s.id]);
             sumQiCi+=Qi*Ci;
           });
+          const denom=Qs+activeQi;
           const cr=denom>0?(Qs*cHulu+sumQiCi)/denom:null;
           const bm=p.bmVal;
           const status=cr!=null&&bm!=null?(cr<=bm?'ok':'ng'):null;
-          const cmRaw=bm!=null&&ubmTotalQi>0?(bm*denom-Qs*cHulu)/ubmTotalQi:null;
+          const cmRaw=bm!=null&&activeQi>0?(bm*denom-Qs*cHulu)/activeQi:null;
           const cMax=cmRaw!=null?Math.max(0,cmRaw):null;
           const alokasi=ubmParamAlokasi(p);
           // Representatif Usulan BM untuk backward compat (sumber diusulkan pertama yang terisi)
@@ -7744,46 +7853,77 @@ async function exportExcel(){
 
         const NC=4+ubmSources.length+2+nJenis+5; // No,Param,Sat,Hulu,Src×n,CR,BM,Jenis×n,Status,Cmaks,UsulanBM,Alok
 
+        // Style khusus Q Sungai / ΣQ Limbah
+        const qLblSt = {font:font(true,10,C.gldDk),fill:fill(C.gldBg2),alignment:align('center','center',true),border:bdr(C.gldMd)};
+        const qValSt = {font:font(true,10,C.gldDk),fill:fill(C.gldBg2),alignment:align('center','center',false),border:bdrT(C.gldMd)};
+        const sqLblSt= {font:font(true,10,C.gldDk),fill:fill(C.gldBg), alignment:align('center','center',true),border:bdr(C.gldMd)};
+        const sqValSt= {font:font(true,10,C.gldDk),fill:fill(C.gldBg), alignment:align('center','center',false),border:bdrT(C.gldMd)};
+        const fmlSt  = {...S.meta,font:font(false,10,C.muted),alignment:align('left','center',false)};
+
         const aoa=[
+          // Row 0 (Excel 1): Banner
           [mkCell(`CR HILIR & USULAN BAKU MUTU AIR LIMBAH  ·  ${seasonLabel.toUpperCase()}`,BNR),...Array(NC-1).fill(null)],
+          // Row 1 (Excel 2): Meta subtitle
           [mkCell(`${ubmRiverName}   ·   Kelas ${ubmClsRom}   ·   Q ${seasonLabel}: ${fmtS(Qs,4)} m³/det   ·   ΣQ Limbah: ${fmtS(ubmTotalQi,6)} m³/det   ·   ${dateStr}`,META),...Array(NC-1).fill(null)],
-          [mkCell('Formula Excel aktif (semua merujuk sel, bukan angka tetap): CR = (A6×C_hulu + ΣQi×Ci) / (A6+B6)   ·   C_maks = [BM×(A6+B6) − A6×C_hulu] / B6   ·   Status = IF(CR≤BM)   ·   Alokasi = Usulan_BM × B6 × 86400 / 1000   ·   Qi tiap sumber merujuk sheet "Sumber Air Limbah"',{...S.meta,font:font(false,8,C.muted)}),...Array(NC-1).fill(null)],
-          Array(NC).fill(null),
-          [mkCell('Q SUNGAI (m³/det)',{font:font(true,9,C.gldDk),fill:fill(C.gldBg2),alignment:align('center','center',true),border:bdr(C.gldMd)}),
-           mkCell('ΣQ LIMBAH (m³/det)',{font:font(true,9,C.gldDk),fill:fill(C.gldBg),alignment:align('center','center',true),border:bdr(C.gldMd)}),null,null,null,null,null,null,null],
-          [mkCell(Qs,{font:font(true,14,C.gldDk),fill:fill(C.gldBg2),alignment:align('center','center',false),border:bdrT(C.gldMd)}),
-           mkCell(ubmTotalQi,{font:font(true,14,C.gldDk),fill:fill(C.gldBg),alignment:align('center','center',false),border:bdrT(C.gldMd)}),null,null,null,null,null,null,null],
-          Array(NC).fill(null),
+          // Row 2 (Excel 3): Label Q Sungai | Label ΣQ Limbah | Formula note
+          [
+            mkCell('Q Sungai\n(m³/det)', qLblSt),
+            mkCell('ΣQ Limbah\n(m³/det)', sqLblSt),
+            mkCell('Formula: CR=(A4×C_hulu+ΣQi×Ci)/(A4+B4)  ·  C_maks=[BM×(A4+B4)−A4×C_hulu]/B4  ·  A4=Q Sungai (m³/det)  ·  B4=ΣQ Limbah (m³/det)',fmlSt),
+            ...Array(NC-3).fill({v:'',t:'s',s:S.dat}),
+          ],
+          // Row 3 (Excel 4): Nilai Q Sungai | Nilai ΣQ Limbah | (kolom sisanya kosong)
+          [
+            nCell(Qs,        qValSt, FMT.debitS),
+            nCell(ubmTotalQi,sqValSt,FMT.debitS),
+            ...Array(NC-2).fill({v:'',t:'s',s:S.dat}),
+          ],
+          // Row 4 (Excel 5): Header kolom tabel — nama sumber & BM Jenis pakai singkatan, detail di keterangan bawah
           [
             mkCell('No',HDR),mkCell('Parameter',HDR),mkCell('Satuan',HDR),
-            mkCell(`C Hulu ${isWet?'🌧 Hujan':'☀ Kemarau'} (mg/L)`,HDR),
-            ...srcNames.map(n=>mkCell(n+' (mg/L)',HDR)),
-            mkCell('CR Hilir (mg/L)',HDR),mkCell('BM Kelas Sungai (mg/L)',HDR),
-            ..._uJ.map(j=>{
-              const t=BMALLDB.find(x=>x.id===j.typeId);
-              const lbl=t?t.label.replace(/–.*/,'').trim().slice(0,30):j.name;
-              return mkCell('BM '+lbl+' (mg/L)',{...S.hdrGold});
-            }),
-            mkCell('Status Mutu',HDR),mkCell('C_maks Hitung (mg/L)',HDR),mkCell('Usulan BM (mg/L)',S.hdrGold),mkCell('Alokasi Beban (kg/hari)',S.hdrGold),
+            mkCell(`C Hulu\n(mg/L)`,HDR),
+            ...ubmSources.map((s,si)=>mkCell(`Q${si+1}\n(mg/L)`,HDR)),
+            mkCell('CR Hilir\n(mg/L)',HDR),mkCell('BM AS\n(mg/L)',HDR),
+            ..._uJ.map((j,ji)=>mkCell(`BM AL${ji+1}\n(mg/L)`,{...S.hdrGold})),
+            mkCell('Alokasi\n(kg/hari)',S.hdrGold),mkCell('Status\nMutu',HDR),mkCell('C_maks\n(mg/L)',HDR),mkCell('Usulan BM\n(mg/L)',S.hdrGold),
           ],
         ];
-        const rh=[RH.banner,RH.meta,RH.formula,8,18,28,8,RH.hdr];
-        const mergesKpi=[]; // Q Sungai (A6) & ΣQ Limbah (B6) kini sel terpisah, tidak digabung
-        const qSungaiCell='$A$6';  // sel Q Sungai (m³/det), dirujuk formula CR & C_maks
-        const sigmaQCell='$B$6';   // sel ΣQ Limbah (m³/det), dirujuk formula Alokasi, CR & C_maks
+        const rh=[RH.banner,RH.meta,28,RH.kpi,RH.hdr]; // row 2=label Q(28pt), row 3=nilai Q, row 4=header kolom
+        const mergesKpi=[
+          // Merge label Q dan ΣQ masing-masing 1 kolom (sudah di A3 B3)
+          // Merge formula note dari C3 sampai NC-1
+          {s:{r:2,c:2},e:{r:2,c:NC-1}},
+          // Merge kosong dari C4 sampai NC-1
+          {s:{r:3,c:2},e:{r:3,c:NC-1}},
+        ];
+        // Q Sungai di $A$4, ΣQ Limbah di $B$4 (baris nilai, Excel row 4)
+        let qSungaiCell = '$A$4';
+        let sigmaQCell  = '$B$4';
         const cHuluColLetter='D';
         const crColLetter=String.fromCharCode(65+4+ubmSources.length); // kolom 'CR Hilir'
         const bmColLetter=String.fromCharCode(65+4+ubmSources.length+1); // kolom 'BM Kelas Sungai'
-        const statusColLetter=String.fromCharCode(65+4+ubmSources.length+2+nJenis); // kolom 'Status Mutu'
-        const cmaksColLetter=String.fromCharCode(65+4+ubmSources.length+2+nJenis+1); // kolom 'C_maks Hitung'
-        const usulanColLetter=String.fromCharCode(65+4+ubmSources.length+2+nJenis+2); // kolom 'Usulan BM'
-        const alokColLetter =String.fromCharCode(65+4+ubmSources.length+2+nJenis+3); // kolom 'Alokasi'
+        const alokColLetter  =String.fromCharCode(65+4+ubmSources.length+2+nJenis);   // kolom 'Alokasi' (sekarang pertama)
+        const statusColLetter=String.fromCharCode(65+4+ubmSources.length+2+nJenis+1); // kolom 'Status Mutu'
+        const cmaksColLetter =String.fromCharCode(65+4+ubmSources.length+2+nJenis+2); // kolom 'C_maks Hitung'
+        const usulanColLetter=String.fromCharCode(65+4+ubmSources.length+2+nJenis+3); // kolom 'Usulan BM'
         const srcColLetters=ubmSources.map((s,si)=>String.fromCharCode(65+4+si)); // kolom tiap sumber Ci
-        // Referensi silang ke sheet 'Sumber Air Limbah' (kolom F = Debit m³/det, baris data dimulai di baris 5 sheet itu)
-        // — supaya nilai Qi tiap sumber BUKAN angka mati, tapi benar2 menunjuk ke sel debit aslinya.
-        const srcQiCellRefs=ubmSources.map((s,si)=>`'💧 Sumber Air Limbah'!$F$${SUMBER_SHEET_FIRST_DATA_ROW+si}`);
-        // Qs sungai musim ini disimpan sbg konstanta tersembunyi di sel referensi tetap (ditulis di komentar formula)
+
+        // ── Hitung baris awal tabel sumber (di bawah tabel CR) ──
+        // Tabel sumber dimulai setelah: header(8 baris) + data(seasonRes.length baris) + footer(1) + gap(2) + banner(1) + meta(1) + formula(1) + header_tabel(1) = +6 baris setelah footer
+        // Kita defer nilai persisnya setelah aoa terbentuk lengkap (pakai placeholder, update setelah push footer)
         const firstDataRow = aoa.length + 1;
+
+        // Tabel sumber ditempatkan di KANAN tabel CR — definisikan konstanta posisi di sini
+        const SRC_COL_OFFSET = NC + 1; // satu kolom kosong pemisah setelah tabel CR
+        const srcDataStartRow = 5;     // baris 5 (0-indexed) = baris 6 Excel = baris data pertama CR
+        const NC_SRC = 6;
+
+        const getSumberTableFirstDataRow = () => srcDataStartRow + 1; // tidak dipakai, compat
+        const makeSrcQiRef = (si) => {
+          const debitCol = String.fromCharCode(65 + SRC_COL_OFFSET + 5);
+          const debitRow = srcDataStartRow + si + 1;
+          return `$${debitCol}$${debitRow}`;
+        };
 
         seasonRes.forEach((r,i)=>{
           const {p,cr,bm,status,cMax,usulanBMVal,alokasi}=r;
@@ -7803,56 +7943,64 @@ async function exportExcel(){
           const crRef = `${crColLetter}${excelRow}`;
           const bmRef = `${bmColLetter}${excelRow}`;
           const cmaksRef = `${cmaksColLetter}${excelRow}`;
-          // ΣQi×Ci — setiap suku memakai SEL Qi sungguhan (rujukan silang ke sheet Sumber Air Limbah),
-          // bukan angka mati — jadi kalau debit sumber diubah di sana, CR di sini ikut berubah otomatis.
+          // ΣQi×Ci — hanya sumber yang ada BM Jenisnya (atau tidak punya typeId) yang masuk CR
+          // Sumber punya typeId tapi tidak ada BM Jenis untuk parameter ini → skip (tulis "—")
+          const activeSourceMask = ubmSources.map((s,si)=>{
+            const isP = ubmProposedSrcIds.has(s.id);
+            const noApplicableBM = s.typeId && ubmGetBMJenisVal(p.name, s.typeId)===null;
+            if(!noApplicableBM) return true;
+            // Tidak ada BM Jenis: aktif hanya jika diusulkan DAN Usulan BM sudah diisi
+            const ubmSrcRaw = isP ? (p.usulanBMPerSrc?.[s.id] ?? '') : '';
+            const ubmSrcVal = ubmSrcRaw !== '' ? pNum(ubmSrcRaw) : null;
+            return isP && ubmSrcVal!=null;
+          });
+          const activeSrcQiTerms = ubmSources.map((s,si)=>activeSourceMask[si]?makeSrcQiRef(si):'0').filter(t=>t!=='0');
+          const activeQiFormula = activeSrcQiTerms.length ? activeSrcQiTerms.join('+') : '0';
           const sumQiCiTerms = ubmSources.map((s,si)=>{
-            return `${srcQiCellRefs[si]}*${srcColLetters[si]}${excelRow}`;
-          }).join('+');
+            if(!activeSourceMask[si]) return null;
+            return `${makeSrcQiRef(si)}*${srcColLetters[si]}${excelRow}`;
+          }).filter(Boolean).join('+') || '0';
           const bmNum=(typeof bm==='number')?bm:null;
-          // ΣQi_param — total debit HANYA dari sumber yang punya nilai Ci>0 untuk parameter ini (baris ini).
-          // Dibangun sebagai penjumlahan bersyarat per sumber (bukan SUMPRODUCT range karena referensi Qi
-          // tersebar di sel-sel berbeda, bukan range berurutan): IF(Ci>0, Qi_ref, 0) + IF(...) + ...
-          // (paramSigmaQFormula lama dihapus — alokasi kini pakai alokasiSumFormula di atas)
-
-          // ΣCi×Qi_param (kg/hari basis) — jumlah kontribusi tiap sumber yang punya Ci>0 untuk parameter ini.
-          // Kolom sumber di baris ini (di atas) SUDAH memakai nilai Usulan BM untuk sumber yang diusulkan,
-          // jadi rumus ini otomatis konsisten: sumber diusulkan pakai Usulan BM, sumber lain pakai C aktual.
+          // ΣCi×Qi_param — alokasi beban, hanya sumber aktif
           const alokasiSumFormula = ubmSources.length
-            ? ubmSources.map((s,si)=>`IF(${srcColLetters[si]}${excelRow}>0,${srcColLetters[si]}${excelRow}*${srcQiCellRefs[si]},0)`).join('+')
+            ? ubmSources.map((s,si)=>activeSourceMask[si]?`IF(${srcColLetters[si]}${excelRow}>0,${srcColLetters[si]}${excelRow}*${makeSrcQiRef(si)},0)`:'0').filter(t=>t!=='0').join('+') || '0'
             : '0';
 
           aoa.push([
             mkCell(i+1,baseC),mkCell(p.name||'—',base),mkCell(p.unit||'—',baseC),
-            nCell(fmtV(cHuluNum,4),baseR),
-            ...ubmSources.map(s=>{
+            nCell(fmtV(cHuluNum,4),baseR,FMT.conc),
+            ...ubmSources.map((s,si)=>{
               const isP=ubmProposedSrcIds.has(s.id);
               const ubmSrcRaw=isP?(p.usulanBMPerSrc?.[s.id]??''):'';
               const ubmSrcVal=ubmSrcRaw!==''?pNum(ubmSrcRaw):null;
+              if(!activeSourceMask[si]){
+                // Sumber tanpa BM Jenis (dan tanpa Usulan BM terisi) → tampilkan "—" di sel Excel
+                return mkCell('—',{...baseC,font:font(false,10,C.muted)});
+              }
               const val=isP&&ubmSrcVal!=null?ubmSrcVal:pNum(p.cSrc[s.id]);
-              return nCell(fmtV(val,4),isP&&ubmSrcVal!=null?{...baseR,fill:fill('fef3c7'),font:font(true,10,C.amb2)}:baseR);
+              return nCell(fmtV(val,4),isP&&ubmSrcVal!=null?{...baseR,fill:fill('fef3c7'),font:font(true,10,C.amb2)}:baseR,FMT.conc);
             }),
-            // CR Hilir — formula Excel hidup: (Qs×C_hulu + ΣQi×Ci) / (Qs+ΣQi), Qs & ΣQi merujuk sel KPI A6/B6
-            {f:`(${qSungaiCell}*${cHuluRef}+${sumQiCiTerms})/(${qSungaiCell}+${sigmaQCell})`,t:'n',s:crSt,v:fmtV(cr,4)},
+            // CR Hilir — formula Excel hidup: (Qs×C_hulu + ΣQi×Ci) / (Qs+ΣQi aktif per-parameter)
+            injectFmt({f:`(${qSungaiCell}*${cHuluRef}+${sumQiCiTerms})/(${qSungaiCell}+${activeQiFormula})`,t:'n',s:crSt,v:fmtV(cr,4)},FMT.conc,cr),
             // BM Kelas Sungai — nilai baku mutu (referensi statis dari database, bukan dihitung)
-            bmNum!=null?nCell(fmtV(bmNum,4),{...baseC,font:font(true,10,C.teal2)}):mkCell('—',{...baseC,font:font(true,10,C.teal2)}),
+            bmNum!=null?nCell(fmtV(bmNum,4),{...baseC,font:font(true,10,C.teal2)},FMT.bm):mkCell('—',{...baseC,font:font(true,10,C.teal2)}),
             ..._uJ.map(j=>{
               const v=_getXLBMJenis(p.name,j.typeId);
-              return typeof v==='number'?nCell(fmtV(v,4),goldSt):mkCell(v==null?'—':String(v),goldSt);
+              return typeof v==='number'?nCell(fmtV(v,4),goldSt,FMT.bm):mkCell(v==null?'—':String(v),goldSt);
             }),
+            // Alokasi Beban (kg/hari) — sekarang setelah BM AL
+            alokasi!=null
+              ? fCell(`(${alokasiSumFormula})*86400/1000`,S.alok,fmtV(alokasi,4),FMT.beban)
+              : mkCell('—',{...baseR,font:font(false,10,C.muted)}),
             // Status Mutu — formula Excel hidup, bandingkan CR vs BM langsung di sheet
             bmNum!=null
               ? {f:`IF(${crRef}<=${bmRef},"✓ Memenuhi","✗ Melebihi")`,t:'s',s:stCell,v:stLabel}
               : mkCell('—',S.na),
-            // C_maks Hitung — formula Excel hidup: [BM×(Qs+ΣQi) − Qs×C_hulu] / ΣQi
-            bmNum!=null
-              ? {f:`MAX(0,(${bmRef}*(${qSungaiCell}+${sigmaQCell})-${qSungaiCell}*${cHuluRef})/${sigmaQCell})`,t:'n',s:cmSt,v:fmtV(cMax,4)}
+            // C_maks Hitung — formula Excel hidup: [BM×(Qs+ΣQi_aktif) − Qs×C_hulu] / ΣQi_aktif
+            bmNum!=null&&activeQiFormula!=='0'
+              ? injectFmt({f:`MAX(0,(${bmRef}*(${qSungaiCell}+${activeQiFormula})-${qSungaiCell}*${cHuluRef})/(${activeQiFormula}))`,t:'n',s:cmSt,v:fmtV(cMax,4)},FMT.conc,cMax)
               : mkCell('—',cmSt),
-            usulanBMVal!=null?nCell(fmtV(usulanBMVal,4),ubmSt):mkCell('— (belum diisi)',{...baseC,font:font(false,9,C.muted)}),
-            // Alokasi Beban (kg/hari) = Σ(Ci_sumber × Qi_sumber) × 86.400 ÷ 1.000 — FORMULA EXCEL HIDUP
-            // Ci sumber yang diusulkan = Usulan BM (sudah tercermin di kolom sumber di atas); Ci sumber lain = C aktual.
-            alokasi!=null
-              ? fCell(`(${alokasiSumFormula})*86400/1000`,S.alok,fmtV(alokasi,4))
-              : mkCell('—',{...baseR,font:font(false,9,C.muted)}),
+            usulanBMVal!=null?nCell(fmtV(usulanBMVal,4),ubmSt):mkCell('— (belum diisi)',{...baseC,font:font(false,10,C.muted)}),
           ]);
           rh.push(RH.data);
         });
@@ -7865,66 +8013,156 @@ async function exportExcel(){
           ...ubmSources.map(()=>blank(TOT)),
           blank(TOT),blank(TOT),
           ..._uJ.map(()=>blank(TOT)),
+          injectFmt({f:`SUM(${alokColLetter}${firstDataRow}:${alokColLetter}${lastDataRow})`,t:'n',s:{...S.alok,...TOT,font:font(true,10,C.gldDk)},v:fmtV(totalAlok,4)},FMT.beban),
           mkCell(seasonRes.filter(r=>r.status==='ok').length+' Memenuhi / '+seasonRes.filter(r=>r.status==='ng').length+' Melebihi',{...TOT,alignment:align('center')}),
           blank(TOT),blank(TOT),
-          {f:`SUM(${alokColLetter}${firstDataRow}:${alokColLetter}${lastDataRow})`,t:'n',s:{...S.alok,...TOT,font:font(true,12,C.gldDk)},v:fmtV(totalAlok,4)},
         ]);
         rh.push(RH.tot);
 
+        // ── KETERANGAN — singkatan kolom ──────────────────────────────────────
+        const bdrBlk = bdr('000000','thin');
+        const legSt  = {font:font(false,10,C.ink2), fill:fill(C.white), alignment:align('left','center',false), border:bdrBlk};
+        const legHdSt= {font:font(true, 10,C.white), fill:fill(C.teal2), alignment:align('left','center',false), border:bdrBlk};
+
+        const legGapIdx = aoa.length;
+        aoa.push(Array(NC).fill({v:'',t:'s',s:{...S.dat,fill:fill(C.slateL),border:bdrBlk}}));
+        rh.push(4);
+
+        const legFirstIdx = aoa.length;
+        const pushLeg=(text,style)=>{
+          aoa.push([mkCell(text,style||legSt),...Array(NC-1).fill(null)]);
+          rh.push(RH.data);
+        };
+        pushLeg('KETERANGAN SINGKATAN KOLOM', legHdSt);
+        pushLeg(`C Hulu (mg/L)  =  Konsentrasi hulu sungai musim ${isWet?'Hujan':'Kemarau'}`);
+        ubmSources.forEach((s,si)=>{
+          pushLeg(`Q${si+1}  =  ${s.name||'Sumber '+(si+1)}  —  ${s.typeLabel||'Air Limbah'}  |  Debit: ${fmtS(pNum(s.qDay)/86400,6)} m³/det`);
+        });
+        _uJ.forEach((j,ji)=>{
+          const t=BMALLDB.find(x=>x.id===j.typeId);
+          const lbl=t?t.label.replace(/\s*\u2013.*$/,'').trim():j.name;
+          pushLeg(`BM AL${ji+1}  =  Baku Mutu Air Limbah: ${lbl}`);
+        });
+        pushLeg('BM AS  =  Baku Mutu Air Sungai sesuai Kelas Sungai (PP 22/2021 Lampiran VI)');
+        pushLeg('C_maks  =  Konsentrasi maksimum yang diperbolehkan di outlet sumber (mg/L)');
+        pushLeg('Alokasi  =  Alokasi beban pencemaran harian = Usulan BM x Debit x 86.400 / 1.000 (kg/hari)');
+
+        const legLastIdx = aoa.length;
+        const legStartRow = firstDataRow + seasonRes.length;
+
+
+        // ── Tabel Sumber Air Limbah — di KANAN tabel CR, sejajar baris 1 ─────
+        // NC_SRC kolom: No, Nama Sumber, Jenis Air Limbah, Debit(m³/hari), Debit(m³/jam), Debit(m³/det)
+        const NC_SRC_LOCAL=6; // alias lokal — NC_SRC sudah didefinisikan di atas
+
+        // Helper: tulis sel langsung ke ws pada (row, col) absolut
+        const sumberCells=[]; // kumpulkan dulu, tulis setelah ws dibuat
+        const sumberMerges=[]; // merge untuk banner/meta/formula
+
+        // Q Sungai & ΣQ Limbah sudah di A3 & B3 dalam aoa utama — tidak perlu di sumberCells
+
+        // Baris 0: banner tabel sumber (merge NC_SRC kolom)
+        sumberCells.push({r:0, c:SRC_COL_OFFSET, cell:mkCell('DATA SUMBER AIR LIMBAH — TABEL KONVERSI SATUAN DEBIT',S.bannerG)});
+        for(let ci=1;ci<NC_SRC;ci++) sumberCells.push({r:0,c:SRC_COL_OFFSET+ci,cell:{v:'',t:'s',s:S.bannerG}});
+        sumberMerges.push({s:{r:0,c:SRC_COL_OFFSET},e:{r:0,c:SRC_COL_OFFSET+NC_SRC-1}});
+
+        // Baris 1: meta
+        sumberCells.push({r:1, c:SRC_COL_OFFSET, cell:mkCell(`${ubmRiverName}   ·   ${dateStr}`,S.meta)});
+        for(let ci=1;ci<NC_SRC;ci++) sumberCells.push({r:1,c:SRC_COL_OFFSET+ci,cell:{v:'',t:'s',s:S.meta}});
+        sumberMerges.push({s:{r:1,c:SRC_COL_OFFSET},e:{r:1,c:SRC_COL_OFFSET+NC_SRC-1}});
+
+        // Baris 2: formula note tabel sumber
+        sumberCells.push({r:2, c:SRC_COL_OFFSET, cell:mkCell('Formula: Debit (m³/jam) = m³/hari ÷ 24   ·   Debit (m³/det) = m³/hari ÷ 86.400',{...S.meta,font:font(false,10,C.muted)})});
+        for(let ci=1;ci<NC_SRC;ci++) sumberCells.push({r:2,c:SRC_COL_OFFSET+ci,cell:{v:'',t:'s',s:S.meta}});
+        sumberMerges.push({s:{r:2,c:SRC_COL_OFFSET},e:{r:2,c:SRC_COL_OFFSET+NC_SRC-1}});
+        // Baris 3: kosong (sejajar baris nilai Q Sungai)
+        for(let ci=0;ci<NC_SRC;ci++) sumberCells.push({r:3,c:SRC_COL_OFFSET+ci,cell:{v:'',t:'s',s:S.dat}});
+        sumberMerges.push({s:{r:3,c:SRC_COL_OFFSET},e:{r:3,c:SRC_COL_OFFSET+NC_SRC-1}});
+
+        // Baris 3 (= row index 3 = gap row di aoa): kosong — biarkan
+        // Baris 4 (= Q SUNGAI label row): header tabel sumber
+        const srcHdrRow = 4; // sejajar dengan baris header tabel CR (row index 4 = Excel row 5)
+        const srcHdrLabels=['No','Nama Sumber /\nTitik Penaatan','Jenis Air Limbah','Debit\n(m³/hari)','Debit\n(m³/jam)','Debit\n(m³/det)'];
+        srcHdrLabels.forEach((lbl,ci)=>sumberCells.push({r:srcHdrRow,c:SRC_COL_OFFSET+ci,cell:mkCell(lbl,S.hdrG)}));
+
+        // Baris 5 (= Q SUNGAI value row): baris data sumber pertama
+        // Baris data mulai dari row 5 di worksheet (0-indexed) — sesuai srcDataStartRow di atas
+        ubmSources.forEach((s,i)=>{
+          const alt=i%2, qd=pNum(s.qDay);
+          const excelRowSrc = srcDataStartRow + 1 + i; // Excel 1-based untuk formula
+          const qdColLetter = String.fromCharCode(65+SRC_COL_OFFSET+3); // kolom D tabel sumber
+          const qdRef = `${qdColLetter}${excelRowSrc}`;
+          const rowIdx = srcDataStartRow + i;
+          sumberCells.push({r:rowIdx, c:SRC_COL_OFFSET,   cell:mkCell(i+1, alt?S.datAltC:S.datC)});
+          sumberCells.push({r:rowIdx, c:SRC_COL_OFFSET+1, cell:mkCell(s.name||'—', alt?S.datAlt:S.dat)});
+          sumberCells.push({r:rowIdx, c:SRC_COL_OFFSET+2, cell:mkCell(s.typeLabel||'(Manual)', alt?S.datAlt:S.dat)});
+          sumberCells.push({r:rowIdx, c:SRC_COL_OFFSET+3, cell:nCell(fmtV(qd,2), alt?S.datAltR:S.datR, FMT.debitD)});
+          sumberCells.push({r:rowIdx, c:SRC_COL_OFFSET+4, cell:injectFmt({f:`${qdRef}/24`,t:'n',s:alt?S.datAltR:S.datR,v:fmtV(qd/24,4)},FMT.debitJ)});
+          sumberCells.push({r:rowIdx, c:SRC_COL_OFFSET+5, cell:injectFmt({f:`${qdRef}/86400`,t:'n',s:alt?S.datAltR:S.datR,v:fmtV(qd/86400,6)},FMT.debitS)});
+        });
+
+        // Footer total tabel sumber
+        const srcTotRow = srcDataStartRow + ubmSources.length;
+        const totalQd=ubmSources.reduce((sx,x)=>sx+pNum(x.qDay),0);
+        const srcFirstDataExcel = srcDataStartRow + 1;
+        const srcLastDataExcel  = srcDataStartRow + ubmSources.length;
+        const colLetterSrcD = String.fromCharCode(65+SRC_COL_OFFSET+3);
+        const colLetterSrcE = String.fromCharCode(65+SRC_COL_OFFSET+4);
+        const colLetterSrcF = String.fromCharCode(65+SRC_COL_OFFSET+5);
+        sumberCells.push({r:srcTotRow, c:SRC_COL_OFFSET,   cell:blank(S.totT)});
+        sumberCells.push({r:srcTotRow, c:SRC_COL_OFFSET+1, cell:mkCell('TOTAL',{...S.totT,alignment:align('center')})});
+        sumberCells.push({r:srcTotRow, c:SRC_COL_OFFSET+2, cell:blank(S.totT)});
+        sumberCells.push({r:srcTotRow, c:SRC_COL_OFFSET+3, cell:injectFmt({f:`SUM(${colLetterSrcD}${srcFirstDataExcel}:${colLetterSrcD}${srcLastDataExcel})`,t:'n',s:S.totT,v:fmtV(totalQd,2)},FMT.debitD)});
+        sumberCells.push({r:srcTotRow, c:SRC_COL_OFFSET+4, cell:injectFmt({f:`SUM(${colLetterSrcE}${srcFirstDataExcel}:${colLetterSrcE}${srcLastDataExcel})`,t:'n',s:S.totT,v:fmtV(totalQd/24,4)},FMT.debitJ)});
+        sumberCells.push({r:srcTotRow, c:SRC_COL_OFFSET+5, cell:injectFmt({f:`SUM(${colLetterSrcF}${srcFirstDataExcel}:${colLetterSrcF}${srcLastDataExcel})`,t:'n',s:S.totT,v:fmtV(totalQd/86400,6)},FMT.debitS)});
+
+        // Baris sumber lama sudah dihapus — tabel sumber kini ditulis ke kanan
+        // Legend row merges — mulai setelah baris TOTAL (index = 4+seasonRes.length+1+1 = legStart)
+        const legGapRow    = legGapIdx;   // posisi gap di aoa (direkam sebelum push)
+        const legHdrRow    = legFirstIdx; // posisi baris keterangan pertama
+        const legCount     = legLastIdx - legFirstIdx; // jumlah baris keterangan aktual
+        const legMerges = [];
+        legMerges.push({s:{r:legGapRow,c:0},e:{r:legGapRow,c:NC-1}});
+        for(let li=0; li<legCount; li++){
+          legMerges.push({s:{r:legHdrRow+li,c:0},e:{r:legHdrRow+li,c:NC-1}});
+        }
         const mergesS=[
-          {s:{r:0,c:0},e:{r:0,c:NC-1}},{s:{r:1,c:0},e:{r:1,c:NC-1}},
-          {s:{r:2,c:0},e:{r:2,c:NC-1}},
+          {s:{r:0,c:0},e:{r:0,c:NC-1}},  // banner
+          {s:{r:1,c:0},e:{r:1,c:NC-1}},  // meta
           ...mergesKpi,
+          ...legMerges,
+          ...sumberMerges,
         ];
-        const colW=[5,28,9,13,...ubmSources.map(()=>14),14,14,..._uJ.map(()=>18),14,14,14,16];
-        addSheet(WB,isWet?'🌧 CR Hilir & UBM - Hujan':'☀ CR Hilir & UBM - Kemarau',aoa,colW,mergesS,rh,firstDataRow-1);
+        // Kolom tabel sumber ditambahkan ke colW: pemisah(1) + NC_SRC kolom
+        const colW=[4,20,7,9,...ubmSources.map(()=>9),9,9,..._uJ.map(()=>9),9,9,9,11,
+                    3, // kolom pemisah kosong
+                    4,20,16,12,12,12, // No, Nama, Jenis, m³/hari, m³/jam, m³/det
+                   ];
+        // Tambahkan total kolom ke !ref agar sumber masuk sheet
+        const totalNC = SRC_COL_OFFSET + NC_SRC;
+        const ws = addSheet(WB,isWet?'🌧 CR Hilir & UBM - Hujan':'☀ CR Hilir & UBM - Kemarau',aoa,colW,mergesS,rh,firstDataRow-1);
+        // Inject sel tabel sumber langsung ke ws (setelah addSheet menulis aoa)
+        if(ws){
+          sumberCells.forEach(({r,c,cell})=>{
+            const addr=XLSX.utils.encode_cell({r,c});
+            if(cell&&typeof cell==='object'&&'f' in cell){
+              ws[addr]={...cell,v:(cell.v==null?undefined:cell.v)};
+            } else if(cell&&typeof cell==='object'&&'v' in cell){
+              ws[addr]={v:cell.v==null?'':cell.v,t:cell.t||'s',s:cell.s};
+            } else {
+              ws[addr]=cell;
+            }
+          });
+          // Update !ref agar mencakup kolom sumber
+          const curRef=XLSX.utils.decode_range(ws['!ref']);
+          curRef.e.c=Math.max(curRef.e.c, SRC_COL_OFFSET+NC_SRC-1);
+          ws['!ref']=XLSX.utils.encode_range(curRef);
+        }
       }
 
       buildUBMSeasonSheet(resDry,'dry','Kemarau ☀');
       buildUBMSeasonSheet(resWet,'wet','Hujan 🌧');
     }
-  }
-
-  // ═══════════════════════════════════════════════════════
-  // SHEET 6 — SUMBER AIR LIMBAH
-  // ═══════════════════════════════════════════════════════
-  if(ubmSources.length){
-    const NC=6;
-    const aoa=[
-      [mkCell('DATA SUMBER AIR LIMBAH — TABEL KONVERSI SATUAN DEBIT',S.bannerG),...Array(NC-1).fill(null)],
-      [mkCell(`${rn}   ·   ${dateStr}`,S.meta),...Array(NC-1).fill(null)],
-      [mkCell('Formula Excel aktif:  Debit (m³/jam) = Debit (m³/hari) / 24   ·   Debit (m³/det) = Debit (m³/hari) / 86.400',{...S.meta,font:font(false,8,C.muted)}),...Array(NC-1).fill(null)],
-      ['No','Nama Sumber / Titik Penaatan','Jenis Air Limbah','Debit (m³/hari)','Debit (m³/jam)','Debit (m³/det)'].map(c=>mkCell(c,S.hdrG)),
-    ];
-    const rh=[RH.banner,RH.meta,RH.formula,RH.hdr];
-    const firstDataRow = aoa.length + 1;
-    ubmSources.forEach((s,i)=>{
-      const alt=i%2, qd=pNum(s.qDay);
-      const excelRow = firstDataRow + i;
-      const qdRef = `D${excelRow}`;
-      aoa.push([
-        mkCell(i+1, alt?S.datAltC:S.datC),
-        mkCell(s.name||'—', alt?S.datAlt:S.dat),
-        mkCell(s.typeLabel||'(Manual)', alt?S.datAlt:S.dat),
-        nCell(fmtV(qd,2), alt?S.datAltR:S.datR),
-        // m³/jam — formula Excel hidup: Debit(m³/hari) / 24
-        {f:`${qdRef}/24`,t:'n',s:alt?S.datAltR:S.datR,v:fmtV(qd/24,4)},
-        // m³/det — formula Excel hidup: Debit(m³/hari) / 86400
-        {f:`${qdRef}/86400`,t:'n',s:alt?S.datAltR:S.datR,v:fmtV(qd/86400,6)},
-      ]);
-      rh.push(RH.data);
-    });
-    const lastDataRow = firstDataRow + ubmSources.length - 1;
-    const totalQd=ubmSources.reduce((s,x)=>s+pNum(x.qDay),0);
-    aoa.push([
-      blank(S.totT),mkCell('TOTAL',{...S.totT,alignment:align('center')}),blank(S.totT),
-      {f:`SUM(D${firstDataRow}:D${lastDataRow})`,t:'n',s:{...S.totT,font:font(true,11,C.teal2)},v:fmtV(totalQd,2)},
-      {f:`SUM(E${firstDataRow}:E${lastDataRow})`,t:'n',s:{...S.totT,font:font(true,11,C.teal2)},v:fmtV(totalQd/24,4)},
-      {f:`SUM(F${firstDataRow}:F${lastDataRow})`,t:'n',s:{...S.totT,font:font(true,11,C.teal2)},v:fmtV(totalQd/86400,6)},
-    ]);
-    rh.push(RH.tot);
-    const merges=[{s:{r:0,c:0},e:{r:0,c:NC-1}},{s:{r:1,c:0},e:{r:1,c:NC-1}},{s:{r:2,c:0},e:{r:2,c:NC-1}}];
-    addSheet(WB,'💧 Sumber Air Limbah',aoa,[5,36,32,16,16,16],merges,rh,firstDataRow-1);
   }
 
   // ═══════════════════════════════════════════════════════
@@ -7959,7 +8197,7 @@ async function exportExcel(){
       rh.push(RH.data);
     });
     const merges=[{s:{r:0,c:0},e:{r:0,c:NC-1}},{s:{r:1,c:0},e:{r:1,c:NC-1}},{s:{r:2,c:0},e:{r:2,c:NC-1}}];
-    addSheet(WB,'🗂 Database Parameter',aoa,[5,32,9,14,12,12,12,12],merges,rh);
+    addSheet(WB,'🗂 Database Parameter',aoa,[4,16,7,9,9,9,9,9],merges,rh);
   }
 
   // ── Generate & download ──────────────────────────────────────

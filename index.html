@@ -518,7 +518,7 @@ tr:hover td { background: rgba(26,176,166,0.02); }
 /* ── Hero ── */
 .home-hero {
   position: relative; overflow: hidden;
-  display: grid; grid-template-columns: 1.1fr 1fr; gap: 28px; align-items: center;
+  display: grid; grid-template-columns: 0.8fr 1.4fr; gap: 24px; align-items: center;
   background: var(--panel); border: 1px solid var(--brd); border-radius: var(--r);
   padding: 36px 38px; margin-bottom: 26px;
 }
@@ -1159,6 +1159,7 @@ input.inp-sm::placeholder {
           <div class="rl-dd-item" onclick="nav('ubm')" id="nav-ubm"><span class="rl-dd-icon">🎯</span> Usulan Baku Mutu</div>
           <div class="rl-dd-item" onclick="nav('fishbone')" id="nav-fishbone"><span class="rl-dd-icon">🐟</span> Fishbone</div>
           <div class="rl-dd-item" onclick="nav('compare')" id="nav-compare"><span class="rl-dd-icon">⚖</span> Bandingkan Sungai</div>
+          <div class="rl-dd-item" onclick="nav('kompensasi')" id="nav-kompensasi"><span class="rl-dd-icon">⚖️</span> Kompensasi</div>
         </div>
       </div>
 
@@ -1292,12 +1293,12 @@ input.inp-sm::placeholder {
           </g>
 
           <!-- ── Alur sungai: hulu (1) → effluen atas (2) → effluen bawah (3) → titik campur akhir ── -->
-          <path id="riverPath2" d="M14,176 C80,168 120,168 165,184 C215,202 248,202 290,184 C325,168 358,154 446,168"
+          <path id="riverPath2" d="M14,176 C80,168 120,168 165,184 C215,202 248,202 290,184 C325,168 358,154 420,163"
             stroke="url(#riverGrad2)" stroke-width="26" fill="none" opacity="0.18" stroke-linecap="round"/>
-          <path d="M14,176 C80,168 120,168 165,184 C215,202 248,202 290,184 C325,168 358,154 446,168"
+          <path d="M14,176 C80,168 120,168 165,184 C215,202 248,202 290,184 C325,168 358,154 420,163"
             stroke="url(#riverGrad2)" stroke-width="8" fill="none" opacity="0.95" stroke-linecap="round" filter="url(#glow2)"/>
           <!-- kilau air bergerak di permukaan sungai -->
-          <path d="M14,176 C80,168 120,168 165,184 C215,202 248,202 290,184 C325,168 358,154 446,168"
+          <path d="M14,176 C80,168 120,168 165,184 C215,202 248,202 290,184 C325,168 358,154 420,163"
             stroke="url(#riverShine2)" stroke-width="3.4" fill="none" stroke-linecap="round" stroke-dasharray="70,800">
             <animate attributeName="stroke-dashoffset" from="870" to="-870" dur="2.4s" repeatCount="indefinite"/>
           </path>
@@ -1318,11 +1319,6 @@ input.inp-sm::placeholder {
             </animateMotion>
           </circle>
 
-          <!-- Panah arah aliran sungai (informatif: menunjukkan arah hilir) -->
-          <g class="ra-flowlabel">
-            <text x="430" y="200" text-anchor="end" font-family="Inter,sans-serif" font-size="9" font-weight="700" fill="var(--txt2)" letter-spacing="0.5px">HILIR →</text>
-          </g>
-
           <!-- ── Titik 1 — hulu sungai (Q1, C1) ── -->
           <g filter="url(#softGlow2)">
             <circle cx="40" cy="182" r="15" fill="rgba(47,116,224,0.22)" stroke="#2f74e0" stroke-width="2.6">
@@ -1337,8 +1333,8 @@ input.inp-sm::placeholder {
           <text x="40" y="208" text-anchor="middle" font-family="Inter,sans-serif" font-size="8" font-weight="700" fill="#2f74e0" letter-spacing="0.3px">HULU</text>
 
           <!-- Kartu data titik 1: ditempatkan DI DALAM viewBox, di bawah titik, tidak terpotong -->
-          <g font-family="Inter,sans-serif" font-size="10" font-weight="700">
-            <rect x="4" y="14" width="74" height="84" rx="10" fill="var(--ra-card-bg-blue)" stroke="#2f74e0" stroke-width="1.3"/>
+          <g transform="translate(0,18)" font-family="Inter,sans-serif" font-size="10" font-weight="700">
+            <rect x="4" y="14" width="74" height="92" rx="10" fill="var(--ra-card-bg-blue)" stroke="#2f74e0" stroke-width="1.3"/>
             <rect x="4" y="14" width="74" height="20" rx="10" fill="#2f74e0" opacity="0.16"/>
             <text x="41" y="27" text-anchor="middle" font-size="7.5" font-weight="800" fill="#2f74e0" letter-spacing="0.5px">TITIK 1</text>
             <text x="12" y="45" fill="#2f74e0">Q<tspan baseline-shift="sub" font-size="7">1</tspan></text>
@@ -1362,8 +1358,8 @@ input.inp-sm::placeholder {
           <line x1="165" y1="105" x2="165" y2="177" stroke="#ef4d5e" stroke-width="2.4" stroke-dasharray="4,3.4" marker-end="url(#arrRed2)" opacity="0.95">
             <animate attributeName="stroke-dashoffset" from="0" to="-14.8" dur="0.75s" repeatCount="indefinite"/>
           </line>
-          <g font-family="Inter,sans-serif" font-size="10" font-weight="700">
-            <rect x="187" y="206" width="78" height="84" rx="10" fill="var(--ra-card-bg-red)" stroke="#ef4d5e" stroke-width="1.3"/>
+          <g transform="translate(13,-158)" font-family="Inter,sans-serif" font-size="10" font-weight="700">
+            <rect x="187" y="206" width="78" height="92" rx="10" fill="var(--ra-card-bg-red)" stroke="#ef4d5e" stroke-width="1.3"/>
             <rect x="187" y="206" width="78" height="20" rx="10" fill="#ef4d5e" opacity="0.16"/>
             <text x="226" y="219" text-anchor="middle" font-size="7.5" font-weight="800" fill="#ef4d5e" letter-spacing="0.5px">TITIK 2</text>
             <text x="195" y="237" fill="#ef4d5e">Q<tspan baseline-shift="sub" font-size="7">2</tspan></text>
@@ -1387,8 +1383,8 @@ input.inp-sm::placeholder {
           <line x1="352" y1="247" x2="352" y2="172" stroke="#1fb4a8" stroke-width="2.4" stroke-dasharray="4,3.4" marker-end="url(#arrTeal2)" opacity="0.95">
             <animate attributeName="stroke-dashoffset" from="0" to="-14.8" dur="0.75s" begin="0.3s" repeatCount="indefinite"/>
           </line>
-          <g font-family="Inter,sans-serif" font-size="10" font-weight="700">
-            <rect x="378" y="32" width="78" height="84" rx="10" fill="var(--ra-card-bg-teal)" stroke="#1fb4a8" stroke-width="1.3"/>
+          <g transform="translate(-138,172)" font-family="Inter,sans-serif" font-size="10" font-weight="700">
+            <rect x="378" y="32" width="78" height="92" rx="10" fill="var(--ra-card-bg-teal)" stroke="#1fb4a8" stroke-width="1.3"/>
             <rect x="378" y="32" width="78" height="20" rx="10" fill="#1fb4a8" opacity="0.16"/>
             <text x="417" y="45" text-anchor="middle" font-size="7.5" font-weight="800" fill="#1fb4a8" letter-spacing="0.5px">TITIK 3</text>
             <text x="450" y="63" fill="#1fb4a8" text-anchor="end">Q<tspan baseline-shift="sub" font-size="7">3</tspan></text>
@@ -1397,25 +1393,43 @@ input.inp-sm::placeholder {
             <text x="450" y="111" fill="#1fb4a8" text-anchor="end">C<tspan baseline-shift="sub" font-size="7">DO,3</tspan></text>
           </g>
 
+          <!-- Titik 4 — hilir (Q4, C4) -->
+          <g font-family="Inter,sans-serif" font-size="10" font-weight="700">
+            <rect x="378" y="32" width="78" height="92" rx="10" fill="var(--ra-card-bg-blue)" stroke="#2f74e0" stroke-width="1.3"/>
+            <rect x="378" y="32" width="78" height="20" rx="10" fill="#2f74e0" opacity="0.16"/>
+            <text x="417" y="45" text-anchor="middle" font-size="7.5" font-weight="800" fill="#2f74e0" letter-spacing="0.5px">TITIK 4</text>
+            <text x="450" y="63" fill="#2f74e0" text-anchor="end">Q<tspan baseline-shift="sub" font-size="7">4</tspan></text>
+            <text x="450" y="79" fill="#2f74e0" text-anchor="end">C<tspan baseline-shift="sub" font-size="7">BOD,4</tspan></text>
+            <text x="450" y="95" fill="#2f74e0" text-anchor="end">C<tspan baseline-shift="sub" font-size="7">Cl,4</tspan></text>
+            <text x="450" y="111" fill="#2f74e0" text-anchor="end">C<tspan baseline-shift="sub" font-size="7">DO,4</tspan></text>
+          </g>
+
           <!-- Zona pencampuran (mixing zone) -->
-          <ellipse cx="205" cy="192" rx="44" ry="17" fill="rgba(239,77,94,0.08)" stroke="rgba(239,77,94,0.4)" stroke-width="1.3" stroke-dasharray="4,3">
+          <ellipse cx="165" cy="187" rx="44" ry="17" fill="rgba(239,77,94,0.08)" stroke="rgba(239,77,94,0.4)" stroke-width="1.3" stroke-dasharray="4,3">
             <animate attributeName="rx" values="44;58;44" dur="3.4s" repeatCount="indefinite"/>
             <animate attributeName="opacity" values="0.6;1;0.6" dur="3.4s" repeatCount="indefinite"/>
           </ellipse>
-          <ellipse cx="350" cy="178" rx="38" ry="15" fill="rgba(31,180,168,0.08)" stroke="rgba(31,180,168,0.4)" stroke-width="1.3" stroke-dasharray="4,3">
+          <ellipse cx="352" cy="165" rx="38" ry="15" fill="rgba(31,180,168,0.08)" stroke="rgba(31,180,168,0.4)" stroke-width="1.3" stroke-dasharray="4,3">
             <animate attributeName="rx" values="38;50;38" dur="3.4s" begin="0.5s" repeatCount="indefinite"/>
             <animate attributeName="opacity" values="0.6;1;0.6" dur="3.4s" begin="0.5s" repeatCount="indefinite"/>
           </ellipse>
 
           <!-- Label "zona campur" kecil agar lebih informatif -->
-          <text x="205" y="196" text-anchor="middle" font-family="Inter,sans-serif" font-size="6.5" font-weight="700" fill="#ef4d5e" opacity="0.85" letter-spacing="0.3px">ZONA CAMPUR</text>
+          <text x="165" y="191" text-anchor="middle" font-family="Inter,sans-serif" font-size="6.5" font-weight="700" fill="#ef4d5e" opacity="0.85" letter-spacing="0.3px">ZONA CAMPUR</text>
+          <text x="352" y="158" text-anchor="middle" font-family="Inter,sans-serif" font-size="6.5" font-weight="700" fill="#1fb4a8" opacity="0.85" letter-spacing="0.3px">ZONA CAMPUR</text>
 
-          <!-- Hasil akhir Cmix di ujung kanan sungai -->
+          <!-- ── Titik 4 — hilir sungai (Q4 = Qmix, C4 = Cmix) ── -->
           <g filter="url(#softGlow2)">
-            <circle cx="446" cy="168" r="10" fill="rgba(63,159,220,0.3)" stroke="#3f9fdc" stroke-width="2.2">
-              <animate attributeName="r" values="10;13;10" dur="2.2s" repeatCount="indefinite"/>
+            <circle cx="420" cy="163" r="15" fill="rgba(47,116,224,0.22)" stroke="#2f74e0" stroke-width="2.6">
+              <animate attributeName="r" values="15;19;15" dur="2.6s" begin="1.8s" repeatCount="indefinite"/>
             </circle>
+            <circle cx="420" cy="163" r="23" fill="none" stroke="#2f74e0" stroke-width="1.2" opacity="0.4">
+              <animate attributeName="r" values="15;28" dur="2.6s" begin="1.8s" repeatCount="indefinite"/>
+              <animate attributeName="opacity" values="0.55;0" dur="2.6s" begin="1.8s" repeatCount="indefinite"/>
+            </circle>
+            <text x="420" y="168" text-anchor="middle" fill="#ffffff" font-family="Sora,Inter,sans-serif" font-size="13" font-weight="800">4</text>
           </g>
+          <text x="420" y="189" text-anchor="middle" font-family="Inter,sans-serif" font-size="8" font-weight="700" fill="#2f74e0" letter-spacing="0.3px">HILIR</text>
 
           <!-- Label rumus neraca massa — kartu solid, kontras tinggi, di dalam frame -->
           <g>
@@ -2524,6 +2538,78 @@ input.inp-sm::placeholder {
 <!-- ═══ END PAGE UBM ══════════════════════════════════════ -->
 
 
+<!-- ═══ PAGE: FISHBONE ═══════════════════════════════════════════ -->
+<div class="page" id="page-fishbone">
+  <div class="ph">
+    <div>
+      <div class="ph-title">FISHBONE</div>
+      <div class="ph-sub">Diagram skematik posisi Outfall sepanjang sungai — debit musim hujan/kemarau di hulu</div>
+    </div>
+    <div class="ph-acts">
+      <button class="btn btn-outline btn-sm" onclick="fishboneRefresh()">🔄 Perbarui dari Data</button>
+      <button class="btn btn-outline btn-sm" onclick="fishboneDownloadPNG()" style="color:var(--accent);border-color:rgba(26,176,166,.4)">⬇ Unduh PNG</button>
+    </div>
+  </div>
+
+  <div style="font-family:var(--mono);font-size:9.5px;color:var(--txt2);margin-bottom:16px;padding:9px 14px;background:rgba(26,176,166,0.05);border:1px solid var(--brd);border-radius:var(--rs)">
+    ℹ &nbsp;Diagram ini hanya gambaran skematik (bukan skala jarak sebenarnya). Posisi tiap Outfall diatur proporsional sepanjang garis sungai berdasarkan jumlah <strong style="color:var(--accent)">Nama Sumber / Titik Penaatan</strong> yang sudah diisi di menu <span style="color:var(--accent);cursor:pointer;text-decoration:underline" onclick="nav('ubm')">Usulan Baku Mutu</span>. Debit hulu (Q_Hujan / Q_Kemarau) diambil dari menu <span style="color:var(--accent);cursor:pointer;text-decoration:underline" onclick="nav('bpm')">Beban Pencemar</span>.
+  </div>
+
+  <!-- Susun urutan outfall -->
+  <div class="card mb18" id="fishbone-order-card">
+    <div class="card-hd">
+      <div>
+        <div class="card-title">🔢 Susun Urutan Outfall</div>
+        <div class="card-help">Khusus kalau sumber air limbah lebih dari satu — atur urutan dari hulu ke hilir pakai tombol ▲▼. Posisi di diagram otomatis menyesuaikan.</div>
+      </div>
+    </div>
+    <div id="fishbone-order-list"></div>
+  </div>
+
+  <div style="background:#ffffff;border-radius:var(--r);padding:24px;overflow-x:auto;box-shadow:var(--shd)">
+    <div id="fishbone-container" style="min-width:880px"></div>
+  </div>
+
+  <div id="fishbone-empty-hint" style="display:none;margin-top:14px;padding:14px;text-align:center;font-family:var(--mono);font-size:10.5px;color:var(--mute);background:var(--card2);border:1px solid var(--brd2);border-radius:var(--rs)">
+    Belum ada "Nama Sumber / Titik Penaatan" di menu Usulan Baku Mutu — diagram di atas hanya menunjukkan garis HULU → HILIR tanpa titik Outfall.
+  </div>
+</div>
+
+<!-- ═══ PAGE: BANDINGKAN SUNGAI ═══════════════════════════════════ -->
+<div class="page" id="page-compare">
+  <div class="ph">
+    <div>
+      <div class="ph-title">BANDINGKAN SUNGAI</div>
+      <div class="ph-sub">Lihat ringkasan & Fishbone semua sungai dalam proyek ini berdampingan</div>
+    </div>
+    <div class="ph-acts">
+      <button class="btn btn-outline btn-sm" onclick="compareRefresh()">🔄 Perbarui</button>
+      <button class="btn btn-outline btn-sm" onclick="sitesAddNew()" style="color:var(--accent);border-color:rgba(26,176,166,.4)">＋ Tambah Sungai</button>
+    </div>
+  </div>
+
+  <div style="font-family:var(--mono);font-size:9.5px;color:var(--txt2);margin-bottom:16px;padding:9px 14px;background:rgba(26,176,166,0.05);border:1px solid var(--brd);border-radius:var(--rs)">
+    ℹ &nbsp;Tampilan ini read-only — untuk mengubah data, pindah ke sungai yang dimaksud lewat dropdown <strong style="color:var(--accent)">📍 Sungai Aktif</strong> di topbar, lalu edit seperti biasa di menu Beban Pencemar / Usulan Baku Mutu.
+  </div>
+
+  <div id="compare-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px"></div>
+</div>
+
+<!-- ═══ PAGE: KOMPENSASI ═══════════════════════════════════════ -->
+<div class="page" id="page-kompensasi">
+  <div class="ph">
+    <div>
+      <div class="ph-title">KOMPENSASI LINGKUNGAN</div>
+      <div class="ph-sub">BM sungai &amp; alokasi beban pencemar sesuai Usulan Baku Mutu · Kepdirjen PPKL No. 114 Tahun 2024</div>
+    </div>
+    <div class="ph-acts">
+      <button class="btn btn-outline btn-sm" onclick="renderKompensasi()">🔄 Perbarui</button>
+      <button class="btn btn-outline btn-sm" onclick="nav('ubm')" style="color:var(--accent);border-color:rgba(26,176,166,.4)">→ Usulan Baku Mutu</button>
+    </div>
+  </div>
+  <div id="komp-content"></div>
+</div>
+
 </main>
 
 <div id="toast"></div>
@@ -2683,6 +2769,7 @@ function nav(p) {
   if(p==='ubm') { ubmSyncFromBPM(); ubmRenderSources(); ubmRenderParams(); ubmWizGoto(1, true); }
   if(p==='fishbone') { setTimeout(function(){ if(typeof fishboneRefresh==='function') fishboneRefresh(); }, 50); }
   if(p==='compare') { setTimeout(function(){ if(typeof compareRefresh==='function') compareRefresh(); }, 50); }
+  if(p==='kompensasi') renderKompensasi();
 }
 
 // ─── True wizard Beban Pencemar (satu langkah tampil per waktu) ───
@@ -2799,7 +2886,7 @@ function _trimTrailingZerosID(s) {
 function fN(v,d=4) {
   if(v==null||isNaN(v)) return '—';
   if(v===0) return '0';
-  if(Math.abs(v)<0.0001 && v!==0) return v.toExponential(3);
+  if(Math.abs(v)<0.0001 && v!==0) return v.toExponential(3).replace('.',',');
   var s = parseFloat(v.toFixed(d)).toLocaleString('id-ID',{minimumFractionDigits:d,maximumFractionDigits:d});
   return _trimTrailingZerosID(s);
 }
@@ -4464,7 +4551,7 @@ const KEY='riverload_v4';
 
 function getState(){
   return {
-    _v: 5,
+    _v: 6,
     // ── BPM page ──────────────────────────────────
     bpm: {
       name:  document.getElementById('r-name')?.value  || '',
@@ -4515,6 +4602,8 @@ function getState(){
     },
     // ── Generate Peta (kop, logo, kertas) ──────────
     gen: JSON.parse(JSON.stringify(typeof _genState !== 'undefined' ? _genState : {})),
+    // ── Kompensasi Lingkungan (parameter terpilih + progres lembar kerja) ──
+    komp: (typeof kompSerialize==='function') ? kompSerialize() : (window.__kompPending || { rows:[] }),
     // ── Fishbone ──────────────────────────────────
     fishbone: {
       order: JSON.parse(JSON.stringify(typeof _fishboneOrder !== 'undefined' ? _fishboneOrder : [])),
@@ -4524,10 +4613,11 @@ function getState(){
 
 function _blankState(){
   return {
-    _v: 5,
+    _v: 6,
     bpm: { name:'', cls:'', qDry:'', qWet:'', params:[], pid:0, wasteSources:[], wsId:0, season:'dry' },
     ubm: { river:'', cls:'', sources:[], ubmSrcId:0, params:[], ubmPId:0, ubmProposedSrcIds:[] },
     peta: { markers:[], rivers:[], uid:1, lines:[], polygons:[], shp:[], shpColorIdx:0, layerOrder:[] },
+    komp: { rows:[] },
     fishbone: { order:[] },
     gen: { logoDataUrl:null, judul:'PETA PEMANTAUAN KUALITAS AIR SUNGAI', perusahaan:'', lokasi:'', direktur:'', tenagaAhli:'', direkturJabatan:'Direktur', tenagaAhliJabatan:'Tenaga Ahli', paperSize:'A4', paperOrient:'landscape', paperCustomW:420, paperCustomH:297 },
   };
@@ -4623,6 +4713,9 @@ function restoreState(s){
   ubmRenderSources();
   ubmRenderParams();
   _ubmCalcAndShowResults();
+
+  // ── Kompensasi Lingkungan ─────────────────────
+  if(typeof kompRestore==='function') kompRestore(s.komp); else window.__kompPending = s.komp || { rows:[] };
 
   // ── Pemetaan ──────────────────────────────────
   if (typeof _markers !== 'undefined') {
@@ -7665,13 +7758,20 @@ async function exportExcel(){
     const kpiLbl = {font:font(true,10,ACC1),fill:fill(ACC_BG2),alignment:align('center','center',true),border:bdr(ACC)};
     const kpiVal = {font:font(true,10,ACC1),fill:fill(ACC_BG),alignment:align('center','center',false),border:bdrT(ACC)};
 
+    // Baris data dimulai di Excel row 9 (8 baris header: banner,meta,formula,gap,kpiLbl,kpiVal,gap,hdr)
+    const _bpmFirstDataRow = 9;
+    const _bpmLastDataRow  = 8 + params.length;
+
     const aoa=[
       [mkCell(`BEBAN PENCEMARAN MAKSIMUM & AKTUAL  ·  ${seasonLabel.toUpperCase()}`,BNR),...Array(NC-1).fill(null)],
       [mkCell(`${rn}   ·   Kelas ${clsRom}   ·   Q = ${fmtS(Q,4)} m³/det   ·   ${okP} Memenuhi  /  ${ngP} Melebihi   ·   ${dateStr}`,META),...Array(NC-1).fill(null)],
       [mkCell('Formula Excel aktif:  BPM = Q_sungai × Baku_Mutu × 3,6 (kg/jam)   ·   BPA = Q_sungai × C_Aktual × 3,6 (kg/jam)   ·   Rasio = BPA/BPM   ·   Status = IF(BPA<BPM)',{...S.meta,font:font(false,10,C.muted)}),...Array(NC-1).fill(null)],
       Array(NC).fill(null),
       [mkCell('Q SUNGAI',kpiLbl),mkCell('KONSTANTA',kpiLbl),mkCell('TOTAL BPM',kpiLbl),mkCell('TOTAL BPA',kpiLbl),mkCell('STATUS KESELURUHAN',{...kpiLbl,alignment:align('center','center',true)}),null,null,null,null],
-      [mkCell(Q,kpiVal),mkCell(3.6,kpiVal),mkCell(round4(totalBPM),{...kpiVal,font:font(true,14,ACC1)}),mkCell(round4(totalBPA),{...kpiVal,font:font(true,14,totalBPA>totalBPM?C.redDk:C.grnDk),fill:fill(totalBPA>totalBPM?C.redBg:C.grnBg)}),mkCell((ngP===0?'✓ SEMUA MEMENUHI':ngP+' PARAMETER MELEBIHI'),{font:font(true,11,ngP===0?C.grnDk:C.redDk),fill:fill(ngP===0?C.grnBg:C.redBg),alignment:align('center','center',true),border:bdrT(ngP===0?C.grnMd:C.redMd)}),null,null,null,null],
+      [mkCell(Q,kpiVal),mkCell(3.6,kpiVal),
+       fCell(`SUM(F${_bpmFirstDataRow}:F${_bpmLastDataRow})`,{...kpiVal,font:font(true,14,ACC1)},fmtV(totalBPM,4),FMT.beban),
+       fCell(`SUM(G${_bpmFirstDataRow}:G${_bpmLastDataRow})`,{...kpiVal,font:font(true,14,totalBPA>totalBPM?C.redDk:C.grnDk),fill:fill(totalBPA>totalBPM?C.redBg:C.grnBg)},fmtV(totalBPA,4),FMT.beban),
+       mkCell((ngP===0?'✓ SEMUA MEMENUHI':ngP+' PARAMETER MELEBIHI'),{font:font(true,11,ngP===0?C.grnDk:C.redDk),fill:fill(ngP===0?C.grnBg:C.redBg),alignment:align('center','center',true),border:bdrT(ngP===0?C.grnMd:C.redMd)}),null,null,null,null],
       Array(NC).fill(null),
       ['No','Parameter','Satuan','Baku Mutu\n(BM)','C Aktual\n(mg/L)','BPM\n(kg/jam)','BPA\n(kg/jam)','Status','Rasio\nBPA/BPM'].map(c=>mkCell(c,HDR)),
     ];
@@ -7853,6 +7953,16 @@ async function exportExcel(){
 
         const NC=4+ubmSources.length+2+nJenis+5; // No,Param,Sat,Hulu,Src×n,CR,BM,Jenis×n,Status,Cmaks,UsulanBM,Alok
 
+        // Konstanta posisi tabel sumber (di kanan tabel CR) — harus didefinisikan SEBELUM aoa agar bisa dipakai di formula ΣQ
+        const SRC_COL_OFFSET = NC + 1; // satu kolom kosong pemisah setelah tabel CR
+        const srcDataStartRow = 5;     // baris 5 (0-indexed) = baris 6 Excel = baris data pertama sumber
+        const NC_SRC = 6;
+        // Formula SUM untuk ΣQ Limbah ($B$4) — menjumlah kolom debit m³/det di tabel sumber
+        const _sigmaQCol   = XLSX.utils.encode_col(SRC_COL_OFFSET + 5);
+        const _sigmaQFirst = srcDataStartRow + 1;                     // Excel row pertama data sumber
+        const _sigmaQLast  = srcDataStartRow + ubmSources.length;     // Excel row terakhir data sumber
+        const sigmaQFormula = `SUM($${_sigmaQCol}$${_sigmaQFirst}:$${_sigmaQCol}$${_sigmaQLast})`;
+
         // Style khusus Q Sungai / ΣQ Limbah
         const qLblSt = {font:font(true,10,C.gldDk),fill:fill(C.gldBg2),alignment:align('center','center',true),border:bdr(C.gldMd)};
         const qValSt = {font:font(true,10,C.gldDk),fill:fill(C.gldBg2),alignment:align('center','center',false),border:bdrT(C.gldMd)};
@@ -7875,7 +7985,7 @@ async function exportExcel(){
           // Row 3 (Excel 4): Nilai Q Sungai | Nilai ΣQ Limbah | (kolom sisanya kosong)
           [
             nCell(Qs,        qValSt, FMT.debitS),
-            nCell(ubmTotalQi,sqValSt,FMT.debitS),
+            fCell(sigmaQFormula,sqValSt,fmtV(ubmTotalQi,6),FMT.debitS),
             ...Array(NC-2).fill({v:'',t:'s',s:S.dat}),
           ],
           // Row 4 (Excel 5): Header kolom tabel — nama sumber & BM Jenis pakai singkatan, detail di keterangan bawah
@@ -7899,28 +8009,22 @@ async function exportExcel(){
         // Q Sungai di $A$4, ΣQ Limbah di $B$4 (baris nilai, Excel row 4)
         let qSungaiCell = '$A$4';
         let sigmaQCell  = '$B$4';
-        const cHuluColLetter='D';
-        const crColLetter=String.fromCharCode(65+4+ubmSources.length); // kolom 'CR Hilir'
-        const bmColLetter=String.fromCharCode(65+4+ubmSources.length+1); // kolom 'BM Kelas Sungai'
-        const alokColLetter  =String.fromCharCode(65+4+ubmSources.length+2+nJenis);   // kolom 'Alokasi' (sekarang pertama)
-        const statusColLetter=String.fromCharCode(65+4+ubmSources.length+2+nJenis+1); // kolom 'Status Mutu'
-        const cmaksColLetter =String.fromCharCode(65+4+ubmSources.length+2+nJenis+2); // kolom 'C_maks Hitung'
-        const usulanColLetter=String.fromCharCode(65+4+ubmSources.length+2+nJenis+3); // kolom 'Usulan BM'
-        const srcColLetters=ubmSources.map((s,si)=>String.fromCharCode(65+4+si)); // kolom tiap sumber Ci
+        // Semua kolom pakai XLSX.utils.encode_col() agar aman untuk kolom >Z (AA,AB,…)
+        const _ec = (n) => XLSX.utils.encode_col(n); // shorthand
+        const cHuluColLetter= _ec(3); // kolom D (index 3)
+        const crColLetter   = _ec(4+ubmSources.length);       // kolom 'CR Hilir'
+        const bmColLetter   = _ec(4+ubmSources.length+1);     // kolom 'BM Kelas Sungai'
+        const alokColLetter  = _ec(4+ubmSources.length+2+nJenis);   // kolom 'Alokasi'
+        const statusColLetter= _ec(4+ubmSources.length+2+nJenis+1); // kolom 'Status Mutu'
+        const cmaksColLetter = _ec(4+ubmSources.length+2+nJenis+2); // kolom 'C_maks Hitung'
+        const usulanColLetter= _ec(4+ubmSources.length+2+nJenis+3); // kolom 'Usulan BM'
+        const srcColLetters  = ubmSources.map((s,si)=>_ec(4+si));   // kolom tiap sumber Ci
 
-        // ── Hitung baris awal tabel sumber (di bawah tabel CR) ──
-        // Tabel sumber dimulai setelah: header(8 baris) + data(seasonRes.length baris) + footer(1) + gap(2) + banner(1) + meta(1) + formula(1) + header_tabel(1) = +6 baris setelah footer
-        // Kita defer nilai persisnya setelah aoa terbentuk lengkap (pakai placeholder, update setelah push footer)
         const firstDataRow = aoa.length + 1;
-
-        // Tabel sumber ditempatkan di KANAN tabel CR — definisikan konstanta posisi di sini
-        const SRC_COL_OFFSET = NC + 1; // satu kolom kosong pemisah setelah tabel CR
-        const srcDataStartRow = 5;     // baris 5 (0-indexed) = baris 6 Excel = baris data pertama CR
-        const NC_SRC = 6;
 
         const getSumberTableFirstDataRow = () => srcDataStartRow + 1; // tidak dipakai, compat
         const makeSrcQiRef = (si) => {
-          const debitCol = String.fromCharCode(65 + SRC_COL_OFFSET + 5);
+          const debitCol = XLSX.utils.encode_col(SRC_COL_OFFSET + 5); // kolom debit m³/det di tabel sumber
           const debitRow = srcDataStartRow + si + 1;
           return `$${debitCol}$${debitRow}`;
         };
@@ -8090,7 +8194,7 @@ async function exportExcel(){
         ubmSources.forEach((s,i)=>{
           const alt=i%2, qd=pNum(s.qDay);
           const excelRowSrc = srcDataStartRow + 1 + i; // Excel 1-based untuk formula
-          const qdColLetter = String.fromCharCode(65+SRC_COL_OFFSET+3); // kolom D tabel sumber
+          const qdColLetter = XLSX.utils.encode_col(SRC_COL_OFFSET+3); // kolom D tabel sumber
           const qdRef = `${qdColLetter}${excelRowSrc}`;
           const rowIdx = srcDataStartRow + i;
           sumberCells.push({r:rowIdx, c:SRC_COL_OFFSET,   cell:mkCell(i+1, alt?S.datAltC:S.datC)});
@@ -8106,9 +8210,9 @@ async function exportExcel(){
         const totalQd=ubmSources.reduce((sx,x)=>sx+pNum(x.qDay),0);
         const srcFirstDataExcel = srcDataStartRow + 1;
         const srcLastDataExcel  = srcDataStartRow + ubmSources.length;
-        const colLetterSrcD = String.fromCharCode(65+SRC_COL_OFFSET+3);
-        const colLetterSrcE = String.fromCharCode(65+SRC_COL_OFFSET+4);
-        const colLetterSrcF = String.fromCharCode(65+SRC_COL_OFFSET+5);
+        const colLetterSrcD = XLSX.utils.encode_col(SRC_COL_OFFSET+3);
+        const colLetterSrcE = XLSX.utils.encode_col(SRC_COL_OFFSET+4);
+        const colLetterSrcF = XLSX.utils.encode_col(SRC_COL_OFFSET+5);
         sumberCells.push({r:srcTotRow, c:SRC_COL_OFFSET,   cell:blank(S.totT)});
         sumberCells.push({r:srcTotRow, c:SRC_COL_OFFSET+1, cell:mkCell('TOTAL',{...S.totT,alignment:align('center')})});
         sumberCells.push({r:srcTotRow, c:SRC_COL_OFFSET+2, cell:blank(S.totT)});
@@ -8534,62 +8638,7 @@ if (document.readyState === 'loading') {
 
 
 <!-- ══════════════════════════════════════════════════════ PAGE: PETA INTERAKTIF -->
-<!-- ═══ PAGE: FISHBONE ═══════════════════════════════════════════ -->
-<div class="page" id="page-fishbone">
-  <div class="ph">
-    <div>
-      <div class="ph-title">FISHBONE</div>
-      <div class="ph-sub">Diagram skematik posisi Outfall sepanjang sungai — debit musim hujan/kemarau di hulu</div>
-    </div>
-    <div class="ph-acts">
-      <button class="btn btn-outline btn-sm" onclick="fishboneRefresh()">🔄 Perbarui dari Data</button>
-      <button class="btn btn-outline btn-sm" onclick="fishboneDownloadPNG()" style="color:var(--accent);border-color:rgba(26,176,166,.4)">⬇ Unduh PNG</button>
-    </div>
-  </div>
 
-  <div style="font-family:var(--mono);font-size:9.5px;color:var(--txt2);margin-bottom:16px;padding:9px 14px;background:rgba(26,176,166,0.05);border:1px solid var(--brd);border-radius:var(--rs)">
-    ℹ &nbsp;Diagram ini hanya gambaran skematik (bukan skala jarak sebenarnya). Posisi tiap Outfall diatur proporsional sepanjang garis sungai berdasarkan jumlah <strong style="color:var(--accent)">Nama Sumber / Titik Penaatan</strong> yang sudah diisi di menu <span style="color:var(--accent);cursor:pointer;text-decoration:underline" onclick="nav('ubm')">Usulan Baku Mutu</span>. Debit hulu (Q_Hujan / Q_Kemarau) diambil dari menu <span style="color:var(--accent);cursor:pointer;text-decoration:underline" onclick="nav('bpm')">Beban Pencemar</span>.
-  </div>
-
-  <!-- Susun urutan outfall -->
-  <div class="card mb18" id="fishbone-order-card">
-    <div class="card-hd">
-      <div>
-        <div class="card-title">🔢 Susun Urutan Outfall</div>
-        <div class="card-help">Khusus kalau sumber air limbah lebih dari satu — atur urutan dari hulu ke hilir pakai tombol ▲▼. Posisi di diagram otomatis menyesuaikan.</div>
-      </div>
-    </div>
-    <div id="fishbone-order-list"></div>
-  </div>
-
-  <div style="background:#ffffff;border-radius:var(--r);padding:24px;overflow-x:auto;box-shadow:var(--shd)">
-    <div id="fishbone-container" style="min-width:880px"></div>
-  </div>
-
-  <div id="fishbone-empty-hint" style="display:none;margin-top:14px;padding:14px;text-align:center;font-family:var(--mono);font-size:10.5px;color:var(--mute);background:var(--card2);border:1px solid var(--brd2);border-radius:var(--rs)">
-    Belum ada "Nama Sumber / Titik Penaatan" di menu Usulan Baku Mutu — diagram di atas hanya menunjukkan garis HULU → HILIR tanpa titik Outfall.
-  </div>
-</div>
-
-<!-- ═══ PAGE: BANDINGKAN SUNGAI ═══════════════════════════════════ -->
-<div class="page" id="page-compare">
-  <div class="ph">
-    <div>
-      <div class="ph-title">BANDINGKAN SUNGAI</div>
-      <div class="ph-sub">Lihat ringkasan & Fishbone semua sungai dalam proyek ini berdampingan</div>
-    </div>
-    <div class="ph-acts">
-      <button class="btn btn-outline btn-sm" onclick="compareRefresh()">🔄 Perbarui</button>
-      <button class="btn btn-outline btn-sm" onclick="sitesAddNew()" style="color:var(--accent);border-color:rgba(26,176,166,.4)">＋ Tambah Sungai</button>
-    </div>
-  </div>
-
-  <div style="font-family:var(--mono);font-size:9.5px;color:var(--txt2);margin-bottom:16px;padding:9px 14px;background:rgba(26,176,166,0.05);border:1px solid var(--brd);border-radius:var(--rs)">
-    ℹ &nbsp;Tampilan ini read-only — untuk mengubah data, pindah ke sungai yang dimaksud lewat dropdown <strong style="color:var(--accent)">📍 Sungai Aktif</strong> di topbar, lalu edit seperti biasa di menu Beban Pencemar / Usulan Baku Mutu.
-  </div>
-
-  <div id="compare-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px"></div>
-</div>
 
 <script>
 /* ═══════════════════════════════════════════════════════════════
@@ -9000,6 +9049,1705 @@ setTimeout(initHome, 800);
   }
 })();
 
+// ═══════════════════════════════════════════════════════════════
+// KOMPENSASI — rekap dari Step 5 Hasil Hitung Beban Pencemar
+// Berdasarkan Kepdirjen PPKL No. 114 Tahun 2024
+// ═══════════════════════════════════════════════════════════════
+
+// ── Data 8 jenis kegiatan kompensasi (global) ──────────────────
+var KOMP_JENIS = [
+  { lamp:'I',   nama:'IPAL Domestik Komunal',                     param:['BOD','COD','Amoniak','TSS'], icon:'🏠', desc:'Bangun IPAL komunal untuk rumah tangga yang selama ini buang limbah langsung ke sungai.' },
+  { lamp:'II',  nama:'IPAL Industri Kecil (Tahu/Tempe/Ternak)',   param:['TSS','BOD','COD','Amoniak'], icon:'🏭', desc:'Bangun IPAL untuk klaster industri tahu, tempe, atau ternak kecil di sekitar badan air.' },
+  { lamp:'III', nama:'Biodigester Ternak',                         param:['BOD'],                       icon:'🐄', desc:'Konversi kotoran ternak menjadi biogas — mencegah BOD tinggi masuk ke sungai.' },
+  { lamp:'IV',  nama:'Pengelolaan Sampah (TPS 3R)',                param:['BOD'],                       icon:'♻️', desc:'Kelola sampah organik agar lindi tidak mencemari sungai dengan BOD tinggi.' },
+  { lamp:'V',   nama:'Rehabilitasi Lahan',                         param:['TSS'],                       icon:'🌱', desc:'Rehab lahan kritis/gundul → tutupan vegetasi membaik → erosi & sedimen di sungai turun.' },
+  { lamp:'VI',  nama:'Ekoriparian',                                param:['TSS','Amoniak'],             icon:'🌿', desc:'Gabungan IPAL komunal + Constructed Wetland di zona riparian — solusi komprehensif.' },
+  { lamp:'VII', nama:'Pengelolaan Nir Titik (Constructed Wetland)',param:['TSS','Amoniak'],             icon:'💧', desc:'Lahan basah buatan untuk olah air limpasan (run-off/stormwater) dari permukiman/pertanian.' },
+  { lamp:'VIII',nama:'Konversi ke Parameter Lain',                 param:['Fenol','H₂S','Minyak & Lemak'], icon:'🔬', desc:'Konversi parameter eksotis (Fenol, H₂S, M&L) ke ekuivalen BOD/COD sebelum kompensasi.' }
+];
+
+// Mapping: nama parameter (lowercase) → lampiran yang relevan
+var PARAM_LAMP_MAP = {
+  'bod': ['I','II','III','IV','VI','VII'],
+  'cod': ['I','II','VIII'],
+  'amoniak': ['I','II','VI','VII'],
+  'amonia': ['I','II','VI','VII'],
+  'nh3': ['I','II','VI','VII'],
+  'tss': ['I','II','V','VI','VII'],
+  'padatan tersuspensi': ['I','II','V','VI','VII'],
+  'total suspended solid': ['I','II','V','VI','VII'],
+  'fenol': ['VIII'],
+  'h2s': ['VIII'],
+  'h₂s': ['VIII'],
+  'minyak': ['VIII'],
+  'lemak': ['VIII'],
+  'minyak & lemak': ['VIII'],
+  'minyak dan lemak': ['VIII']
+};
+
+function getLampRelev(paramName) {
+  var key = (paramName || '').toLowerCase().trim();
+  var found = null;
+  Object.keys(PARAM_LAMP_MAP).forEach(function(k){
+    if (!found && (key === k || key.indexOf(k) !== -1 || k.indexOf(key) !== -1)) found = PARAM_LAMP_MAP[k];
+  });
+  return found || ['I','II','III','IV','V','VI','VII','VIII'];
+}
+
+function buildDropdown(paramName, idx) {
+  var relev = getLampRelev(paramName);
+  var opts = '<option value="">— Pilih Opsi Kompensasi —</option>';
+  KOMP_JENIS.forEach(function(j){
+    var isRelev = relev.indexOf(j.lamp) !== -1;
+    opts += '<option value="' + j.lamp + '" ' + (isRelev ? '' : 'style="color:var(--mute)"') + '>'
+      + (isRelev ? '★ ' : '  ') + 'Lamp. ' + j.lamp + ' — ' + j.nama
+      + '</option>';
+  });
+  return '<div id="komp-sel-wrap-' + idx + '" style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">'
+    + '<select id="komp-sel-' + idx + '" onchange="kompOnSelect(' + idx + ',this.value)" '
+    + 'style="font-size:10.5px;font-family:var(--mono);padding:4px 6px;border:1px solid var(--brd);border-radius:5px;background:var(--card);color:var(--txt);min-width:230px;cursor:pointer">'
+    + opts + '</select>'
+    + '<button id="komp-kajian-btn-' + idx + '" onclick="kompKajianToggle(' + idx + ')" '
+    + 'style="display:none;font-size:10px;font-family:var(--mono);padding:4px 10px;border:1.5px solid var(--accent);border-radius:5px;background:rgba(26,176,166,0.1);color:var(--accent);cursor:pointer;white-space:nowrap;font-weight:700">📐 Kajian</button>'
+    + '</div>';
+}
+
+// Handler dropdown pilihan kompensasi per parameter
+function kompOnSelect(idx, lampValue) {
+  var infoRow    = document.getElementById('komp-info-' + idx);
+  var infoInner  = document.getElementById('komp-info-inner-' + idx);
+  var kajianBtn  = document.getElementById('komp-kajian-btn-' + idx);
+  var kajianRow  = document.getElementById('komp-kajian-' + idx);
+  if (!infoRow || !infoInner) return;
+
+  // Reset kajian panel saat pilihan berubah
+  if (kajianRow)  kajianRow.style.display = 'none';
+  if (kajianBtn)  kajianBtn.style.display = 'none';
+
+  if (!lampValue) {
+    infoRow.style.display = 'none';
+    infoInner.innerHTML = '';
+    return;
+  }
+
+  var jenis = KOMP_JENIS.filter(function(j){ return j.lamp === lampValue; })[0];
+  if (!jenis) { infoRow.style.display = 'none'; return; }
+
+  var chips = jenis.param.map(function(pr){
+    return '<span style="display:inline-block;background:rgba(26,176,166,0.12);color:var(--accent);font-family:var(--mono);font-size:9.5px;padding:2px 7px;border-radius:4px;margin:2px 2px 2px 0">' + pr + '</span>';
+  }).join('');
+
+  infoInner.innerHTML = ''
+    + '<div style="display:flex;align-items:flex-start;gap:14px">'
+    +   '<div style="font-size:28px;line-height:1;flex-shrink:0;margin-top:2px">' + jenis.icon + '</div>'
+    +   '<div style="flex:1">'
+    +     '<div style="font-family:var(--head);font-size:12.5px;font-weight:700;color:var(--txt);margin-bottom:4px">'
+    +       'Lampiran ' + jenis.lamp + ' — ' + jenis.nama
+    +     '</div>'
+    +     '<div style="font-size:11.5px;color:var(--txt2);line-height:1.7;margin-bottom:8px">' + jenis.desc + '</div>'
+    +     '<div style="margin-bottom:8px">'
+    +       '<span style="font-family:var(--mono);font-size:9px;color:var(--mute);letter-spacing:0.5px;margin-right:6px">PARAMETER TARGET:</span>'
+    +       chips
+    +     '</div>'
+    +     '<div style="font-size:11px;color:var(--accent);font-family:var(--mono);background:rgba(26,176,166,0.08);border-radius:5px;padding:6px 10px;display:inline-block">'
+    +       '📐 Pastikan: <b>BP_kompensasi ≥ BP_industri</b> &nbsp;|&nbsp; SBP = BP_kompensasi − BP_industri ≥ 0'
+    +     '</div>'
+    +   '</div>'
+    + '</div>';
+
+  infoRow.style.display = '';
+  if (kajianBtn) kajianBtn.style.display = '';   // tampilkan tombol kajian
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// KAJIAN OVERLAY — USLE STEP-BY-STEP WIZARD
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// State global untuk kajian wizard
+var kompKajianState = {};
+
+// ─── STATE & FUNGSI KOMPENSASI OPSIONAL (saat semua parameter aman) ───────────
+var kompOptParams = (typeof kompOptParams !== "undefined" && kompOptParams) || [];   // parameter terpilih: { _ubmId|null, name, unit, bm, alok, lamp }
+
+// ─── FORMAT ANGKA INDONESIA: titik = ribuan, koma = desimal ───────────────────
+// kf  : tampilan dengan jumlah desimal tetap, mis. kf(1234.5,2) → "1.234,50"
+function kf(v, d) {
+  if (v == null || v === '' || !isFinite(v)) return '–';
+  d = (d == null) ? 2 : d;
+  return Number(v).toLocaleString('id-ID', { minimumFractionDigits: d, maximumFractionDigits: d });
+}
+// kfv : nilai untuk kotak input (tanpa nol di belakang), mis. 0.28 → "0,28"
+function kfv(v) {
+  if (v == null || v === '') return '';
+  var n = (typeof v === 'number') ? v : pNum(v);
+  if (!isFinite(n) || (typeof v === 'string' && String(v).trim() === '')) return '';
+  return Number(n).toLocaleString('id-ID', { maximumFractionDigits: 6 });
+}
+function kn(s) { return pNum(s); }
+function kempty(s) { return String(s == null ? '' : s).trim() === ''; }
+
+// Konteks sungai dari menu Usulan Baku Mutu / Beban Pencemar
+function kompCtx() {
+  function g(id) { var e = document.getElementById(id); return e ? e.value : ''; }
+  return { river: (g('ubm-river') || g('r-name') || '').trim(), cls: g('ubm-class') || g('r-class') };
+}
+
+// Parameter dari Usulan Baku Mutu (pH tidak punya alokasi beban)
+function kompUbmList() {
+  return (typeof ubmParams !== 'undefined' ? ubmParams : []).filter(function(p){ return p && !p.isPH; });
+}
+function kompUbmFind(id) {
+  var f = null; kompUbmList().forEach(function(p){ if (p.id === id) f = p; }); return f;
+}
+
+// Cari baris WQDB dari nama parameter
+function kompOptFindWQ(name) {
+  var k = (name||'').toLowerCase().trim();
+  if (!k) return null;
+  var f = null;
+  WQDB.forEach(function(r){ if (!f && r.name.toLowerCase() === k) f = r; });
+  if (!f) WQDB.forEach(function(r){ if (!f && r.name.toLowerCase().indexOf('(' + k + ')') !== -1) f = r; });
+  return f;
+}
+
+// BM Sungai (mg/L) untuk sebuah parameter UBM
+function kompUbmBM(p) {
+  if (p.bmVal != null) return p.bmVal;
+  var c = kompCtx().cls, r = kompOptFindWQ(p.name);
+  return (r && c) ? numVal(getKVal(r, parseInt(c))) : null;
+}
+
+// Cari parameter UBM yang cocok dengan nama (untuk baris manual)
+function kompUbmMatch(name) {
+  var k = (name || '').toLowerCase().trim(), f = null;
+  if (!k) return null;
+  kompUbmList().forEach(function(p){ if (!f && (p.name || '').toLowerCase().trim() === k) f = p; });
+  return f;
+}
+
+// Segarkan semua baris: nama/satuan/BM (baris UBM) dan alokasi efektif (otomatis dari UBM atau manual)
+function kompOptRefresh() {
+  kompOptParams.forEach(function(row) {
+    if (!row.mode) row.mode = 'auto';
+    var p = null;
+    if (row._ubmId != null) {
+      p = kompUbmFind(row._ubmId);
+      row._gone = !p;
+      if (p) { row.name = p.name; row.unit = p.unit; row.bm = kompUbmBM(p); }
+    } else {
+      p = kompUbmMatch(row.name);
+    }
+    row._match = p ? p.id : null;
+    row.autoVal = p ? ubmParamAlokasi(p) : null;     // kg/hari, Σ seluruh sumber (Usulan Baku Mutu)
+    row.alok = row.mode === 'manual' ? (kempty(row.alokManual) ? null : pNum(row.alokManual)) : row.autoVal;
+  });
+}
+
+// ── Persistensi Kompensasi ──────────────────────────────
+function kompSerialize() {
+  try { kompOptSyncFromDOM(); } catch (e) {}
+  var rows = kompOptParams.map(function(r) {
+    var o = {};
+    Object.keys(r).forEach(function(k) {
+      if (k === 'kst' || k.charAt(0) === '_' && k !== '_ubmId') return;
+      o[k] = r[k];
+    });
+    if (r.kst) o.kst = JSON.parse(JSON.stringify(r.kst, function(k, v){ return k === '_optParam' ? undefined : v; }));
+    return o;
+  });
+  return { rows: rows };
+}
+function kompRestore(k) {
+  kompKajianState = {};
+  var ov = document.getElementById('kajian-overlay');
+  if (ov) ov.style.display = 'none';
+  document.body.style.overflow = '';
+  kompOptParams = (k && Array.isArray(k.rows)) ? k.rows.map(function(r){
+    r.mode = r.mode || 'auto'; r.lamp = r.lamp || ''; return r;
+  }) : [];
+  try { renderKompensasi(); } catch (e) {}
+}
+// Simpan progres lembar kerja ke baris terkait lalu picu autosave
+function kompKstSave() {
+  var st = kompKajianState, p = st && st._optParam;
+  if (!p) return;
+  var c = {};
+  Object.keys(st).forEach(function(k){ if (k !== '_optParam' && typeof st[k] !== 'function') c[k] = st[k]; });
+  p.kst = JSON.parse(JSON.stringify(c));
+  if (typeof saveAuto === 'function') saveAuto();
+}
+
+// Nilai numerik alokasi/BM sebuah baris (manual = teks Indonesia)
+function kompRowNum(v) { return (typeof v === 'number') ? v : (kempty(v) ? null : pNum(v)); }
+
+function kompOptSyncFromDOM() {
+  kompOptParams.forEach(function(row, i) {
+    var am = document.getElementById('komp-opt-alok-' + i);
+    if (am) row.alokManual = am.value;
+    if (row._ubmId != null) return;
+    ['name','unit','bm'].forEach(function(f) {
+      var el = document.getElementById('komp-opt-' + f + '-' + i);
+      if (el) row[f] = el.value;
+    });
+  });
+}
+
+function kompOptOnName(i) {
+  var row = kompOptParams[i]; if (!row) return;
+  var nEl = document.getElementById('komp-opt-name-' + i);
+  if (nEl) row.name = nEl.value;
+  var r = kompOptFindWQ(row.name), c = kompCtx().cls;
+  if (r) {
+    row.unit = r.unit;
+    var bm = c ? numVal(getKVal(r, parseInt(c))) : null;
+    if (bm != null) row.bm = kfv(bm);
+    var uEl = document.getElementById('komp-opt-unit-' + i); if (uEl) uEl.value = row.unit;
+    var bEl = document.getElementById('komp-opt-bm-' + i);   if (bEl && bm != null) bEl.value = row.bm;
+  }
+}
+
+function kompOptSetMode(i, mode) {
+  kompOptSyncFromDOM();
+  var row = kompOptParams[i]; if (!row) return;
+  kompOptRefresh();
+  if (mode === 'manual' && kempty(row.alokManual) && row.autoVal != null) row.alokManual = kfv(Math.round(row.autoVal * 10000) / 10000);
+  row.mode = mode;
+  renderKompensasi();
+}
+
+function kompOptAddUbm(id) {
+  if (id === '' || id == null) return;
+  kompOptSyncFromDOM();
+  id = Number(id);
+  if (kompOptParams.some(function(r){ return r._ubmId === id; })) return;
+  kompOptParams.push({ _ubmId: id, name:'', unit:'', bm:null, alok:null, mode:'auto', alokManual:'', lamp:'' });
+  renderKompensasi();
+}
+function kompOptAddAllUbm() {
+  kompOptSyncFromDOM();
+  kompUbmList().forEach(function(p) {
+    if (!kompOptParams.some(function(r){ return r._ubmId === p.id; }))
+      kompOptParams.push({ _ubmId: p.id, name:'', unit:'', bm:null, alok:null, mode:'auto', alokManual:'', lamp:'' });
+  });
+  renderKompensasi();
+}
+function kompOptAddRow() {
+  kompOptSyncFromDOM();
+  kompOptParams.push({ _ubmId: null, name:'', unit:'mg/L', bm:'', alok:null, mode:'auto', alokManual:'', lamp:'' });
+  renderKompensasi();
+  setTimeout(function(){
+    var el = document.getElementById('komp-opt-name-' + (kompOptParams.length - 1));
+    if (el) el.focus();
+  }, 50);
+}
+function kompOptDelRow(i) {
+  kompOptSyncFromDOM();
+  kompOptParams.splice(i, 1);
+  renderKompensasi();
+}
+function kompOptSetLamp(i, val) {
+  kompOptSyncFromDOM();
+  if (kompOptParams[i]) kompOptParams[i].lamp = val;
+  renderKompensasi();
+}
+
+// ─── HALAMAN KOMPENSASI LINGKUNGAN (ringkas) ──────────────────────────────────
+function renderKompensasi() {
+  var el = document.getElementById('komp-content');
+  if (!el) return;
+  kompOptSyncFromDOM();
+  kompOptRefresh();
+
+  var ctx = kompCtx();
+  var kelasTxt = ctx.cls ? ('Kelas ' + ['','I','II','III','IV'][+ctx.cls]) : 'kelas belum dipilih';
+  var nSrc = (typeof ubmSources !== 'undefined') ? ubmSources.length : 0;
+  var ubmAll = kompUbmList();
+  var OI = 'font-family:var(--mono);font-size:12px;padding:6px 9px;border:1.5px solid var(--brd);border-radius:6px;background:var(--card);color:var(--txt);width:100%;box-sizing:border-box;text-align:right;';
+  var TH = 'padding:9px 12px;font-family:var(--mono);font-size:9.5px;font-weight:700;letter-spacing:.5px;border-bottom:2px solid var(--brd);';
+
+  // pilihan parameter UBM yang belum ditambahkan
+  var opts = '<option value="">＋ Pilih parameter dari Usulan Baku Mutu…</option>';
+  var sisa = 0;
+  ubmAll.forEach(function(p) {
+    if (kompOptParams.some(function(r){ return r._ubmId === p.id; })) return;
+    sisa++;
+    var a = ubmParamAlokasi(p);
+    opts += '<option value="' + p.id + '">' + esc(p.name || '—') + (a != null ? '  —  ' + fmtN(a, 4) + ' kg/hari' : '  —  (belum ada C sumber)') + '</option>';
+  });
+
+  var rows = kompOptParams.map(function(row, i) {
+    var linked = row._ubmId != null;
+    var relev = getLampRelev(row.name);
+    var lopt = '<option value="">— Pilih jenis kompensasi —</option>';
+    KOMP_JENIS.forEach(function(j) {
+      var isR = relev.indexOf(j.lamp) !== -1;
+      lopt += '<option value="' + j.lamp + '"' + (row.lamp === j.lamp ? ' selected' : '') + (!isR ? ' style="color:var(--mute)"' : '') + '>'
+        + j.icon + ' Lamp. ' + j.lamp + ' — ' + j.nama + (isR ? ' ★' : '') + '</option>';
+    });
+    var jOpt = row.lamp ? KOMP_JENIS.filter(function(j){ return j.lamp === row.lamp; })[0] : null;
+
+    var tdName, tdUnit, tdBM;
+    var IN = 'font-family:var(--mono);font-size:12.5px;height:34px;padding:0 10px;border:1.5px solid var(--brd);border-radius:6px;background:var(--card);color:var(--txt);width:100%;box-sizing:border-box;';
+    if (linked) {
+      tdName = '<div style="font-weight:700;font-size:13px;line-height:1.3">' + esc(row.name || '—') + '</div>'
+        + '<span style="font-family:var(--mono);font-size:8.5px;color:var(--accent);background:rgba(26,176,166,.12);padding:1px 6px;border-radius:3px">dari Usulan BM</span>'
+        + (row._gone ? ' <span style="font-size:9.5px;color:var(--red)">sudah dihapus dari UBM</span>' : '');
+      tdUnit = '<span style="font-family:var(--mono);font-size:11.5px;color:var(--mute)">' + esc(row.unit || '') + '</span>';
+      tdBM = '<span style="font-family:var(--mono);font-size:14px;font-weight:700">' + (row.bm != null ? fmtN(row.bm, 4) : '—') + '</span>';
+    } else {
+      tdName = '<input type="text" list="komp-wq-list" id="komp-opt-name-' + i + '" value="' + esc(row.name) + '" placeholder="Pilih / ketik parameter…" style="' + IN + '" oninput="kompOptParams[' + i + '].name=this.value" onchange="kompOptOnName(' + i + ');renderKompensasi()">'
+        + '<span style="font-family:var(--mono);font-size:8.5px;color:var(--mute);background:rgba(128,128,128,.12);padding:1px 6px;border-radius:3px">manual</span>';
+      tdUnit = '<input type="text" id="komp-opt-unit-' + i + '" value="' + esc(row.unit) + '" style="' + IN + '" oninput="kompOptParams[' + i + '].unit=this.value">';
+      tdBM = '<input type="text" inputmode="decimal" id="komp-opt-bm-' + i + '" value="' + esc(kfv(row.bm)) + '" placeholder="mg/L" style="' + IN + 'text-align:right" oninput="kompOptParams[' + i + '].bm=this.value">';
+    }
+    // Alokasi: pilih Otomatis (dari Usulan Baku Mutu) atau Manual
+    var isAuto = row.mode !== 'manual';
+    var segB = function(on) { return 'font-family:var(--mono);font-size:10px;font-weight:700;padding:5px 10px;border:none;cursor:pointer;' + (on ? 'background:var(--accent);color:#fff;' : 'background:transparent;color:var(--mute);'); };
+    var seg = '<div style="display:inline-flex;border:1.5px solid rgba(26,176,166,.5);border-radius:7px;overflow:hidden;margin-bottom:6px">'
+      + '<button onclick="kompOptSetMode(' + i + ',\'auto\')" style="' + segB(isAuto) + '" title="Ambil otomatis dari menu Usulan Baku Mutu">⚡ Otomatis</button>'
+      + '<button onclick="kompOptSetMode(' + i + ',\'manual\')" style="' + segB(!isAuto) + '" title="Isi sendiri">✎ Manual</button></div>';
+    var aval;
+    if (isAuto) {
+      aval = row.autoVal != null
+        ? '<div style="font-family:var(--mono);font-size:15px;font-weight:800;color:var(--amber);height:34px;line-height:34px">' + fmtN(row.autoVal, 4) + '</div>'
+        : '<div style="font-size:10.5px;color:var(--mute);line-height:1.4;min-height:34px">' + (row._match != null || row._ubmId != null ? 'Belum ada C sumber di Usulan BM' : 'Tidak ditemukan di Usulan BM — pakai Manual') + '</div>';
+    } else {
+      aval = '<input type="text" inputmode="decimal" id="komp-opt-alok-' + i + '" value="' + esc(row.alokManual || '') + '" placeholder="kg/hari" style="' + IN + 'text-align:right;font-weight:700;color:var(--amber)" oninput="kompOptParams[' + i + '].alokManual=this.value">';
+    }
+    var tdAlok = '<div style="text-align:right">' + seg + '</div>' + aval;
+
+    return '<tr style="border-bottom:1px solid var(--brd2);vertical-align:middle">'
+      + '<td style="padding:12px 10px;text-align:center;font-family:var(--mono);font-size:10px;color:var(--mute)">' + (i + 1) + '</td>'
+      + '<td style="padding:12px 10px">' + tdName + '</td>'
+      + '<td style="padding:12px 10px">' + tdUnit + '</td>'
+      + '<td style="padding:12px 10px;text-align:right">' + tdBM + '</td>'
+      + '<td style="padding:12px 14px;text-align:right;background:rgba(243,156,18,.06)">' + tdAlok + '</td>'
+      + '<td style="padding:12px 10px"><select style="' + IN + 'font-size:11.5px;cursor:pointer" onchange="kompOptSetLamp(' + i + ',this.value)">' + lopt + '</select></td>'
+      + '<td style="padding:12px 6px;text-align:center"><button onclick="kompOptDelRow(' + i + ')" title="Hapus" style="background:none;border:1px solid var(--brd2);border-radius:5px;width:28px;height:28px;cursor:pointer;font-size:14px;color:var(--mute)">×</button></td>'
+      + '</tr>'
+      + (jOpt ? '<tr style="background:rgba(26,176,166,.06);border-bottom:2px solid rgba(26,176,166,.2)"><td></td><td colspan="6" style="padding:10px 10px">'
+          + '<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">'
+          + '<button onclick="kompOptKajian(' + i + ')" style="font-family:var(--mono);font-size:11px;font-weight:700;padding:7px 18px;border:none;border-radius:7px;background:var(--accent);color:#fff;cursor:pointer">📐 Buka Kajian Kompensasi →</button>'
+          + '<span style="font-size:11px;color:var(--txt2)">' + jOpt.icon + ' <b>Lamp. ' + jOpt.lamp + '</b> — ' + jOpt.nama + ': ' + jOpt.desc + '</span></div></td></tr>' : '');
+  }).join('');
+
+  var empty = !kompOptParams.length
+    ? '<div style="text-align:center;padding:30px 20px;font-size:12px;color:var(--mute);line-height:1.8">'
+      + (ubmAll.length ? 'Pilih parameter dari <b>Usulan Baku Mutu</b> di atas, atau klik <b>Tambah Semua</b>.'
+                       : 'Belum ada parameter di menu <b>Usulan Baku Mutu</b>. Isi dulu sumber air limbah &amp; parameternya, atau tambahkan parameter secara <b>manual</b>.')
+      + '</div>' : '';
+
+  el.innerHTML = ''
+    + '<div class="card" style="padding:0;overflow:hidden;border:1.5px solid rgba(26,176,166,.35)">'
+    +   '<div style="padding:14px 18px;background:rgba(26,176,166,.07);border-bottom:1px solid var(--brd)">'
+    +     '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">'
+    +       '<div><div style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--accent);letter-spacing:.5px">BAKU MUTU SUNGAI &amp; ALOKASI BEBAN PENCEMAR</div>'
+    +       '<div style="font-size:11px;color:var(--txt2);margin-top:3px">' + (ctx.river ? '<b>' + esc(ctx.river) + '</b> · ' : '') + kelasTxt + ' · ' + nSrc + ' sumber air limbah</div></div>'
+    +       '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">'
+    +         '<select onchange="kompOptAddUbm(this.value)" style="font-family:var(--mono);font-size:11px;padding:7px 10px;border:1.5px solid rgba(26,176,166,.5);border-radius:7px;background:var(--card);color:var(--txt);min-width:260px;max-width:380px;cursor:pointer"' + (sisa ? '' : ' disabled') + '>' + opts + '</select>'
+    +         (sisa > 1 ? '<button onclick="kompOptAddAllUbm()" style="font-family:var(--mono);font-size:10.5px;font-weight:700;padding:7px 12px;border:1.5px solid rgba(26,176,166,.5);border-radius:7px;background:transparent;color:var(--accent);cursor:pointer">Tambah Semua</button>' : '')
+    +         '<button onclick="kompOptAddRow()" style="font-family:var(--mono);font-size:10.5px;font-weight:700;padding:7px 14px;border:none;border-radius:7px;background:var(--accent);color:#fff;cursor:pointer">+ Manual</button>'
+    +       '</div>'
+    +     '</div>'
+    +   '</div>'
+    +   '<div style="overflow-x:auto"><table style="width:100%;min-width:900px;table-layout:fixed;border-collapse:collapse;font-size:12px">'
+    +     '<colgroup><col style="width:46px"><col style="width:26%"><col style="width:84px"><col style="width:120px"><col style="width:230px"><col><col style="width:46px"></colgroup>'
+    +     '<thead><tr style="background:rgba(26,176,166,.04)">'
+    +       '<th style="' + TH + 'text-align:center;width:36px;color:var(--mute)">NO</th>'
+    +       '<th style="' + TH + 'text-align:left;color:var(--mute)">PARAMETER</th>'
+    +       '<th style="' + TH + 'text-align:left;color:var(--mute)">SATUAN</th>'
+    +       '<th style="' + TH + 'text-align:right;color:var(--accent)">BM SUNGAI<br>(mg/L)</th>'
+    +       '<th style="' + TH + 'text-align:right;color:var(--amber)">ALOKASI BEBAN PENCEMAR<br>(kg/hari)</th>'
+    +       '<th style="' + TH + 'text-align:left;color:var(--mute)">JENIS KOMPENSASI</th>'
+    +       '<th style="' + TH + 'width:40px"></th>'
+    +     '</tr></thead><tbody>' + rows + '</tbody></table></div>'
+    +   empty
+    +   '<div style="padding:10px 18px;border-top:1px solid var(--brd2);font-size:10.5px;color:var(--mute);line-height:1.7">'
+    +     'Alokasi Beban = Σ (Ci × Qi) × 86.400 ÷ 1.000 — total dari <b>seluruh sumber air limbah</b>, dengan Ci sumber yang diusulkan = Usulan Baku Mutu (sama dengan tabel hasil di menu Usulan Baku Mutu). '
+    +     'Ref: Kepdirjen PPKL No. 114/2024.'
+    +   '</div>'
+    +   '<datalist id="komp-wq-list">' + WQDB.map(function(r){ return '<option value="' + esc(r.name) + '">'; }).join('') + '</datalist>'
+    + '</div>';
+}
+
+function kompOptKajian(i) {
+  kompOptSyncFromDOM();
+  var p = kompOptParams[i];
+  if (!p || !p.lamp) return;
+  var lamp = p.lamp;
+  kompKajianState = { idx: 'opt_' + i, lamp: lamp, step: 1, _optParam: p };
+  if (p.kst && p.kst.lamp === lamp) {
+    var _o = JSON.parse(JSON.stringify(p.kst));
+    Object.keys(_o).forEach(function(k){ kompKajianState[k] = _o[k]; });
+    kompKajianState.idx = 'opt_' + i; kompKajianState._optParam = p; kompKajianState.step = 1;
+  }
+  // Jika TSS, B = alokasi beban TSS (kg/hari) dari Usulan Baku Mutu
+  kompOptRefresh();
+  var nm = (p.name || '').toLowerCase();
+  if (nm.indexOf('tss') !== -1 || nm.indexOf('padatan tersuspensi') !== -1) {
+    var aVal = kompRowNum(p.alok);
+    if (aVal != null && aVal > 0) kompKajianState.bp_tss = Math.round(aVal * 10000) / 10000;
+  }
+
+  var ov = document.getElementById('kajian-overlay');
+  if (!ov) { ov = kompCreateOverlay(); document.body.appendChild(ov); }
+  ov.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+
+  if (lamp === 'V') {
+    kompRenderStep();
+  } else if (lamp === 'I') {
+    kompIRender();
+  } else {
+    var jenis = KOMP_JENIS.filter(function(j){ return j.lamp === lamp; })[0];
+    var namaLamp = jenis ? ('Lampiran ' + lamp + ' — ' + jenis.nama) : ('Lampiran ' + lamp);
+    document.getElementById('kajian-title').textContent = 'Kajian Kompensasi · ' + namaLamp;
+    document.getElementById('kajian-steps-indicator').innerHTML = '';
+    document.getElementById('kajian-body').innerHTML = ''
+      + '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:20px;padding:60px 40px;text-align:center">'
+      +   '<div style="font-size:64px">🚧</div>'
+      +   '<div style="font-family:var(--head);font-size:18px;font-weight:700;color:var(--amber)">Dalam Tahap Pengembangan</div>'
+      +   '<div style="font-size:13px;color:var(--txt2);max-width:440px;line-height:1.8">Kalkulator kajian untuk <b>' + namaLamp + '</b> sedang dikembangkan. Silakan hitung secara manual mengacu pada Lampiran ' + lamp + ' Kepdirjen PPKL No. 114 Tahun 2024.</div>'
+      + '</div>';
+    document.getElementById('kajian-footer').innerHTML = '<button onclick="kompKajianClose()" style="font-family:var(--mono);font-size:12px;font-weight:700;padding:9px 22px;border:none;border-radius:8px;color:#fff;cursor:pointer;background:#888">✕ Tutup</button>';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// LEMBAR KERJA LAMPIRAN I — IPAL DOMESTIK KOMUNAL (disederhanakan, format Tabel 3.24)
+//   Beban industri (b) = Q limbah (m³/hari) × BMAL × faktor satuan
+//   Beban inlet / outlet = Q IPAL (m³/hari) × C × faktor satuan
+//   Penurunan IPAL (a)   = Beban inlet − Beban outlet
+//   Selisih = (a) − (b)  → diterima bila ≥ 0
+// Faktor satuan (1 m³ = 1.000 L = 10.000 × 100 mL):
+//   mg/L → ÷ 1.000 → kg/hari   |   µg/L → × 10⁻⁶ → kg/hari
+//   MPN/100 mL atau CFU/100 mL → × 10.000 → MPN (CFU)/hari
+// ═══════════════════════════════════════════════════════════════════════════════
+var KOMP_UNITS = {
+  'mg/L':       { f: 0.001, lu: 'kg/hari',  cu: 'mg/L',       dec: 4, note: 'Beban (kg/hari) = Q (m³/hari) × C (mg/L) ÷ 1.000' },
+  'µg/L':       { f: 1e-6,  lu: 'kg/hari',  cu: 'µg/L',       dec: 6, note: 'Beban (kg/hari) = Q (m³/hari) × C (µg/L) ÷ 1.000.000' },
+  'MPN/100 mL': { f: 1e4,   lu: 'MPN/hari', cu: 'MPN/100 mL', dec: 0, note: 'Beban (MPN/hari) = Q (m³/hari) × C (MPN/100 mL) × 10.000, karena 1 m³ = 10.000 × 100 mL' },
+  'CFU/100 mL': { f: 1e4,   lu: 'CFU/hari', cu: 'CFU/100 mL', dec: 0, note: 'Beban (CFU/hari) = Q (m³/hari) × C (CFU/100 mL) × 10.000, karena 1 m³ = 10.000 × 100 mL' },
+  'custom':     { f: 1,     lu: 'satuan/hari', cu: 'satuan', dec: 4, note: 'Faktor konversi diisi manual' }
+};
+
+// Petakan satuan parameter (WQDB) ke satuan lembar kerja; null bila tidak bisa dikonversi
+function kompIUnitFromRow(u) {
+  var k = String(u || '').toLowerCase().replace(/\s+/g, '');
+  if (!k) return null;
+  if (k.indexOf('mpn') !== -1) return 'MPN/100 mL';
+  if (k.indexOf('cfu') !== -1 || k.indexOf('jml/100') !== -1 || k.indexOf('jumlah/100') !== -1) return 'CFU/100 mL';
+  if (k.indexOf('µg') !== -1 || k.indexOf('ug/l') !== -1) return 'µg/L';
+  if (k === 'mg/l' || k === 'mg/liter') return 'mg/L';
+  return null;
+}
+
+function kompIFac(ip) {
+  var u = KOMP_UNITS[ip.unit] || KOMP_UNITS['mg/L'];
+  if (ip.unit === 'custom') {
+    var f = pNum(ip.fcust);
+    return { f: f > 0 ? f : 0, lu: (ip.ucust || 'satuan') + '/hari', cu: (ip.ucust || 'satuan'), dec: 4, note: u.note };
+  }
+  return u;
+}
+
+function kompIFmtLoad(v, dec) { return (v == null || !isFinite(v)) ? '–' : kf(v, dec); }
+
+function kompIRender() {
+  kompWsInjectCss();
+  var st = kompKajianState, row = st._optParam || {};
+  var ip = st.ip = st.ip || {};
+  var warnUnit = false;
+
+  // satuan awal dari parameter
+  if (ip.unit == null) {
+    var mu = kompIUnitFromRow(row.unit);
+    if (mu) ip.unit = mu; else { ip.unit = 'mg/L'; warnUnit = !!row.unit && row.unit !== 'mg/L'; }
+    ip.unitFromRow = row.unit || '';
+  }
+  // isi awal beban industri dari Usulan Baku Mutu (total seluruh sumber)
+  if (ip.qind == null && ip.bmal == null && ip.Bdir == null) {
+    var up = kompUbmFind(row._ubmId != null ? row._ubmId : row._match);
+    var fac0 = KOMP_UNITS[ip.unit] || KOMP_UNITS['mg/L'];
+    if (up) {
+      var Qd = ubmParamQi(up) * 86400;            // m³/hari, sumber ber-C
+      var pseudo = ubmParamAlokasi(up);           // Σ Q·C ÷ 1.000 (kg/hari bila C dianggap mg/L)
+      if (Qd > 0 && pseudo != null) {
+        ip.qind = kfv(Math.round(Qd * 10000) / 10000);
+        ip.bmal = kfv(Math.round((pseudo * 1000 / Qd) * 10000) / 10000);   // konsentrasi rata-rata tertimbang
+        ip.fromUbm = true;
+      }
+    } else if (row.alok != null && isFinite(row.alok)) {
+      ip.Bdir = kfv(Math.round(row.alok * 1000 * fac0.f * 10000) / 10000);   // alokasi manual → beban murni
+    }
+  }
+  var bodyEl = document.getElementById('kajian-body');
+  bodyEl.style.maxWidth = '1000px';
+  document.getElementById('kajian-title').textContent = 'Kajian Kompensasi · IPAL Domestik Komunal (Lampiran I)';
+  var _sb = document.getElementById('kajian-sub'); if (_sb) _sb.textContent = 'Kepdirjen PPKL No. 114 Tahun 2024 · Lampiran I — Pembangunan IPAL Domestik';
+  document.getElementById('kajian-steps-indicator').innerHTML = '<span style="font-family:var(--mono);font-size:10px;color:var(--mute)">Lembar kerja Lampiran I · hasil terhitung otomatis</span>';
+
+  function inp(id, ph) {
+    return '<input id="ip-' + id + '" class="ws-in" type="text" inputmode="decimal" value="' + esc(ip[id] == null ? '' : ip[id]) + '" placeholder="' + (ph || '') + '" oninput="kompICalc(\'' + id + '\')">';
+  }
+  function out(id) { return '<span id="ip-' + id + '">–</span>'; }
+  var uopts = Object.keys(KOMP_UNITS).map(function(k) {
+    return '<option value="' + k + '"' + (ip.unit === k ? ' selected' : '') + '>' + (k === 'custom' ? 'Lainnya (faktor manual)' : k) + '</option>';
+  }).join('');
+  var secTd = 'style="background:rgba(26,176,166,.10);font-family:var(--mono);font-size:10px;font-weight:700;color:var(--accent);letter-spacing:.5px"';
+  var subTd = 'style="font-style:italic;font-weight:700;color:var(--txt2);background:rgba(128,128,128,.05)"';
+
+  var html = '<div class="ws-sum">'
+    + '<div class="ws-chip" style="border-left:3px solid var(--amber)"><i>BEBAN INDUSTRI (b)</i><b id="ip-s-b">–</b><small class="ip-lu">kg/hari</small></div>'
+    + '<div class="ws-chip" style="border-left:3px solid var(--green)"><i>PENURUNAN IPAL (a)</i><b id="ip-s-pb">–</b><small class="ip-lu">kg/hari</small></div>'
+    + '<div class="ws-chip"><i>SELISIH (a) − (b)</i><b id="ip-s-sbp">–</b><small class="ip-lu">kg/hari</small></div>'
+    + '<div class="ws-chip" id="ip-s-wrap"><i>HASIL</i><b id="ip-s-stat">Belum lengkap</b></div></div>';
+
+  html += '<div class="ws-card"><div class="ws-h"><b>KOMPENSASI BEBAN PENCEMAR — ' + esc((row.name || '—').toUpperCase()) + '</b><span>Format Tabel 3.24 Lampiran I · Kepdirjen PPKL No. 114/2024</span></div>'
+    + '<div style="overflow-x:auto"><table class="ws-t"><thead><tr><th style="width:56%">DESKRIPSI</th><th style="width:24%;text-align:right">JUMLAH</th><th>UNIT</th></tr></thead><tbody>'
+    // satuan
+    + '<tr><td>Satuan parameter <span class="fs">· menentukan faktor konversi beban</span></td><td><select id="ip-unit" class="ws-sel" onchange="kompICalc(\'unit\')">' + uopts + '</select></td><td class="fs" id="ip-unitnote" style="color:var(--mute)"></td></tr>'
+    + '<tr id="ip-rowcust" style="display:none"><td>Faktor konversi &amp; nama satuan <span class="fs">· beban = Q × C × faktor</span></td><td><div class="ws-cell" style="justify-content:flex-end"><input id="ip-fcust" class="ws-in" style="width:90px" type="text" inputmode="decimal" placeholder="faktor" value="' + esc(ip.fcust || '') + '" oninput="kompICalc(\'fcust\')"><input id="ip-ucust" class="ws-in" style="width:90px;text-align:left" type="text" placeholder="satuan" value="' + esc(ip.ucust || '') + '" oninput="kompICalc(\'ucust\')"></div></td><td></td></tr>'
+    // BMAL & beban
+    + '<tr><td colspan="3" ' + secTd + '>RANCANGAN BMAL DAN BEBAN PENCEMARAN</td></tr>'
+    + '<tr><td>Limbah yang akan dibuang' + (ip.fromUbm ? ' <span class="fs">· total sumber dari Usulan Baku Mutu</span>' : '') + '</td><td>' + inp('qind', 'm³/hari') + '</td><td class="fs">m³/hari</td></tr>'
+    + '<tr><td>BMAL / konsentrasi air limbah' + (ip.fromUbm ? ' <span class="fs">· rata-rata tertimbang dari Usulan Baku Mutu</span>' : '') + '</td><td>' + inp('bmal', '') + '</td><td class="fs ip-cu">mg/L</td></tr>'
+    + '<tr><td>Atau isi beban langsung <span class="fs">· bila sudah ada (mengganti Q × BMAL)</span></td><td>' + inp('Bdir', '') + '</td><td class="fs ip-lu">kg/hari</td></tr>'
+    + '<tr class="res"><td>Beban pencemaran tertinggi — industri (b)</td><td class="n" style="color:var(--amber)">' + out('Bind') + '</td><td class="fs ip-lu">kg/hari</td></tr>'
+    // IPAL
+    + '<tr><td colspan="3" ' + secTd + '>RANCANGAN IPAL DOMESTIK KOMPENSASI</td></tr>'
+    + '<tr><td colspan="3" ' + subTd + '>INLET</td></tr>'
+    + '<tr><td>Konsentrasi di inlet IPAL Kompensasi <span class="fs">· karakteristik air limbah domestik (literatur)</span></td><td>' + inp('cin', '') + '</td><td class="fs ip-cu">mg/L</td></tr>'
+    + '<tr><td>Debit IPAL Domestik Kompensasi</td><td>' + inp('q', 'm³/hari') + '</td><td class="fs">m³/hari</td></tr>'
+    + '<tr class="res"><td>Beban pencemaran inlet kompensasi</td><td class="n">' + out('Bin') + '</td><td class="fs ip-lu">kg/hari</td></tr>'
+    + '<tr><td colspan="3" ' + subTd + '>OUTLET</td></tr>'
+    + '<tr><td>Konsentrasi di outlet IPAL Kompensasi</td><td>' + inp('cout', '') + '</td><td class="fs ip-cu">mg/L</td></tr>'
+    + '<tr><td>Debit IPAL Domestik Kompensasi <span class="fs">· sama dengan inlet</span></td><td class="n">' + out('q2') + '</td><td class="fs">m³/hari</td></tr>'
+    + '<tr class="res"><td>Beban pencemaran outlet kompensasi</td><td class="n">' + out('Bout') + '</td><td class="fs ip-lu">kg/hari</td></tr>'
+    // hasil
+    + '<tr><td colspan="3" style="height:6px;padding:0"></td></tr>'
+    + '<tr class="res"><td>Selisih inlet − outlet kompensasi (a)</td><td class="n" style="color:var(--green)">' + out('PB') + '</td><td class="fs ip-lu">kg/hari</td></tr>'
+    + '<tr class="res"><td>Selisih IPAL Kompensasi − beban industri = (a) − (b)</td><td class="n">' + out('SBP') + '</td><td class="fs ip-lu">kg/hari</td></tr>'
+    + '<tr><td>Debit IPAL minimum agar selisih ≥ 0</td><td class="n">' + out('qmin') + '</td><td class="fs">m³/hari</td></tr>'
+    + '</tbody></table></div>'
+    + '<div id="ip-conv" style="padding:10px 18px;font-size:10.5px;color:var(--mute);border-top:1px solid var(--brd2);line-height:1.7"></div>'
+    + '<div id="ip-verdict" style="padding:16px;text-align:center;font-size:13px;font-weight:700;color:var(--mute)">Lengkapi tabel di atas untuk melihat kesimpulan.</div></div>';
+
+  html += (warnUnit ? '<div style="padding:10px 14px;background:rgba(243,156,18,.10);border:1px solid var(--amber);border-radius:8px;font-size:11.5px;color:var(--amber);margin-bottom:14px">⚠ Satuan parameter “' + esc(ip.unitFromRow) + '” tidak berbasis massa/jumlah per volume. Pilih satuan yang sesuai atau “Lainnya” dan isi faktor konversinya.</div>' : '');
+  bodyEl.innerHTML = html;
+  document.getElementById('kajian-footer').innerHTML = '<button onclick="kompIReset()" style="' + OVS.btn + 'background:#888">↺ Kosongkan</button>'
+    + '<div style="font-family:var(--mono);font-size:10px;color:var(--mute)">Semua perubahan dihitung otomatis</div>'
+    + '<button onclick="kompKajianClose()" style="' + OVS.btn + 'background:var(--green)">✓ Selesai</button>';
+  kompICalc('init');
+  bodyEl.scrollTop = 0;
+}
+
+function kompIReset() {
+  if (kompKajianState._optParam) kompKajianState._optParam.kst = null;
+  kompKajianState = { idx: kompKajianState.idx, lamp: kompKajianState.lamp, step: 1, _optParam: kompKajianState._optParam };
+  kompIRender();
+}
+
+function kompICalc(src) {
+  var ip = kompKajianState.ip = kompKajianState.ip || {};
+  function el(id) { return document.getElementById('ip-' + id); }
+  function set(id, t) { var e = el(id); if (e) e.textContent = t; }
+  ['qind','bmal','Bdir','q','cin','cout','fcust','ucust'].forEach(function(f) { if (el(f)) ip[f] = el(f).value; });
+  if (el('unit')) ip.unit = el('unit').value;
+
+  var U = kompIFac(ip), f = U.f, dec = U.dec;
+  var rc = el('rowcust'); if (rc) rc.style.display = ip.unit === 'custom' ? '' : 'none';
+  Array.prototype.forEach.call(document.querySelectorAll('#kajian-body .ip-cu'), function(e) { e.textContent = U.cu; });
+  Array.prototype.forEach.call(document.querySelectorAll('#kajian-body .ip-lu'), function(e) { e.textContent = U.lu; });
+  var un = el('unitnote'); if (un) un.textContent = ip.unit === 'custom' ? '' : ('faktor × ' + (f >= 1 ? kf(f, 0) : fmtN(f, 6)));
+  var cv = el('conv'); if (cv) cv.textContent = 'Konversi: ' + U.note + (ip.unit === 'custom' ? '' : '. Faktor = ' + (f >= 1 ? kf(f, 0) : fmtN(f, 6)) + '.') + ' Angka di tabel dihitung dengan faktor ini.';
+
+  var Bdir = kempty(ip.Bdir) ? null : pNum(ip.Bdir);
+  var qi = pNum(ip.qind), bm = pNum(ip.bmal);
+  var B = Bdir != null ? Bdir : (qi > 0 && bm > 0 ? qi * bm * f : null);
+  var Q = pNum(ip.q), cin = pNum(ip.cin), haveCout = !kempty(ip.cout), cout = pNum(ip.cout);
+  var Bin = (Q > 0 && cin > 0) ? Q * cin * f : null;
+  var Bout = (Q > 0 && haveCout) ? Q * cout * f : null;
+  var PB = (Bin != null && Bout != null) ? Bin - Bout : null;
+  var SBP = (PB != null && B != null) ? PB - B : null;
+
+  set('Bind', B != null ? kompIFmtLoad(B, dec) : '–');
+  set('Bin', kompIFmtLoad(Bin, dec)); set('Bout', kompIFmtLoad(Bout, dec));
+  set('q2', Q > 0 ? kf(Q, 2) : '–');
+  set('PB', kompIFmtLoad(PB, dec)); set('SBP', kompIFmtLoad(SBP, dec));
+  var dC = cin - cout;
+  var qmin = (B != null && B > 0 && dC > 0 && f > 0) ? B / (dC * f) : 0;
+  set('qmin', qmin > 0 ? kf(qmin, 2) : '–');
+  set('s-b', kompIFmtLoad(B, dec)); set('s-pb', kompIFmtLoad(PB, dec)); set('s-sbp', kompIFmtLoad(SBP, dec));
+  var ok = SBP != null && SBP >= 0;
+  var sb = el('SBP'); if (sb) sb.style.color = SBP != null ? (ok ? 'var(--green)' : 'var(--red)') : '';
+  var stEl = el('s-stat'), wr = el('s-wrap'), vEl = el('verdict');
+  if (SBP != null) {
+    if (stEl) { stEl.textContent = ok ? '✅ DITERIMA' : '❌ DITOLAK'; stEl.style.color = ok ? 'var(--green)' : 'var(--red)'; }
+    if (wr) wr.style.borderColor = ok ? 'var(--green)' : 'var(--red)';
+    if (vEl) {
+      vEl.style.background = ok ? 'rgba(39,174,96,.10)' : 'rgba(231,76,60,.10)'; vEl.style.color = ok ? 'var(--green)' : 'var(--red)';
+      vEl.innerHTML = ok ? '✅ DITERIMA — penurunan beban IPAL kompensasi ≥ beban industri'
+        : '❌ DITOLAK — penurunan beban IPAL kompensasi &lt; beban industri<br><span style="font-size:11px;font-weight:400">Perbesar debit IPAL' + (qmin > 0 ? ' (minimum ' + kf(qmin, 2) + ' m³/hari)' : '') + ' atau turunkan konsentrasi outlet.</span>';
+    }
+  } else {
+    if (stEl) { stEl.textContent = 'Belum lengkap'; stEl.style.color = 'var(--mute)'; }
+    if (wr) wr.style.borderColor = '';
+    if (vEl) { vEl.style.background = ''; vEl.style.color = 'var(--mute)'; vEl.textContent = 'Lengkapi tabel di atas untuk melihat kesimpulan.'; }
+  }
+}
+
+// Tabel referensi USLE
+var USLE_TABLES = {
+  // Tabel 50 — Faktor LS (Gregory et al., 1978 dalam Sarwono Hardjowigeno & Widiatmaka 2001)
+  LS: [
+    { kelas:'Datar (0–3%)',        kode:'A', ls:0.15  },
+    { kelas:'Berombak (3–8%)',     kode:'B', ls:0.25  },
+    { kelas:'Agak Landai (8–16%)', kode:'C', ls:1.2   },
+    { kelas:'Landai (16–24%)',     kode:'D', ls:4.25  },
+    { kelas:'Agak Curam (24–35%)', kode:'E', ls:7.25  },
+    { kelas:'Curam (35–45%)',      kode:'F', ls:9.5   },
+    { kelas:'Sangat Curam (>45%)', kode:'G', ls:12.0  }
+  ],
+  // Tabel 51 — Faktor C (Arsyad, 2010)
+  C: [
+    { lahan:'Tanah terbuka / tanpa tanaman',              c:1.000 },
+    { lahan:'Padi sawah',                                 c:0.010 },
+    { lahan:'Tegalan tidak dispesifikasikan',             c:0.700 },
+    { lahan:'Ubikayu',                                    c:0.800 },
+    { lahan:'Jagung',                                     c:0.700 },
+    { lahan:'Kedelai',                                    c:0.399 },
+    { lahan:'Kacang tanah',                               c:0.200 },
+    { lahan:'Padi lahan kering',                          c:0.561 },
+    { lahan:'Tebu',                                       c:0.200 },
+    { lahan:'Pisang',                                     c:0.600 },
+    { lahan:'Kebun campuran — kerapatan tinggi',          c:0.100 },
+    { lahan:'Kebun campuran — kerapatan sedang',          c:0.200 },
+    { lahan:'Kebun campuran — kerapatan rendah',          c:0.500 },
+    { lahan:'Perladangan',                                c:0.400 },
+    { lahan:'Hutan alam — serasah banyak',               c:0.001 },
+    { lahan:'Hutan alam — serasah kurang',               c:0.005 },
+    { lahan:'Semak belukar / padang rumput',              c:0.300 }
+  ],
+  // Tabel 52 — Faktor P (Pusat Lingkungan Geologi Badan Geologi, 2007)
+  P: [
+    { pengelolaan:'Lahan diolah tanpa tindakan konservasi',           p:1.000 },
+    { pengelolaan:'Pengolahan tanah sejajar lereng 0–10%',            p:0.500 },
+    { pengelolaan:'Pengolahan tanah sejajar lereng 10–20%',           p:0.750 },
+    { pengelolaan:'Pengolahan tanah sejajar lereng >20%',             p:0.900 },
+    { pengelolaan:'Teras bangku — konstruksi baik',                   p:0.040 },
+    { pengelolaan:'Teras bangku — konstruksi sedang',                 p:0.150 },
+    { pengelolaan:'Teras bangku — konstruksi kurang baik',            p:0.350 },
+    { pengelolaan:'Teras tradisional',                                p:0.400 },
+    { pengelolaan:'Strip tanaman rumput',                             p:0.400 }
+  ],
+  // Tabel 54 — SDR (Permenhut P.61/Menhut-II/2014) — nilai diskrit per luas DAS
+  SDR: [
+    { luas:'10 ha',          ha:10,       sdr:53   },
+    { luas:'50 ha',          ha:50,       sdr:39   },
+    { luas:'100 ha',         ha:100,      sdr:35   },
+    { luas:'500 ha',         ha:500,      sdr:27   },
+    { luas:'1.000 ha',       ha:1000,     sdr:24   },
+    { luas:'5.000 ha',       ha:5000,     sdr:15   },
+    { luas:'10.000 ha',      ha:10000,    sdr:13   },
+    { luas:'20.000 ha',      ha:20000,    sdr:11   },
+    { luas:'50.000 ha',      ha:50000,    sdr:8.5  },
+    { luas:'2.600.000 ha',   ha:2600000,  sdr:4.9  }
+  ],
+  // Tabel 48 — Harkat Struktur Tanah (Arsyad, 2010) — untuk Faktor K
+  STRUCT: [
+    { harkat:1, desc:'Granular sangat halus' },
+    { harkat:2, desc:'Granular halus' },
+    { harkat:3, desc:'Granular sedang sampai kasar' },
+    { harkat:4, desc:'Gumpal, lempeng, pejal' }
+  ],
+  // Tabel 49 — Harkat Permeabilitas Tanah (Arsyad, 2010) — untuk Faktor K
+  PERM: [
+    { harkat:1, desc:'Cepat (> 25,4 cm/jam)' },
+    { harkat:2, desc:'Sedang sampai cepat (12,7 – 25,4 cm/jam)' },
+    { harkat:3, desc:'Sedang (6,3 – 12,7 cm/jam)' },
+    { harkat:4, desc:'Lambat sampai sedang (2,0 – 6,3 cm/jam)' },
+    { harkat:5, desc:'Lambat (0,5 – 2,0 cm/jam)' },
+    { harkat:6, desc:'Sangat lambat (< 0,5 cm/jam)' }
+  ]
+};
+
+// Helper — ambil BP TSS dari state aplikasi
+function kompGetBPTSS() {
+  try {
+    var found = null;
+    kompUbmList().forEach(function(p) {
+      var nm = (p.name || '').toLowerCase();
+      if (nm.indexOf('tss') !== -1 || nm.indexOf('padatan tersuspensi') !== -1) {
+        var a = ubmParamAlokasi(p);   // kg/hari, total seluruh sumber (Usulan Baku Mutu)
+        if (a != null) found = a;
+      }
+    });
+    return found;
+  } catch(e){ return null; }
+}
+
+// ─── BUKA OVERLAY ─────────────────────────────────────────────────────────────
+function kompKajianToggle(idx) {
+  var sel  = document.getElementById('komp-sel-' + idx);
+  var lamp = sel ? sel.value : '';
+  kompKajianState = { idx: idx, lamp: lamp, step: 1 };
+
+  // Inisialisasi nilai BP TSS
+  var bpTSS = kompGetBPTSS();
+  if (bpTSS != null) kompKajianState.bp_tss = bpTSS;
+
+  var ov = document.getElementById('kajian-overlay');
+  if (!ov) { ov = kompCreateOverlay(); document.body.appendChild(ov); }
+  ov.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+
+  if (lamp === 'V') {
+    kompRenderStep();
+  } else {
+    var jenis = (typeof KOMP_JENIS !== 'undefined') ? KOMP_JENIS.filter(function(j){ return j.lamp === lamp; })[0] : null;
+    var namaLamp = jenis ? ('Lampiran ' + lamp + ' — ' + jenis.nama) : ('Lampiran ' + lamp);
+    document.getElementById('kajian-title').textContent = 'Kajian Kompensasi · ' + namaLamp;
+    document.getElementById('kajian-steps-indicator').innerHTML = '';
+    document.getElementById('kajian-body').innerHTML = ''
+      + '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:20px;padding:60px 40px;text-align:center">'
+      +   '<div style="font-size:64px">🚧</div>'
+      +   '<div style="font-family:var(--head);font-size:18px;font-weight:700;color:var(--amber)">Dalam Tahap Pengembangan</div>'
+      +   '<div style="font-size:13px;color:var(--txt2);max-width:440px;line-height:1.8">Kalkulator kajian untuk <b>' + namaLamp + '</b> sedang dikembangkan. Silakan hitung secara manual mengacu pada Lampiran ' + lamp + ' Kepdirjen PPKL No. 114 Tahun 2024.</div>'
+      + '</div>';
+    document.getElementById('kajian-footer').innerHTML = '<button onclick="kompKajianClose()" style="'+OVS.btn+'background:#888">✕ Tutup</button>';
+  }
+}
+
+function kompKajianClose() {
+  try { kompKstSave(); } catch (e) {}
+  var ov = document.getElementById('kajian-overlay');
+  if (ov) ov.style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+// Shared button style
+var OVS = {
+  btn: 'font-size:12px;font-family:var(--mono);font-weight:700;padding:9px 22px;border:none;border-radius:8px;color:#fff;cursor:pointer;',
+  inp: 'font-family:var(--mono);font-size:12px;padding:7px 10px;border:1.5px solid var(--brd);border-radius:6px;background:var(--card);color:var(--txt);width:100%;box-sizing:border-box;',
+  lbl: 'display:block;font-family:var(--mono);font-size:9.5px;color:var(--mute);letter-spacing:0.5px;margin-bottom:4px;font-weight:700;',
+  card:'background:var(--card);border:1.5px solid var(--brd2);border-radius:10px;padding:18px 20px;',
+  th:  'padding:8px 12px;font-family:var(--mono);font-size:9px;font-weight:700;color:var(--mute);text-align:left;border-bottom:1.5px solid var(--brd2);letter-spacing:0.5px;',
+  td:  'padding:8px 12px;font-family:var(--mono);font-size:11px;color:var(--txt);border-bottom:1px solid var(--brd2);'
+};
+
+function kompCreateOverlay() {
+  var ov = document.createElement('div');
+  ov.id = 'kajian-overlay';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:9999;display:none;flex-direction:column;background:var(--bg);';
+
+  ov.innerHTML = ''
+    // Header
+    + '<div id="kajian-header" style="flex-shrink:0;display:flex;align-items:center;gap:14px;padding:14px 24px;background:var(--card);border-bottom:1.5px solid var(--brd2);box-shadow:0 2px 8px rgba(0,0,0,.08)">'
+    +   '<button onclick="kompKajianClose()" style="font-size:11px;font-family:var(--mono);font-weight:700;padding:6px 14px;border:1.5px solid var(--brd2);border-radius:6px;background:transparent;color:var(--txt2);cursor:pointer">← Kembali</button>'
+    +   '<div style="flex:1">'
+    +     '<div id="kajian-title" style="font-family:var(--head);font-size:15px;font-weight:800;color:var(--txt)">Kajian Kompensasi</div>'
+    +     '<div id="kajian-sub" style="font-family:var(--mono);font-size:9.5px;color:var(--mute);margin-top:2px">Kepdirjen PPKL No. 114 Tahun 2024 · Metode USLE (Universal Soil Loss Equation)</div>'
+    +   '</div>'
+    +   '<div id="kajian-steps-indicator" style="display:flex;gap:6px;align-items:center"></div>'
+    + '</div>'
+    // Body scroll
+    + '<div id="kajian-body" style="flex:1;overflow-y:auto;padding:28px 32px;max-width:920px;margin:0 auto;width:100%;box-sizing:border-box"></div>'
+    // Footer nav
+    + '<div id="kajian-footer" style="flex-shrink:0;display:flex;justify-content:space-between;align-items:center;padding:14px 32px;background:var(--card);border-top:1.5px solid var(--brd2)"></div>';
+
+  return ov;
+}
+
+// ─── STEP NAVIGATOR ───────────────────────────────────────────────────────────
+var KAJIAN_STEPS = [
+  { no:1, title:'Faktor R',          sub:'Erosivitas Hujan' },
+  { no:2, title:'Faktor K',          sub:'Erodibilitas Tanah' },
+  { no:3, title:'Faktor LS',         sub:'Kemiringan Lereng' },
+  { no:4, title:'Faktor C',          sub:'Tutupan Lahan' },
+  { no:5, title:'Faktor P',          sub:'Pengelolaan Lahan' },
+  { no:6, title:'Laju Erosi',        sub:'Prediksi Ea (USLE)' },
+  { no:7, title:'Muatan Sedimen',    sub:'SDR & MS' },
+  { no:8, title:'Verifikasi',        sub:'A ≥ B · Kesimpulan' }
+];
+
+function kompRenderStep() {
+  return kompWsRender();
+}
+function kompRenderStepLegacy() {
+  var st = kompKajianState;
+  var s  = KAJIAN_STEPS[st.step - 1];
+
+  // Header title + step indicator
+  document.getElementById('kajian-title').textContent = 'Kajian Kompensasi · Rehabilitasi Lahan (Lampiran V)';
+  var indEl = document.getElementById('kajian-steps-indicator');
+  indEl.innerHTML = KAJIAN_STEPS.map(function(x){
+    var active = x.no === st.step;
+    var done   = x.no < st.step;
+    return '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;cursor:'+(done||active?'pointer':'default')+'" '
+      + (done ? 'onclick="kompKajianGoStep('+x.no+')"' : '')+'>'
+      + '<div style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:700;'
+      + (active ? 'background:var(--accent);color:#fff;' : done ? 'background:var(--green);color:#fff;' : 'background:var(--brd2);color:var(--mute);')
+      + '">' + (done ? '✓' : x.no) + '</div>'
+      + '<div style="font-family:var(--mono);font-size:8px;color:'+(active?'var(--accent)':done?'var(--green)':'var(--mute)')+';white-space:nowrap">' + x.title + '</div>'
+      + '</div>'
+      + (x.no < 8 ? '<div style="width:20px;height:1px;background:var(--brd2);margin-top:14px;flex-shrink:0"></div>' : '');
+  }).join('');
+
+  // Body content
+  var bodyEl = document.getElementById('kajian-body');
+  bodyEl.innerHTML = kompStepContent(st.step);
+
+  // Footer nav
+  var footEl = document.getElementById('kajian-footer');
+  var prevBtn = st.step > 1
+    ? '<button onclick="kompKajianGoStep('+(st.step-1)+')" style="'+OVS.btn+'background:#888">← Sebelumnya</button>'
+    : '<div></div>';
+  var nextLabel = st.step < 8 ? 'Selanjutnya →' : '✓ Selesai';
+  var nextBg    = st.step < 8 ? 'var(--accent)' : 'var(--green)';
+  var nextAction = st.step < 8 ? 'kompKajianNext()' : 'kompKajianClose()';
+  footEl.innerHTML = prevBtn
+    + '<div style="font-family:var(--mono);font-size:10px;color:var(--mute)">Langkah ' + st.step + ' dari 8</div>'
+    + '<button onclick="'+nextAction+'" style="'+OVS.btn+'background:'+nextBg+'">'+nextLabel+'</button>';
+
+  // Scroll top
+  bodyEl.scrollTop = 0;
+}
+
+function kompKajianGoStep(n) {
+  kompKajianSaveStep(kompKajianState.step);
+  kompKajianState.step = n;
+  kompRenderStep();
+}
+
+function kompKajianNext() {
+  kompKajianSaveStep(kompKajianState.step);
+  if (kompKajianState.step < 8) {
+    kompKajianState.step++;
+    kompRenderStep();
+  }
+}
+
+// ─── SIMPAN NILAI DARI INPUT AKTIF ────────────────────────────────────────────
+function kompKajianSaveStep(step) {
+  function gv(id) { var el=document.getElementById(id); return el?el.value:''; }
+  function gf(id) { return pNum(gv(id)); }
+  var st = kompKajianState;
+  if (step === 1) {
+    // R: cek apakah mode manual atau tabel 12 bulan
+    var rMode = document.querySelector('input[name="r-mode"]:checked');
+    if (rMode && rMode.value === 'manual') {
+      st.R = gf('rl-r-manual');
+      st.R_mode = 'manual';
+    } else {
+      st.R_months = [];
+      var rTotal = 0;
+      for (var m=1; m<=12; m++) {
+        var rain = gf('r-rain-'+m), days = gf('r-days-'+m), maxp = gf('r-maxp-'+m);
+        var ri = (rain>0 && days>0 && maxp>0) ? 6.119 * Math.pow(rain,1.21) * Math.pow(days,-0.47) * Math.pow(maxp,0.53) : 0;
+        st.R_months.push({m:m,rain:rain,days:days,maxp:maxp,r:ri});
+        rTotal += ri;
+      }
+      st.R = rTotal;
+      st.R_mode = 'tabel';
+    }
+  } else if (step === 2) {
+    var kMode = document.querySelector('input[name="k-mode"]:checked');
+    if (kMode && kMode.value === 'manual') {
+      st.K = gf('rl-k-manual');
+      st.K_mode = 'manual';
+    } else {
+      st.K_M  = gf('k-M');
+      st.K_a  = gf('k-a');
+      st.K_b  = gf('k-b');
+      st.K_c  = gf('k-c');
+      var val100K = 2.723 * Math.pow(st.K_M, 1.34) * 1e-4 * (12 - st.K_a) + 3.25*(st.K_b - 2) + 2.5*(st.K_c - 3);
+      st.K = val100K / 100;
+      st.K_mode = 'formula';
+    }
+  } else if (step === 3) {
+    st.LS = gf('rl-ls-val');
+    st.LS_kelas = gv('rl-ls-kelas');
+  } else if (step === 4) {
+    st.C1 = gf('rl-c1-val'); st.C1_lahan = gv('rl-c1-lahan');
+    st.C2 = gf('rl-c2-val'); st.C2_lahan = gv('rl-c2-lahan');
+  } else if (step === 5) {
+    st.P1 = gf('rl-p1-val'); st.P1_peng = gv('rl-p1-peng');
+    st.P2 = gf('rl-p2-val'); st.P2_peng = gv('rl-p2-peng');
+  } else if (step === 7) {
+    st.A_das = gf('rl-a-das');
+    st.SDR   = gf('rl-sdr-val');
+    st.SDR_kelas = gv('rl-sdr-kelas');
+  } else if (step === 8) {
+    st.A_lahan   = gf('rl-a-lahan');
+    st.pct_endap = gf('rl-pct-endap') || 60;
+    st.bp_tss    = gf('rl-bp-tss');
+  }
+}
+
+// ─── KONTEN TIAP STEP ─────────────────────────────────────────────────────────
+function kompStepContent(step) {
+  var st = kompKajianState;
+  var s  = KAJIAN_STEPS[step-1];
+  var hdr = '<div style="margin-bottom:24px">'
+    + '<div style="font-family:var(--mono);font-size:9px;color:var(--accent);letter-spacing:1px;font-weight:700;margin-bottom:6px">LANGKAH ' + step + ' / 8</div>'
+    + '<div style="font-family:var(--head);font-size:20px;font-weight:800;color:var(--txt);margin-bottom:4px">' + s.title + ' <span style="color:var(--mute);font-size:14px;font-weight:400">— ' + s.sub + '</span></div>';
+
+  if (step === 1) return hdr
+    + '<div style="font-size:12px;color:var(--txt2);margin-bottom:20px;line-height:1.8">Erosivitas hujan (R) dihitung dengan rumus <b>Bols (1978)</b>:<br>'
+    + '<span style="font-family:var(--mono);background:rgba(26,176,166,0.08);padding:4px 8px;border-radius:4px;display:inline-block;margin-top:4px">R = 6,119 × (RAIN)¹·²¹ × (DAYS)⁻⁰·⁴⁷ × (MAXP)⁰·⁵³</span><br>'
+    + '<span style="font-size:11px;color:var(--mute)">RAIN = curah hujan bulanan (mm), DAYS = hari hujan per bulan, MAXP = curah hujan maks harian (mm)</span>'
+    + '</div></div>'
+    + '<div style="margin-bottom:18px;display:flex;gap:16px;align-items:center">'
+    +   '<label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:12px;color:var(--txt)"><input type="radio" name="r-mode" value="tabel" '+((!st.R_mode||st.R_mode==='tabel')?'checked':'')+' onchange="kompToggleRMode()"> Input data 12 bulan (Tabel)</label>'
+    +   '<label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:12px;color:var(--txt)"><input type="radio" name="r-mode" value="manual" '+(st.R_mode==='manual'?'checked':'')+' onchange="kompToggleRMode()"> Input nilai R langsung</label>'
+    + '</div>'
+    + '<div id="r-mode-tabel" style="'+(st.R_mode==='manual'?'display:none':'')+'">'
+    +   '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;min-width:540px">'
+    +     '<thead><tr><th style="'+OVS.th+'">Bulan</th><th style="'+OVS.th+'">RAIN (mm)</th><th style="'+OVS.th+'">DAYS (hari)</th><th style="'+OVS.th+'">MAXP (mm)</th><th style="'+OVS.th+'text-align:right">R bulan</th></tr></thead>'
+    +     '<tbody id="r-tabel-body">' + kompRMonthRows() + '</tbody>'
+    +   '</table></div>'
+    +   '<div style="margin-top:14px;padding:10px 14px;background:rgba(26,176,166,0.07);border-radius:7px;font-family:var(--mono);font-size:11px">'
+    +     'R Total = <span id="r-total-display" style="font-weight:700;color:var(--accent)">'+(st.R?(st.kf(R,2)):'-')+'</span> (EJ/ha/tahun) &nbsp;|&nbsp; <button onclick="kompHitungR()" style="font-size:10px;font-family:var(--mono);padding:4px 12px;border:1px solid var(--accent);border-radius:5px;background:transparent;color:var(--accent);cursor:pointer">⚙ Hitung R</button>'
+    +   '</div>'
+    + '</div>'
+    + '<div id="r-mode-manual" style="'+(st.R_mode!=='manual'?'display:none':'')+';max-width:280px">'
+    +   '<label style="'+OVS.lbl+'">Nilai R Total (EJ/ha/tahun)</label>'
+    +   '<input id="rl-r-manual" type="text" inputmode="decimal" step="any" value="'+(st.R||'')+'" style="'+OVS.inp+'">'
+    + '</div>';
+
+  if (step === 2) return hdr
+    + '<div style="font-size:12px;color:var(--txt2);margin-bottom:18px;line-height:1.8">Erodibilitas tanah (K) menggambarkan kepekaan tanah terhadap erosi. Rumus:<br>'
+    + '<span style="font-family:var(--mono);background:rgba(26,176,166,0.08);padding:4px 8px;border-radius:4px;display:inline-block;margin-top:4px">100K = 2,723 × M¹·³⁴ × 10⁻⁴ × (12−a) + 3,25(b−2) + 2,5(c−3)</span><br>'
+    + '<span style="font-size:11px;color:var(--mute)">M = (%debu + %pasir halus)(100−%liat); a = harkat BO; b = harkat struktur; c = harkat permeabilitas</span>'
+    + '</div></div>'
+    + '<div style="margin-bottom:18px;display:flex;gap:16px;align-items:center">'
+    +   '<label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:12px;color:var(--txt)"><input type="radio" name="k-mode" value="formula" '+((!st.K_mode||st.K_mode==='formula')?'checked':'')+' onchange="kompToggleKMode()"> Hitung via formula</label>'
+    +   '<label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:12px;color:var(--txt)"><input type="radio" name="k-mode" value="manual" '+(st.K_mode==='manual'?'checked':'')+' onchange="kompToggleKMode()"> Input nilai K langsung</label>'
+    + '</div>'
+    + '<div id="k-mode-formula" style="'+(st.K_mode==='manual'?'display:none':'')+'">'
+    +   '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-bottom:18px">'
+    +     '<div><label style="'+OVS.lbl+'">M = (%debu + %pasir halus)(100−%liat)</label><input id="k-M" type="text" inputmode="decimal" step="any" value="'+(st.K_M||'')+'" placeholder="cth: 5600" style="'+OVS.inp+'"></div>'
+    +     '<div><label style="'+OVS.lbl+'">a = Harkat Bahan Organik (0–4)</label><input id="k-a" type="text" inputmode="decimal" step="any" min="0" max="4" value="'+(st.K_a||'')+'" placeholder="0–4" style="'+OVS.inp+'"></div>'
+    +   '</div>'
+    +   '<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:14px">'
+    +     '<div>'
+    +       '<div style="font-family:var(--mono);font-size:9px;color:var(--mute);letter-spacing:0.5px;margin-bottom:8px;font-weight:700">TABEL 48 — HARKAT STRUKTUR TANAH → pilih (b)</div>'
+    +       '<table style="width:100%;border-collapse:collapse">'
+    +         '<thead><tr><th style="'+OVS.th+'">Harkat</th><th style="'+OVS.th+'">Deskripsi</th></tr></thead><tbody>'
+    +         kompStructRows(st)
+    +       '</tbody></table>'
+    +       '<div style="margin-top:8px"><label style="'+OVS.lbl+'">b (nilai terpilih)</label><input id="k-b" type="text" inputmode="decimal" step="1" min="1" max="4" value="'+(st.K_b||'')+'" style="'+OVS.inp+';max-width:120px"></div>'
+    +     '</div>'
+    +     '<div>'
+    +       '<div style="font-family:var(--mono);font-size:9px;color:var(--mute);letter-spacing:0.5px;margin-bottom:8px;font-weight:700">TABEL 49 — HARKAT PERMEABILITAS → pilih (c)</div>'
+    +       '<table style="width:100%;border-collapse:collapse">'
+    +         '<thead><tr><th style="'+OVS.th+'">Harkat</th><th style="'+OVS.th+'">Kelas Permeabilitas</th></tr></thead><tbody>'
+    +         kompPermRows(st)
+    +       '</tbody></table>'
+    +       '<div style="margin-top:8px"><label style="'+OVS.lbl+'">c (nilai terpilih)</label><input id="k-c" type="text" inputmode="decimal" step="1" min="1" max="6" value="'+(st.K_c||'')+'" style="'+OVS.inp+';max-width:120px"></div>'
+    +     '</div>'
+    +   '</div>'
+    +   '<button onclick="kompHitungK()" style="'+OVS.btn+'background:var(--accent)">⚙ Hitung K</button>'
+    +   '<div id="k-hasil" style="margin-top:10px;font-family:var(--mono);font-size:12px;color:var(--accent)">'+(st.K?'K = '+st.kf(K,4):'')+'</div>'
+    + '</div>'
+    + '<div id="k-mode-manual" style="'+(st.K_mode!=='manual'?'display:none':'')+';max-width:280px">'
+    +   '<label style="'+OVS.lbl+'">Nilai K (ton·ha·jam / ha·MJ·mm)</label>'
+    +   '<input id="rl-k-manual" type="text" inputmode="decimal" step="any" value="'+(st.K||'')+'" placeholder="cth: 0.28" style="'+OVS.inp+'">'
+    + '</div>';
+
+  if (step === 3) return hdr
+    + '<div style="font-size:12px;color:var(--txt2);margin-bottom:20px;line-height:1.8">Faktor LS menggabungkan panjang lereng (L) dan kemiringan (S). Pilih kelas kelerengan dari Tabel 50 berikut (Gregory et al., 1978 dalam Sarwono Hardjowigeno & Widiatmaka, 2001). Klik baris untuk memilih, nilai LS dapat diedit manual.</div></div>'
+    + '<div style="overflow-x:auto;margin-bottom:20px;border:1px solid var(--brd2);border-radius:8px"><table style="width:100%;border-collapse:collapse">'
+    +   '<thead><tr><th style="'+OVS.th+'">Kelas Kelerengan (%)</th><th style="'+OVS.th+'text-align:center">Kode</th><th style="'+OVS.th+'text-align:right">Nilai LS</th><th style="'+OVS.th+'text-align:center">✓</th></tr></thead><tbody>'
+    +   kompLSRows(st)
+    + '</tbody></table></div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;max-width:420px">'
+    +   '<div><label style="'+OVS.lbl+'">Kelas Terpilih</label><input id="rl-ls-kelas" type="text" value="'+(st.LS_kelas||'')+'" readonly style="'+OVS.inp+'background:var(--bg)"></div>'
+    +   '<div><label style="'+OVS.lbl+'">Nilai LS (dapat diedit)</label><input id="rl-ls-val" type="text" inputmode="decimal" step="any" value="'+(st.LS||'')+'" placeholder="0.15" style="'+OVS.inp+'"></div>'
+    + '</div>';
+
+  if (step === 4) return hdr
+    + '<div style="font-size:12px;color:var(--txt2);margin-bottom:20px;line-height:1.8">Faktor C mencerminkan pengaruh tutupan lahan terhadap erosi. Pilih kondisi <b>SEBELUM</b> dan <b>SESUDAH</b> rehabilitasi dari Tabel 51 (Arsyad, 2010).</div></div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">'
+    +   kompCPTable('C1','c1','Sebelum Rehabilitasi','rl-c1-lahan','rl-c1-val',st.C1_lahan,st.C1,'lahan')
+    +   kompCPTable('C2','c2','Sesudah Rehabilitasi','rl-c2-lahan','rl-c2-val',st.C2_lahan,st.C2,'lahan')
+    + '</div>';
+
+  if (step === 5) return hdr
+    + '<div style="font-size:12px;color:var(--txt2);margin-bottom:20px;line-height:1.8">Faktor P mencerminkan efektivitas tindakan konservasi lahan. Pilih kondisi <b>SEBELUM</b> dan <b>SESUDAH</b> rehabilitasi dari Tabel 52.</div></div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">'
+    +   kompCPTable('P1','p1','Sebelum Rehabilitasi','rl-p1-peng','rl-p1-val',st.P1_peng,st.P1,'pengelolaan')
+    +   kompCPTable('P2','p2','Sesudah Rehabilitasi','rl-p2-peng','rl-p2-val',st.P2_peng,st.P2,'pengelolaan')
+    + '</div>';
+
+  if (step === 6) {
+    var R=st.R||0, K=st.K||0, LS=st.LS||0, C1=st.C1||0, C2=st.C2||0, P1=st.P1||0, P2=st.P2||0;
+    var Ea1 = R*K*LS*C1*P1, Ea2 = R*K*LS*C2*P2;
+    st.Ea1 = Ea1; st.Ea2 = Ea2;
+    function orow(l,v,u){ return '<tr><td style="'+OVS.td+'color:var(--mute)">'+l+'</td><td style="'+OVS.td+'font-weight:700;text-align:right">'+v+'</td><td style="'+OVS.td+'font-size:10px;color:var(--mute)">'+u+'</td></tr>'; }
+    return hdr
+      + '<div style="font-size:12px;color:var(--txt2);margin-bottom:20px;line-height:1.8">Laju erosi dihitung dengan persamaan USLE:<br>'
+      + '<span style="font-family:var(--mono);background:rgba(26,176,166,0.08);padding:4px 8px;border-radius:4px;display:inline-block;margin-top:4px">Ea = R × K × LS × C × P</span>'
+      + '</div></div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:20px">'
+      +   '<div style="'+OVS.card+';border-left:3px solid var(--red)">'
+      +     '<div style="font-family:var(--mono);font-size:9px;font-weight:700;color:var(--red);margin-bottom:12px;letter-spacing:0.5px">SEBELUM REHABILITASI</div>'
+      +     '<table style="width:100%;border-collapse:collapse">'
+      +       orow('R (erosivitas)',kf(R,2),'EJ/ha/th')
+      +       orow('K (erodibilitas)',kf(K,4),'ton·ha·jam/ha·MJ·mm')
+      +       orow('LS (topografi)',kf(LS,2),'–')
+      +       orow('C₁ (tutupan lahan)',kf(C1,3),'–')
+      +       orow('P₁ (pengelolaan)',kf(P1,3),'–')
+      +     '</table>'
+      +     '<div style="margin-top:12px;padding:10px;background:rgba(231,76,60,0.08);border-radius:6px;font-family:var(--mono);font-size:13px;font-weight:700;color:var(--red);text-align:center">'
+      +       'Ea₁ = '+kf(Ea1,2)+' ton/ha/th'
+      +     '</div>'
+      +   '</div>'
+      +   '<div style="'+OVS.card+';border-left:3px solid var(--green)">'
+      +     '<div style="font-family:var(--mono);font-size:9px;font-weight:700;color:var(--green);margin-bottom:12px;letter-spacing:0.5px">SESUDAH REHABILITASI</div>'
+      +     '<table style="width:100%;border-collapse:collapse">'
+      +       orow('R (erosivitas)',kf(R,2),'EJ/ha/th')
+      +       orow('K (erodibilitas)',kf(K,4),'ton·ha·jam/ha·MJ·mm')
+      +       orow('LS (topografi)',kf(LS,2),'–')
+      +       orow('C₂ (tutupan lahan)',kf(C2,3),'–')
+      +       orow('P₂ (pengelolaan)',kf(P2,3),'–')
+      +     '</table>'
+      +     '<div style="margin-top:12px;padding:10px;background:rgba(39,174,96,0.08);border-radius:6px;font-family:var(--mono);font-size:13px;font-weight:700;color:var(--green);text-align:center">'
+      +       'Ea₂ = '+kf(Ea2,2)+' ton/ha/th'
+      +     '</div>'
+      +   '</div>'
+      + '</div>'
+      + '<div style="padding:12px 18px;background:rgba(26,176,166,0.07);border-radius:8px;font-size:12px;color:var(--txt2)">'
+      +   '📉 Penurunan erosi = <b style="color:var(--accent)">' + kf(Ea1-Ea2,2) + ' ton/ha/th</b> &nbsp;('
+      +   (Ea1>0 ? (kf(((Ea1-Ea2)/Ea1)*100,1)+'%') : '–') + ' reduksi)'
+      + '</div>'
+      + ((!R||!K||!LS) ? '<div style="margin-top:14px;padding:10px 14px;background:rgba(243,156,18,0.08);border:1px solid var(--amber);border-radius:7px;font-size:11.5px;color:var(--amber)">⚠ Beberapa faktor belum diisi (R, K, atau LS = 0). Kembali ke langkah sebelumnya untuk melengkapi data.</div>' : '');
+  }
+
+  if (step === 7) {
+    // Auto-match: cari baris SDR paling dekat dengan luas DAS input
+    function sdrRow(r){
+      var las = st.A_das || 0;
+      var sel = st.SDR_kelas === r.luas;
+      // highlight baris referensi terdekat (interpolasi: cari yang ha-nya paling dekat)
+      var closest = null, minDiff = Infinity;
+      USLE_TABLES.SDR.forEach(function(x){ var d=Math.abs(x.ha-las); if(d<minDiff){minDiff=d;closest=x;} });
+      var match = las > 0 && closest && closest.luas === r.luas;
+      return '<tr style="cursor:pointer;background:'+(sel?'rgba(26,176,166,0.12)':(match?'rgba(243,156,18,0.07)':'transparent'))+'" onclick="kompPickSDR(\''+r.luas+'\','+r.sdr+')">'
+        +'<td style="'+OVS.td+'">'+r.luas+'</td>'
+        +'<td style="'+OVS.td+'text-align:right;font-weight:700;color:var(--accent)">'+r.sdr+'%</td>'
+        +'<td style="'+OVS.td+'text-align:center">'+(match&&!sel?'◀':'')+''+(sel?'✓':'')+'</td></tr>';
+    }
+    return hdr
+      + '<div style="font-size:12px;color:var(--txt2);margin-bottom:20px;line-height:1.8">SDR (Nisbah Pelepasan Sedimen) menunjukkan proporsi sedimen erosi yang sampai ke badan air. Gunakan tabel acuan Permenhut P.61/2014 (Tabel 54). Masukkan luas DAS untuk mendapatkan referensi baris terdekat, lalu klik baris yang sesuai atau interpolasi manual.</div></div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">'
+      +   '<div>'
+      +     '<label style="'+OVS.lbl+'">Luas DAS / Catchment Area (ha)</label>'
+      +     '<input id="rl-a-das" type="text" inputmode="decimal" step="any" value="'+(st.A_das||'')+'" placeholder="cth: 500" style="'+OVS.inp+';max-width:220px;margin-bottom:18px">'
+      +     '<div style="font-family:var(--mono);font-size:9px;color:var(--mute);letter-spacing:0.5px;font-weight:700;margin-bottom:8px">TABEL 54 — SDR vs LUAS DAS (Permenhut P.61/2014) · klik baris untuk pilih</div>'
+      +     '<div style="overflow-y:auto;max-height:320px;border:1px solid var(--brd2);border-radius:8px">'
+      +     '<table style="width:100%;border-collapse:collapse">'
+      +       '<thead style="position:sticky;top:0;background:var(--bg)"><tr><th style="'+OVS.th+'">Luas DAS</th><th style="'+OVS.th+'text-align:right">SDR (%)</th><th style="'+OVS.th+'text-align:center">Ref</th></tr></thead>'
+      +       '<tbody>'+USLE_TABLES.SDR.map(sdrRow).join('')+'</tbody>'
+      +     '</table></div>'
+      +     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px">'
+      +       '<div><label style="'+OVS.lbl+'">Referensi Terpilih</label><input id="rl-sdr-kelas" type="text" value="'+(st.SDR_kelas||'')+'" readonly style="'+OVS.inp+'background:var(--bg)"></div>'
+      +       '<div><label style="'+OVS.lbl+'">Nilai SDR (%) — dapat diedit</label><input id="rl-sdr-val" type="text" inputmode="decimal" step="any" value="'+(st.SDR||'')+'" style="'+OVS.inp+'"></div>'
+      +     '</div>'
+      +   '</div>'
+      +   '<div style="'+OVS.card+'">'
+      +     '<div style="font-family:var(--mono);font-size:9px;font-weight:700;color:var(--mute);margin-bottom:14px;letter-spacing:0.5px">MUATAN SEDIMEN</div>'
+      +     '<div style="font-family:var(--mono);font-size:11px;color:var(--txt2);margin-bottom:14px;line-height:1.9">MS = Ea × SDR<br><span style="font-size:9.5px;color:var(--mute)">(MS sebelum & sesudah rehabilitasi)</span></div>'
+      +     kompMS7Table(st)
+      +   '</div>'
+      + '</div>';
+  }
+
+  if (step === 8) {
+    var bpTSS = st.bp_tss || kompGetBPTSS() || 0;
+    var A_lahan = st.A_lahan || 0, pct = st.pct_endap || 60;
+    var MS2 = st.MS2 || 0;
+    // Laju sedimentasi pencegahan (A): MS2 × A_lahan × (pct/100) / 365
+    var sedA = (A_lahan > 0 && MS2 > 0) ? (MS2 * A_lahan * (pct/100) / 365 * 1000) : 0; // ton/th→kg/hr (×1000/365)
+    var sedA_tonhr = (A_lahan > 0 && MS2 > 0) ? (MS2 * A_lahan * (pct/100) / 365) : 0;
+    st.sedA = sedA;
+    var ok = sedA >= bpTSS && bpTSS > 0 && sedA > 0;
+    function vrow(l,v,u,clr,bold){ return '<tr><td style="'+OVS.td+'color:var(--mute)">'+l+'</td><td style="'+OVS.td+'text-align:right;font-weight:'+(bold?'700':'400')+';color:'+(clr||'var(--txt)')+'">'+v+'</td><td style="'+OVS.td+'font-size:10px;color:var(--mute)">'+u+'</td></tr>'; }
+    return hdr
+      + '<div style="font-size:12px;color:var(--txt2);margin-bottom:20px;line-height:1.8">Verifikasi akhir: <b>Besaran pencegahan sedimentasi (A) ≥ Total Beban Pencemar TSS Industri (B)</b>.</div></div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px">'
+      +   '<div>'
+      +     '<div style="font-family:var(--mono);font-size:9px;font-weight:700;color:var(--mute);letter-spacing:0.5px;margin-bottom:12px">INPUT PARAMETER</div>'
+      +     '<div style="display:flex;flex-direction:column;gap:12px">'
+      +       '<div><label style="'+OVS.lbl+'">Luas Lahan Konservasi (ha)</label><input id="rl-a-lahan" type="text" inputmode="decimal" step="any" value="'+(st.A_lahan||'')+'" placeholder="cth: 250" style="'+OVS.inp+'" onchange="kompUpdateVerif()"></div>'
+      +       '<div><label style="'+OVS.lbl+'">Persen Sedimen Mengendap (%)</label><input id="rl-pct-endap" type="text" inputmode="decimal" step="any" value="'+(st.pct_endap||60)+'" style="'+OVS.inp+'" onchange="kompUpdateVerif()"></div>'
+      +       '<div><label style="'+OVS.lbl+'">BP TSS Industri — B (kg/hari)</label><input id="rl-bp-tss" type="text" inputmode="decimal" step="any" value="'+bpTSS+'" placeholder="dari Step 5" style="'+OVS.inp+'" onchange="kompUpdateVerif()"><div style="font-size:10px;color:var(--mute);margin-top:3px">Isi manual atau otomatis dari data BPM</div></div>'
+      +     '</div>'
+      +   '</div>'
+      +   '<div id="verif-hasil" style="'+OVS.card+';border-left:3px solid '+(ok?'var(--green)':'var(--red)')+'">'
+      +     kompVerifHasil(A_lahan, pct, MS2, bpTSS)
+      +   '</div>'
+      + '</div>';
+  }
+
+  return '<div>Step tidak dikenali</div>';
+}
+
+// Render tabel C atau P (shared template)
+function kompCPTable(varName, prefix, judulKolom, idLahan, idVal, selLahan, selVal, field) {
+  var tbl = field === 'lahan' ? USLE_TABLES.C : USLE_TABLES.P;
+  var colLabel = field === 'lahan' ? 'Penggunaan/Tutupan Lahan' : 'Jenis Pengelolaan';
+  var valLabel = field === 'lahan' ? 'Nilai C' : 'Nilai P';
+  return '<div>'
+    + '<div style="font-family:var(--mono);font-size:9px;font-weight:700;color:var(--mute);letter-spacing:0.5px;margin-bottom:10px">'+varName+' — '+judulKolom+' · klik baris untuk memilih</div>'
+    + '<div style="overflow-y:auto;max-height:340px;border:1px solid var(--brd2);border-radius:8px">'
+    +   '<table style="width:100%;border-collapse:collapse">'
+    +     '<thead style="position:sticky;top:0;background:var(--bg)"><tr><th style="'+OVS.th+'">'+colLabel+'</th><th style="'+OVS.th+'text-align:right">'+valLabel+'</th></tr></thead>'
+    +     '<tbody>'
+    +     kompCPRows(tbl, prefix, field, idLahan, idVal, selLahan)
+    +     '</tbody>'
+    +   '</table>'
+    + '</div>'
+    + '<div style="display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:10px;align-items:end">'
+    +   '<div><label style="'+OVS.lbl+'">Terpilih</label><input id="'+idLahan+'" type="text" value="'+(selLahan||'')+'" readonly style="'+OVS.inp+'background:var(--bg);font-size:10px"></div>'
+    +   '<div><label style="'+OVS.lbl+'">Nilai '+varName+'</label><input id="'+idVal+'" type="text" inputmode="decimal" step="any" value="'+(selVal||'')+'" placeholder="0.0" style="'+OVS.inp+';width:90px"></div>'
+    + '</div>'
+  + '</div>';
+}
+
+// Helper row renderers (extracted to avoid .map()-callback-in-concat bug)
+function kompStructRows(st) {
+  return USLE_TABLES.STRUCT.map(function(r) {
+    var sel = st.K_b == r.harkat;
+    return '<tr style="cursor:pointer;background:'+(sel?'rgba(26,176,166,0.12)':'transparent')+'" onclick="kompPickK(\'b\','+r.harkat+')">'
+      +'<td style="'+OVS.td+'font-weight:700;text-align:center;color:'+(sel?'var(--accent)':'var(--txt)')+'">'+r.harkat+'</td>'
+      +'<td style="'+OVS.td+'color:'+(sel?'var(--accent)':'var(--txt)')+'">'+r.desc+'</td></tr>';
+  }).join('');
+}
+function kompPermRows(st) {
+  return USLE_TABLES.PERM.map(function(r) {
+    var sel = st.K_c == r.harkat;
+    return '<tr style="cursor:pointer;background:'+(sel?'rgba(26,176,166,0.12)':'transparent')+'" onclick="kompPickK(\'c\','+r.harkat+')">'
+      +'<td style="'+OVS.td+'font-weight:700;text-align:center;color:'+(sel?'var(--accent)':'var(--txt)')+'">'+r.harkat+'</td>'
+      +'<td style="'+OVS.td+'color:'+(sel?'var(--accent)':'var(--txt)')+'">'+r.desc+'</td></tr>';
+  }).join('');
+}
+function kompLSRows(st) {
+  return USLE_TABLES.LS.map(function(r) {
+    var sel = st.LS_kelas === r.kelas;
+    return '<tr style="cursor:pointer;background:'+(sel?'rgba(26,176,166,0.12)':'transparent')+'" onclick="kompPickLS(\''+r.kelas+'\','+r.ls+')">'
+      +'<td style="'+OVS.td+'color:'+(sel?'var(--accent)':'var(--txt)')+'">'+r.kelas+'</td>'
+      +'<td style="'+OVS.td+'text-align:center;font-weight:700;color:'+(sel?'var(--accent)':'var(--mute)')+'">'+r.kode+'</td>'
+      +'<td style="'+OVS.td+'text-align:right;font-weight:700;color:var(--accent)">'+r.ls+'</td>'
+      +'<td style="'+OVS.td+'text-align:center;color:var(--green)">'+(sel?'&#10003;':'')+'</td>'
+      +'</tr>';
+  }).join('');
+}
+function kompCPRows(tbl, prefix, field, idLahan, idVal, selLahan) {
+  return tbl.map(function(r) {
+    var key = field === 'lahan' ? r.lahan : r.pengelolaan;
+    var val = field === 'lahan' ? r.c : r.p;
+    var sel = selLahan === key;
+    return '<tr style="cursor:pointer;background:'+(sel?'rgba(26,176,166,0.12)':'transparent')+'" onclick="kompPickCP(\''+prefix+'\',\''+field+'\',\''+idLahan+'\',\''+idVal+'\',\''+key.replace(/'/g,'&#39;')+'\','+val+')">'
+      +'<td style="'+OVS.td+'color:'+(sel?'var(--accent)':'var(--txt)')+'">'+key+'</td>'
+      +'<td style="'+OVS.td+'text-align:right;font-weight:700;color:var(--accent)">'+val+'</td>'
+      +'</tr>';
+  }).join('');
+}
+
+// Helper step 7 — tabel muatan sedimen (extracted to avoid IIFE-in-concat bug)
+function kompMS7Table(st) {
+  var Ea1 = st.Ea1 || 0, Ea2 = st.Ea2 || 0, sdr = (st.SDR || 0) / 100;
+  var MS1 = Ea1 * sdr, MS2 = Ea2 * sdr;
+  st.MS1 = MS1; st.MS2 = MS2;
+  return '<table style="width:100%;border-collapse:collapse">'
+    + '<tr><td style="'+OVS.td+'color:var(--mute)">Ea₁ (sebelum)</td><td style="'+OVS.td+'text-align:right">'+kf(Ea1,2)+'</td><td style="'+OVS.td+'font-size:10px;color:var(--mute)">ton/ha/th</td></tr>'
+    + '<tr><td style="'+OVS.td+'color:var(--mute)">Ea₂ (sesudah)</td><td style="'+OVS.td+'text-align:right">'+kf(Ea2,2)+'</td><td style="'+OVS.td+'font-size:10px;color:var(--mute)">ton/ha/th</td></tr>'
+    + '<tr><td style="'+OVS.td+'color:var(--mute)">SDR</td><td style="'+OVS.td+'text-align:right">'+kf(sdr,3)+'</td><td style="'+OVS.td+'font-size:10px;color:var(--mute)">(desimal)</td></tr>'
+    + '<tr><td style="'+OVS.td+'font-weight:700;color:var(--red)">MS₁ (sebelum)</td><td style="'+OVS.td+'text-align:right;font-weight:700;color:var(--red)">'+kf(MS1,2)+'</td><td style="'+OVS.td+'font-size:10px;color:var(--mute)">ton/ha/th</td></tr>'
+    + '<tr><td style="'+OVS.td+'font-weight:700;color:var(--green)">MS₂ (sesudah)</td><td style="'+OVS.td+'text-align:right;font-weight:700;color:var(--green)">'+kf(MS2,2)+'</td><td style="'+OVS.td+'font-size:10px;color:var(--mute)">ton/ha/th</td></tr>'
+    + '</table>';
+}
+
+// Hitung hasil verifikasi
+function kompVerifHasil(A_lahan, pct, MS2, bpTSS) {
+  if (!A_lahan || !MS2 || !bpTSS) {
+    return '<div style="padding:20px;text-align:center;color:var(--mute);font-size:12px">Lengkapi input di kiri untuk melihat hasil verifikasi.</div>';
+  }
+  var sedA_ton_th = MS2 * A_lahan * (pct/100);         // ton/tahun
+  var sedA_kg_hr  = sedA_ton_th / 365 * 1000;           // kg/hari
+  var ok = sedA_kg_hr >= bpTSS;
+  var defisit = sedA_kg_hr - bpTSS;
+
+  function vrow(l,v,u,clr,bold){ return '<tr><td style="'+OVS.td+'font-size:11px;color:var(--mute)">'+l+'</td><td style="'+OVS.td+'text-align:right;font-weight:'+(bold?'700':'400')+';color:'+(clr||'var(--txt)')+'">'+v+'</td><td style="'+OVS.td+'font-size:10px;color:var(--mute)">'+u+'</td></tr>'; }
+  return '<div style="font-family:var(--mono);font-size:9px;font-weight:700;color:var(--mute);margin-bottom:12px;letter-spacing:0.5px">HASIL VERIFIKASI</div>'
+    + '<table style="width:100%;border-collapse:collapse;margin-bottom:14px">'
+    +   vrow('MS₂ (sesudah rehab)', kf(MS2,2),'ton/ha/th')
+    +   vrow('Luas lahan (A)', A_lahan,'ha')
+    +   vrow('Persen mengendap', pct,'%')
+    +   vrow('Laju Sedimentasi (A)', kf(sedA_ton_th,2),'ton/th')
+    +   vrow('A — Pencegahan Sedimentasi', kf(sedA_kg_hr,4),'kg/hari',ok?'var(--green)':'var(--red)',true)
+    +   vrow('B — Alokasi Beban TSS', kf(bpTSS,4),'kg/hari','var(--amber)',true)
+    +   vrow('Selisih A − B', kf(defisit,4),'kg/hari',ok?'var(--green)':'var(--red)',true)
+    + '</table>'
+    + '<div style="padding:14px;border-radius:8px;text-align:center;font-weight:700;font-size:14px;background:'+(ok?'rgba(39,174,96,0.1)':'rgba(231,76,60,0.1)')+';color:'+(ok?'var(--green)':'var(--red)')+';">'
+    +   (ok ? '✅ DITERIMA — A ≥ B<br><span style="font-size:11px;font-weight:400">Luas lahan konservasi mencukupi.</span>'
+           :  '❌ DITOLAK — A &lt; B<br><span style="font-size:11px;font-weight:400">Tambah luas lahan atau perbaiki tindakan konservasi.</span>')
+    + '</div>';
+}
+
+// ─── HELPERS INTERAKTIF ───────────────────────────────────────────────────────
+function kompToggleRMode() {
+  var m = document.querySelector('input[name="r-mode"]:checked');
+  if (!m) return;
+  document.getElementById('r-mode-tabel').style.display  = m.value==='tabel'?'':'none';
+  document.getElementById('r-mode-manual').style.display = m.value==='manual'?'':'none';
+}
+function kompToggleKMode() {
+  var m = document.querySelector('input[name="k-mode"]:checked');
+  if (!m) return;
+  document.getElementById('k-mode-formula').style.display = m.value==='formula'?'':'none';
+  document.getElementById('k-mode-manual').style.display  = m.value==='manual'?'':'none';
+}
+
+// Bulan singkat
+var BULAN_NAMA = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+function kompRMonthRows() {
+  var st = kompKajianState;
+  var rows = '';
+  for (var m=1; m<=12; m++) {
+    var prev = st.R_months && st.R_months[m-1];
+    rows += '<tr>'
+      + '<td style="'+OVS.td+'color:var(--mute)">'+BULAN_NAMA[m-1]+'</td>'
+      + '<td style="'+OVS.td+'"><input id="r-rain-'+m+'" type="text" inputmode="decimal" step="any" value="'+(prev?prev.rain:'')+'" placeholder="0" style="'+OVS.inp+';width:80px" onchange="kompHitungR()"></td>'
+      + '<td style="'+OVS.td+'"><input id="r-days-'+m+'" type="text" inputmode="decimal" step="any" value="'+(prev?prev.days:'')+'" placeholder="0" style="'+OVS.inp+';width:60px" onchange="kompHitungR()"></td>'
+      + '<td style="'+OVS.td+'"><input id="r-maxp-'+m+'" type="text" inputmode="decimal" step="any" value="'+(prev?prev.maxp:'')+'" placeholder="0" style="'+OVS.inp+';width:80px" onchange="kompHitungR()"></td>'
+      + '<td style="'+OVS.td+'text-align:right;font-family:var(--mono);font-size:11px" id="r-ri-'+m+'">'+(prev?kf(prev.r,2):'-')+'</td>'
+      + '</tr>';
+  }
+  return rows;
+}
+function kompHitungR() {
+  var total = 0;
+  for (var m=1; m<=12; m++) {
+    var rain = pNum(document.getElementById('r-rain-'+m).value);
+    var days = pNum(document.getElementById('r-days-'+m).value);
+    var maxp = pNum(document.getElementById('r-maxp-'+m).value);
+    var ri = (rain>0&&days>0&&maxp>0) ? 6.119*Math.pow(rain,1.21)*Math.pow(days,-0.47)*Math.pow(maxp,0.53) : 0;
+    var el = document.getElementById('r-ri-'+m);
+    if (el) el.textContent = ri>0 ? kf(ri,2) : '-';
+    total += ri;
+  }
+  var el = document.getElementById('r-total-display');
+  if (el) el.textContent = kf(total,2);
+  kompKajianState.R = total;
+}
+
+function kompPickK(field, val) {
+  kompKajianState['K_'+field] = val;
+  var el = document.getElementById('k-'+field);
+  if (el) el.value = val;
+  kompHitungK();
+  // Re-highlight rows
+  var tbl = field==='b' ? 'STRUCT' : 'PERM';
+  // Just rerender step to get fresh highlights
+  var bodyEl = document.getElementById('kajian-body');
+  if (bodyEl) bodyEl.innerHTML = kompStepContent(2);
+}
+function kompHitungK() {
+  var M = pNum(document.getElementById('k-M').value);
+  var a = pNum(document.getElementById('k-a').value);
+  var b = pNum(document.getElementById('k-b').value);
+  var c = pNum(document.getElementById('k-c').value);
+  if (M<=0||b<=0||c<=0) { var el=document.getElementById('k-hasil'); if(el) el.textContent=''; return; }
+  var val100K = 2.723 * Math.pow(M,1.34) * 1e-4 * (12-a) + 3.25*(b-2) + 2.5*(c-3);
+  var K = val100K/100;
+  kompKajianState.K = K;
+  kompKajianState.K_M = M; kompKajianState.K_a = a; kompKajianState.K_b = b; kompKajianState.K_c = c;
+  var el = document.getElementById('k-hasil');
+  if (el) el.innerHTML = '<span style="color:var(--accent)">K = '+kf(K,4)+'</span> &nbsp;<span style="color:var(--mute);font-size:10px">(100K = '+kf(val100K,2)+')</span>';
+}
+
+function kompPickLS(kelas, val) {
+  kompKajianState.LS_kelas = kelas; kompKajianState.LS = val;
+  var k=document.getElementById('rl-ls-kelas'); if(k) k.value=kelas;
+  var v=document.getElementById('rl-ls-val');   if(v) v.value=val;
+  var bodyEl = document.getElementById('kajian-body');
+  if (bodyEl) bodyEl.innerHTML = kompStepContent(3);
+}
+
+function kompPickCP(prefix, field, idLahan, idVal, key, val) {
+  var k=document.getElementById(idLahan); if(k) k.value=key;
+  var v=document.getElementById(idVal);   if(v) v.value=val;
+  if (field==='lahan') {
+    if (prefix==='c1') { kompKajianState.C1_lahan=key; kompKajianState.C1=val; }
+    else               { kompKajianState.C2_lahan=key; kompKajianState.C2=val; }
+  } else {
+    if (prefix==='p1') { kompKajianState.P1_peng=key; kompKajianState.P1=val; }
+    else               { kompKajianState.P2_peng=key; kompKajianState.P2=val; }
+  }
+  var bodyEl = document.getElementById('kajian-body');
+  if (bodyEl) bodyEl.innerHTML = kompStepContent(kompKajianState.step);
+}
+
+function kompPickSDR(kelas, val) {
+  kompKajianState.SDR_kelas = kelas; kompKajianState.SDR = val;
+  var k=document.getElementById('rl-sdr-kelas'); if(k) k.value=kelas;
+  var v=document.getElementById('rl-sdr-val');   if(v) v.value=val;
+  var bodyEl = document.getElementById('kajian-body');
+  if (bodyEl) bodyEl.innerHTML = kompStepContent(7);
+}
+
+function kompUpdateVerif() {
+  var A_lahan = pNum(document.getElementById('rl-a-lahan').value);
+  var pct     = (pNum(document.getElementById('rl-pct-endap').value)||60);
+  var bpTSS   = pNum(document.getElementById('rl-bp-tss').value);
+  kompKajianState.A_lahan = A_lahan;
+  kompKajianState.pct_endap = pct;
+  kompKajianState.bp_tss = bpTSS;
+  var el = document.getElementById('verif-hasil');
+  if (el) el.innerHTML = kompVerifHasil(A_lahan, pct, kompKajianState.MS2||0, bpTSS);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// LEMBAR KERJA KAJIAN LAMPIRAN V — satu halaman, berbasis tabel, hitung otomatis
+// ═══════════════════════════════════════════════════════════════════════════════
+var KOMP_WS_CFG = {
+  ls:  { t:'LS',  v:'ls',  l:'kelas' },
+  c1:  { t:'C',   v:'c',   l:'lahan' },
+  c2:  { t:'C',   v:'c',   l:'lahan' },
+  p1:  { t:'P',   v:'p',   l:'pengelolaan' },
+  p2:  { t:'P',   v:'p',   l:'pengelolaan' },
+  sdr: { t:'SDR', v:'sdr', l:'luas' }
+};
+
+function kompWsInjectCss() {
+  if (document.getElementById('ws-style')) return;
+  var c = document.createElement('style'); c.id = 'ws-style';
+  c.textContent = ''
+    + '.ws-card{background:var(--card);border:1.5px solid var(--brd2);border-radius:12px;margin-bottom:20px;overflow:hidden}'
+    + '.ws-h{padding:12px 18px;background:rgba(26,176,166,.09);border-bottom:1.5px solid var(--brd2);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}'
+    + '.ws-h b{font-family:var(--mono);font-size:11px;color:var(--accent);letter-spacing:.5px}'
+    + '.ws-h span{font-family:var(--mono);font-size:10px;color:var(--mute)}'
+    + '.ws-t{width:100%;border-collapse:collapse;font-size:12px}'
+    + '.ws-t th{padding:9px 14px;font-family:var(--mono);font-size:9.5px;letter-spacing:.5px;color:var(--mute);text-align:left;border-bottom:2px solid var(--brd2);background:rgba(128,128,128,.06)}'
+    + '.ws-t td{padding:9px 14px;border-bottom:1px solid var(--brd2);vertical-align:middle;color:var(--txt)}'
+    + '.ws-t tr:last-child td{border-bottom:none}'
+    + '.ws-t td.n{text-align:right;font-family:var(--mono)}'
+    + '.ws-t .fk{font-family:var(--head);font-weight:800;font-size:14px;color:var(--txt)}'
+    + '.ws-t .fs{font-size:10.5px;color:var(--mute);margin-top:2px;line-height:1.5}'
+    + '.ws-t tr.res td{background:rgba(26,176,166,.07);font-weight:700;font-family:var(--mono)}'
+    + '.ws-t .sb{border-left:3px solid var(--red)} .ws-t .sa{border-left:3px solid var(--green)}'
+    + '.ws-in{font-family:var(--mono);font-size:12.5px;padding:7px 9px;border:1.5px solid var(--brd);border-radius:6px;background:var(--bg);color:var(--txt);box-sizing:border-box;width:100%;text-align:right}'
+    + '.ws-in:focus,.ws-sel:focus{outline:none;border-color:var(--accent);background:var(--card)}'
+    + '.ws-sel{font-family:var(--mono);font-size:11px;padding:7px 8px;border:1.5px solid var(--brd);border-radius:6px;background:var(--card);color:var(--txt);width:100%;box-sizing:border-box;cursor:pointer}'
+    + '.ws-cell{display:flex;gap:8px;align-items:center}.ws-cell .ws-sel{flex:1;min-width:0}.ws-cell .ws-in{width:120px;flex:none}'
+    + '.ws-btn{font-family:var(--mono);font-size:10.5px;font-weight:700;padding:6px 12px;border:1.5px solid rgba(26,176,166,.5);border-radius:6px;background:transparent;color:var(--accent);cursor:pointer;white-space:nowrap}'
+    + '.ws-btn:hover{background:rgba(26,176,166,.1)}'
+    + '.ws-sub{padding:14px 18px;background:rgba(128,128,128,.04);border-top:1px dashed var(--brd2)}'
+    + '.ws-mt{border-collapse:collapse;font-size:11px;min-width:880px;width:100%}'
+    + '.ws-mt th,.ws-mt td{padding:5px 6px;border:1px solid var(--brd2);text-align:center;font-family:var(--mono)}'
+    + '.ws-mt th{background:rgba(128,128,128,.07);color:var(--mute);font-size:9.5px}'
+    + '.ws-mt td.rl{text-align:left;font-weight:700;color:var(--mute);background:rgba(128,128,128,.04);white-space:nowrap}'
+    + '.ws-mt input{width:100%;min-width:52px;font-family:var(--mono);font-size:11px;padding:5px;border:1px solid var(--brd);border-radius:4px;background:var(--bg);color:var(--txt);text-align:right;box-sizing:border-box}'
+    + '.ws-sum{position:sticky;top:-8px;z-index:5;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:20px;padding:10px;background:var(--bg);border-radius:12px;box-shadow:0 6px 12px -8px rgba(0,0,0,.25)}'
+    + '.ws-chip{background:var(--card);border:1.5px solid var(--brd2);border-radius:9px;padding:9px 12px}'
+    + '.ws-chip i{display:block;font-style:normal;font-family:var(--mono);font-size:9px;color:var(--mute);letter-spacing:.5px;margin-bottom:3px}'
+    + '.ws-chip b{font-family:var(--mono);font-size:15px;color:var(--txt)}'
+    + '.ws-chip small{font-size:10px;color:var(--mute);margin-left:3px}';
+  document.head.appendChild(c);
+}
+
+function kompWsSel(id) {
+  var cfg = KOMP_WS_CFG[id], st = kompKajianState;
+  var tbl = USLE_TABLES[cfg.t];
+  var cur = (st.sel && st.sel[id] != null) ? String(st.sel[id]) : '';
+  var o = '<option value="">— pilih dari tabel —</option>';
+  tbl.forEach(function(r, i) {
+    var lab = r[cfg.l];
+    var extra = cfg.t === 'LS' ? ('  [' + r.kode + ']  LS = ' + kfv(r.ls)) : cfg.t === 'SDR' ? ('  →  ' + kfv(r.sdr) + '%') : ('  →  ' + kfv(r[cfg.v]));
+    o += '<option value="' + i + '"' + (cur === String(i) ? ' selected' : '') + '>' + lab + extra + '</option>';
+  });
+  return '<select id="ws-sel-' + id + '" class="ws-sel" onchange="kompWsPick(\'' + id + '\',this.value)">' + o + '</select>';
+}
+
+function kompWsPick(id, idx) {
+  var cfg = KOMP_WS_CFG[id], st = kompKajianState;
+  st.sel = st.sel || {};
+  if (idx === '') { st.sel[id] = null; return; }
+  st.sel[id] = +idx;
+  var r = USLE_TABLES[cfg.t][+idx];
+  var el = document.getElementById('ws-' + id);
+  if (el) el.value = kfv(r[cfg.v]);
+  kompWsCalc();
+}
+
+function kompWsVal(v) { return kfv(v); }
+
+function kompWsRender() {
+  kompWsInjectCss();
+  var st = kompKajianState;
+  st.sel = st.sel || {};
+  if (st.pct_endap == null) st.pct_endap = 60;
+  document.getElementById('kajian-title').textContent = 'Kajian Kompensasi · Rehabilitasi Lahan (Lampiran V)';
+  var _sb2 = document.getElementById('kajian-sub'); if (_sb2) _sb2.textContent = 'Kepdirjen PPKL No. 114 Tahun 2024 · Lampiran V — Metode USLE (Universal Soil Loss Equation)';
+  document.getElementById('kajian-steps-indicator').innerHTML =
+    '<span style="font-family:var(--mono);font-size:10px;color:var(--mute)">Lembar kerja USLE · hasil terhitung otomatis</span>';
+
+  var bodyEl = document.getElementById('kajian-body');
+  bodyEl.style.maxWidth = '1180px';
+
+  function inp(id, val, ph, ev) {
+    return '<input id="ws-' + id + '" class="ws-in" type="text" inputmode="decimal" step="any" value="' + kompWsVal(val) + '" placeholder="' + (ph || '0') + '" oninput="' + (ev || 'kompWsCalc()') + '">';
+  }
+  function cell(id, val, ph) { return '<div class="ws-cell">' + kompWsSel(id) + inp(id, val, ph) + '</div>'; }
+  function res(id, color) { return '<span id="' + id + '" style="color:' + (color || 'var(--txt)') + '">–</span>'; }
+
+  // ringkasan sticky
+  var html = '<div class="ws-sum">'
+    + '<div class="ws-chip" style="border-left:3px solid var(--red)"><i>Ea SEBELUM</i><b id="ws-s-ea1">–</b><small>ton/ha/th</small></div>'
+    + '<div class="ws-chip" style="border-left:3px solid var(--green)"><i>Ea SESUDAH</i><b id="ws-s-ea2">–</b><small>ton/ha/th</small></div>'
+    + '<div class="ws-chip"><i>A · SEDIMEN MENGENDAP</i><b id="ws-s-a">–</b><small>kg/hari</small></div>'
+    + '<div class="ws-chip"><i>B · ALOKASI BEBAN TSS</i><b id="ws-s-b">–</b><small>kg/hari</small></div>'
+    + '<div class="ws-chip" id="ws-s-stat-wrap"><i>HASIL (A ≥ B)</i><b id="ws-s-stat">Belum lengkap</b></div>'
+    + '</div>';
+
+  // 1. FAKTOR USLE
+  html += '<div class="ws-card"><div class="ws-h"><b>① FAKTOR USLE &amp; LAJU EROSI (Ea)</b><span>Ea = R × K × LS × C × P · pilih dari tabel referensi atau ketik nilainya langsung</span></div>'
+    + '<div style="overflow-x:auto"><table class="ws-t"><thead><tr><th style="width:24%">FAKTOR</th><th>SEBELUM REHABILITASI</th><th>SESUDAH REHABILITASI</th><th style="width:90px">SATUAN</th></tr></thead><tbody>'
+    // R
+    + '<tr><td><div class="fk">R</div><div class="fs">Erosivitas hujan (Bols, 1978)</div></td>'
+    +   '<td colspan="2"><div class="ws-cell"><button class="ws-btn" onclick="kompWsPanel(\'r\')">📅 Hitung dari data 12 bulan</button>' + inp('R', st.R, 'nilai R') + '</div><div class="fs" style="margin-top:4px">Sama untuk sebelum &amp; sesudah</div></td>'
+    +   '<td class="fs">EJ/ha/th</td></tr>'
+    // K
+    + '<tr><td><div class="fk">K</div><div class="fs">Erodibilitas tanah</div></td>'
+    +   '<td colspan="2"><div class="ws-cell"><button class="ws-btn" onclick="kompWsPanel(\'k\')">🧪 Hitung dari rumus K</button>' + inp('K', st.K, 'nilai K') + '</div><div class="fs" style="margin-top:4px">Sama untuk sebelum &amp; sesudah</div></td>'
+    +   '<td class="fs">ton·ha·jam/ha·MJ·mm</td></tr>'
+    // LS
+    + '<tr><td><div class="fk">LS</div><div class="fs">Panjang &amp; kemiringan lereng (Tabel 50)</div></td>'
+    +   '<td colspan="2">' + cell('ls', st.LS, 'nilai LS') + '</td><td class="fs">–</td></tr>'
+    // C
+    + '<tr><td><div class="fk">C</div><div class="fs">Tutupan lahan (Tabel 51)</div></td>'
+    +   '<td class="sb">' + cell('c1', st.C1, 'C₁') + '</td><td class="sa">' + cell('c2', st.C2, 'C₂') + '</td><td class="fs">–</td></tr>'
+    // P
+    + '<tr><td><div class="fk">P</div><div class="fs">Pengelolaan / konservasi (Tabel 52)</div></td>'
+    +   '<td class="sb">' + cell('p1', st.P1, 'P₁') + '</td><td class="sa">' + cell('p2', st.P2, 'P₂') + '</td><td class="fs">–</td></tr>'
+    // Hasil
+    + '<tr class="res"><td>Ea — Laju Erosi</td><td class="n" style="color:var(--red);font-size:14px"><span id="ws-ea1">–</span></td><td class="n" style="color:var(--green);font-size:14px"><span id="ws-ea2">–</span></td><td class="fs">ton/ha/th</td></tr>'
+    + '<tr><td colspan="4" style="font-size:11.5px;color:var(--txt2)">📉 Penurunan erosi: <b id="ws-red" style="color:var(--accent)">–</b> <span id="ws-miss" style="color:var(--amber);margin-left:8px"></span></td></tr>'
+    + '</tbody></table></div>';
+
+  // panel R (tabel horizontal 12 bulan)
+  var hr = '<tr><th style="text-align:left">Variabel</th>', rr = ['RAIN (mm)','DAYS (hari)','MAXP (mm)'], ids = ['rain','days','maxp'], body = '';
+  for (var m = 1; m <= 12; m++) hr += '<th>' + BULAN_NAMA[m-1] + '</th>';
+  hr += '<th>TOTAL</th></tr>';
+  ids.forEach(function(k, ri) {
+    body += '<tr><td class="rl">' + rr[ri] + '</td>';
+    for (var m = 1; m <= 12; m++) {
+      var pv = st.R_months && st.R_months[m-1];
+      body += '<td><input id="ws-' + k + '-' + m + '" type="text" inputmode="decimal" step="any" value="' + (pv && pv[k] ? kfv(pv[k]) : '') + '" oninput="kompWsCalcR()"></td>';
+    }
+    body += '<td></td></tr>';
+  });
+  body += '<tr><td class="rl" style="color:var(--accent)">R bulanan</td>';
+  for (var m2 = 1; m2 <= 12; m2++) body += '<td id="ws-ri-' + m2 + '" style="color:var(--accent);font-weight:700">–</td>';
+  body += '<td id="ws-rtot" style="font-weight:800;color:var(--accent)">–</td></tr>';
+  html += '<div id="ws-panel-r" class="ws-sub" style="display:' + (st.ws_r_open ? '' : 'none') + '">'
+    + '<div style="font-family:var(--mono);font-size:10px;font-weight:700;color:var(--accent);margin-bottom:8px">R = 6,119 × RAIN<sup>1,21</sup> × DAYS<sup>−0,47</sup> × MAXP<sup>0,53</sup> &nbsp;·&nbsp; R total = jumlah 12 bulan → otomatis masuk ke kolom R di atas</div>'
+    + '<div style="overflow-x:auto"><table class="ws-mt"><thead>' + hr + '</thead><tbody>' + body + '</tbody></table></div></div>';
+
+  // panel K
+  var ob = '<option value="">— pilih —</option>' + USLE_TABLES.STRUCT.map(function(r){ return '<option value="'+r.harkat+'"'+(st.K_b==r.harkat?' selected':'')+'>'+r.harkat+' — '+r.desc+'</option>'; }).join('');
+  var oc = '<option value="">— pilih —</option>' + USLE_TABLES.PERM.map(function(r){ return '<option value="'+r.harkat+'"'+(st.K_c==r.harkat?' selected':'')+'>'+r.harkat+' — '+r.desc+'</option>'; }).join('');
+  html += '<div id="ws-panel-k" class="ws-sub" style="display:' + (st.ws_k_open ? '' : 'none') + '">'
+    + '<div style="font-family:var(--mono);font-size:10px;font-weight:700;color:var(--accent);margin-bottom:8px">100K = 2,723 × M<sup>1,34</sup> × 10<sup>−4</sup> × (12−a) + 3,25(b−2) + 2,5(c−3) &nbsp;·&nbsp; hasil K otomatis masuk ke kolom K di atas</div>'
+    + '<table class="ws-t" style="background:var(--card);border:1px solid var(--brd2)"><thead><tr><th>M = (%debu+%pasir halus)(100−%liat)</th><th>a — Bahan Organik (0–4)</th><th>b — Struktur (Tabel 48)</th><th>c — Permeabilitas (Tabel 49)</th><th>HASIL K</th></tr></thead><tbody><tr>'
+    + '<td><input id="ws-kM" class="ws-in" type="text" inputmode="decimal" step="any" value="' + kompWsVal(st.K_M) + '" placeholder="cth: 5.600" oninput="kompWsCalcK()"></td>'
+    + '<td><input id="ws-ka" class="ws-in" type="text" inputmode="decimal" step="any" value="' + kompWsVal(st.K_a) + '" placeholder="0–4" oninput="kompWsCalcK()"></td>'
+    + '<td><select id="ws-kb" class="ws-sel" onchange="kompWsCalcK()">' + ob + '</select></td>'
+    + '<td><select id="ws-kc" class="ws-sel" onchange="kompWsCalcK()">' + oc + '</select></td>'
+    + '<td class="n" style="font-weight:800;color:var(--accent)" id="ws-kres">–</td></tr></tbody></table></div>';
+  html += '</div>'; // end card 1
+
+  // 2. SEDIMEN
+  html += '<div class="ws-card"><div class="ws-h"><b>② NISBAH PELEPASAN SEDIMEN (SDR) &amp; MUATAN SEDIMEN (MS)</b><span>MS = Ea × SDR · Tabel 54 (Permenhut P.61/2014)</span></div>'
+    + '<div style="overflow-x:auto"><table class="ws-t"><thead><tr><th style="width:24%">PARAMETER</th><th>SEBELUM REHABILITASI</th><th>SESUDAH REHABILITASI</th><th style="width:90px">SATUAN</th></tr></thead><tbody>'
+    + '<tr><td><div class="fk" style="font-size:12.5px">Luas DAS</div><div class="fs">Untuk menentukan acuan SDR</div></td><td colspan="2"><div class="ws-cell"><span id="ws-sdr-hint" class="fs" style="flex:1"></span><input id="ws-das" class="ws-in" type="text" inputmode="decimal" step="any" value="' + kompWsVal(st.A_das) + '" placeholder="cth: 500" oninput="kompWsCalc()"></div></td><td class="fs">ha</td></tr>'
+    + '<tr><td><div class="fk" style="font-size:12.5px">SDR</div><div class="fs">Nisbah pelepasan sedimen</div></td><td colspan="2">' + cell('sdr', st.SDR, 'SDR %') + '</td><td class="fs">%</td></tr>'
+    + '<tr><td>Ea (dari ①)</td><td class="n"><span id="ws-ea1b">–</span></td><td class="n"><span id="ws-ea2b">–</span></td><td class="fs">ton/ha/th</td></tr>'
+    + '<tr class="res"><td>MS — Muatan Sedimen</td><td class="n" style="color:var(--red);font-size:14px"><span id="ws-ms1">–</span></td><td class="n" style="color:var(--green);font-size:14px"><span id="ws-ms2">–</span></td><td class="fs">ton/ha/th</td></tr>'
+    + '</tbody></table></div></div>';
+
+  // 3. VERIFIKASI — mengikuti Tabel 56 (Prediksi Laju Sedimentasi)
+  var bp = (st.bp_tss != null) ? st.bp_tss : '';
+  html += '<div class="ws-card"><div class="ws-h"><b>③ PREDIKSI LAJU SEDIMENTASI &amp; VERIFIKASI A ≥ B</b><span>Format Tabel 56 · A = % penurunan × besaran pencegahan sedimentasi · B = alokasi beban TSS</span></div>'
+    + '<div style="overflow-x:auto"><table class="ws-t"><thead><tr><th style="width:36%">PARAMETER</th><th style="text-align:right">SEBELUM</th><th style="text-align:right">SESUDAH</th><th style="text-align:right">SELISIH</th><th style="width:90px">SATUAN</th></tr></thead><tbody>'
+    + '<tr><td>MS — Muatan Sedimen</td><td class="n"><span id="ws-v-ms1">–</span></td><td class="n"><span id="ws-v-ms2">–</span></td><td class="n"><b id="ws-v-msd">–</b></td><td class="fs">ton/ha/tahun</td></tr>'
+    + '<tr><td>Luas area konservasi</td><td colspan="2">' + inp('alahan', st.A_lahan, 'cth: 3') + '</td><td class="n">–</td><td class="fs">ha</td></tr>'
+    + '<tr><td>Laju sedimentasi</td><td class="n"><span id="ws-v-t1">–</span></td><td class="n"><span id="ws-v-t2">–</span></td><td class="n"><b id="ws-v-td">–</b></td><td class="fs">ton/tahun</td></tr>'
+    + '<tr><td>Laju sedimentasi</td><td class="n"><span id="ws-v-h1">–</span></td><td class="n"><span id="ws-v-h2">–</span></td><td class="n"><b id="ws-v-hd">–</b></td><td class="fs">ton/hari</td></tr>'
+    + '<tr class="res"><td colspan="3">Besaran pencegahan sedimentasi</td><td class="n"><span id="ws-v-pen">–</span></td><td class="fs">ton/hari</td></tr>'
+    + '<tr><td colspan="3">Persentase penurunan beban sedimentasi per hari</td><td>' + inp('pct', st.pct_endap, '60') + '</td><td class="fs">%</td></tr>'
+    + '<tr class="res"><td colspan="3">A — Sedimen yang akan mengendap (ditetapkan)</td><td class="n"><span id="ws-A-ton">–</span></td><td class="fs">ton/hari</td></tr>'
+    + '<tr><td colspan="3">A dalam kg/hari</td><td class="n"><span id="ws-A">–</span></td><td class="fs">kg/hari</td></tr>'
+    + '<tr><td colspan="3">B — Alokasi Beban TSS <span class="fs">(otomatis dari Usulan Baku Mutu bila ada)</span></td><td>' + inp('bp', bp, 'kg/hari') + '</td><td class="fs">kg/hari</td></tr>'
+    + '<tr class="res"><td colspan="3">Selisih A − B</td><td class="n"><span id="ws-diff">–</span></td><td class="fs">kg/hari</td></tr>'
+    + '<tr><td colspan="3">Luas area konservasi minimum agar A ≥ B</td><td class="n"><span id="ws-amin">–</span></td><td class="fs">ha</td></tr>'
+    + '</tbody></table></div>'
+    + '<div id="ws-verdict" style="padding:16px;text-align:center;font-size:13px;font-weight:700;color:var(--mute)">Lengkapi tabel di atas untuk melihat kesimpulan.</div></div>';
+
+  bodyEl.innerHTML = html;
+
+  var footEl = document.getElementById('kajian-footer');
+  footEl.innerHTML = '<button onclick="kompWsReset()" style="' + OVS.btn + 'background:#888">↺ Kosongkan</button>'
+    + '<div style="font-family:var(--mono);font-size:10px;color:var(--mute)">Semua perubahan dihitung otomatis</div>'
+    + '<button onclick="kompKajianClose()" style="' + OVS.btn + 'background:var(--green)">✓ Selesai</button>';
+
+  kompWsCalcR(true); kompWsCalcK(true); kompWsCalc();
+  bodyEl.scrollTop = 0;
+}
+
+function kompWsPanel(w) {
+  var st = kompKajianState, el = document.getElementById('ws-panel-' + w);
+  if (!el) return;
+  var open = el.style.display === 'none';
+  el.style.display = open ? '' : 'none';
+  st['ws_' + w + '_open'] = open;
+  kompKstSave();
+  if (open) el.scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+function kompWsReset() {
+  if (kompKajianState._optParam) kompKajianState._optParam.kst = null;
+  var keep = { idx: kompKajianState.idx, lamp: kompKajianState.lamp, step: 1, _optParam: kompKajianState._optParam };
+  var b = kompGetBPTSS(); if (b != null) keep.bp_tss = b;
+  kompKajianState = keep;
+  kompWsRender();
+}
+
+// R dari tabel 12 bulan (silent=true: hanya render ulang hasil bulanan, jangan timpa R bila kosong)
+function kompWsCalcR(silent) {
+  var st = kompKajianState, total = 0, any = false, arr = [];
+  function g(id) { var e = document.getElementById(id); return e ? (pNum(e.value)) : 0; }
+  for (var m = 1; m <= 12; m++) {
+    var rain = g('ws-rain-' + m), days = g('ws-days-' + m), maxp = g('ws-maxp-' + m);
+    var ri = (rain > 0 && days > 0 && maxp > 0) ? 6.119 * Math.pow(rain, 1.21) * Math.pow(days, -0.47) * Math.pow(maxp, 0.53) : 0;
+    if (rain || days || maxp) any = true;
+    arr.push({ m: m, rain: rain, days: days, maxp: maxp, r: ri });
+    total += ri;
+    var el = document.getElementById('ws-ri-' + m); if (el) el.textContent = ri > 0 ? kf(ri, 1) : '–';
+  }
+  st.R_months = arr;
+  var t = document.getElementById('ws-rtot'); if (t) t.textContent = total > 0 ? kf(total, 1) : '–';
+  if (!silent && any) {
+    var r = document.getElementById('ws-R'); if (r) r.value = total > 0 ? kf(total, 2) : '';
+    kompWsCalc();
+  }
+}
+
+function kompWsCalcK(silent) {
+  var st = kompKajianState;
+  function g(id) { var e = document.getElementById(id); return e ? (pNum(e.value)) : 0; }
+  var M = g('ws-kM'), a = g('ws-ka'), b = g('ws-kb'), c = g('ws-kc');
+  st.K_M = M; st.K_a = a; st.K_b = b; st.K_c = c;
+  var out = document.getElementById('ws-kres');
+  if (M > 0 && b > 0 && c > 0) {
+    var K = (2.723 * Math.pow(M, 1.34) * 1e-4 * (12 - a) + 3.25 * (b - 2) + 2.5 * (c - 3)) / 100;
+    if (out) out.textContent = kf(K, 4);
+    if (!silent) { var k = document.getElementById('ws-K'); if (k) k.value = kf(K, 4); kompWsCalc(); }
+  } else if (out) out.textContent = '–';
+}
+
+function kompWsCalc() {
+  var st = kompKajianState;
+  function g(id) { var e = document.getElementById(id); return e ? (pNum(e.value)) : 0; }
+  function set(id, txt) { var e = document.getElementById(id); if (e) e.textContent = txt; }
+  var R = g('ws-R'), K = g('ws-K'), LS = g('ws-ls'), C1 = g('ws-c1'), C2 = g('ws-c2'), P1 = g('ws-p1'), P2 = g('ws-p2');
+  var SDR = g('ws-sdr'), das = g('ws-das'), AL = g('ws-alahan'), pct = g('ws-pct'), B = g('ws-bp');
+  var Ea1 = R * K * LS * C1 * P1, Ea2 = R * K * LS * C2 * P2;
+  var MS1 = Ea1 * SDR / 100, MS2 = Ea2 * SDR / 100;
+  st.R = R; st.K = K; st.LS = LS; st.C1 = C1; st.C2 = C2; st.P1 = P1; st.P2 = P2;
+  st.SDR = SDR; st.A_das = das; st.A_lahan = AL; st.pct_endap = pct; st.bp_tss = B;
+  st.Ea1 = Ea1; st.Ea2 = Ea2; st.MS1 = MS1; st.MS2 = MS2;
+
+  set('ws-ea1', kf(Ea1, 2)); set('ws-ea2', kf(Ea2, 2));
+  set('ws-ea1b', kf(Ea1, 2)); set('ws-ea2b', kf(Ea2, 2));
+  set('ws-s-ea1', kf(Ea1, 2)); set('ws-s-ea2', kf(Ea2, 2));
+  set('ws-ms1', kf(MS1, 3)); set('ws-ms2', kf(MS2, 3));
+  set('ws-red', Ea1 > 0 ? (kf(Ea1 - Ea2, 2) + ' ton/ha/th  (' + kf(((Ea1 - Ea2) / Ea1) * 100, 1) + '% reduksi)') : '–');
+  var miss = []; if (!R) miss.push('R'); if (!K) miss.push('K'); if (!LS) miss.push('LS');
+  if (!C1) miss.push('C sebelum'); if (!C2) miss.push('C sesudah'); if (!P1) miss.push('P sebelum'); if (!P2) miss.push('P sesudah');
+  set('ws-miss', miss.length ? ('⚠ Belum diisi: ' + miss.join(', ')) : '');
+
+  // petunjuk SDR dari luas DAS
+  var hint = document.getElementById('ws-sdr-hint');
+  if (hint) {
+    if (das > 0) {
+      var best = null, md = Infinity, bi = -1;
+      USLE_TABLES.SDR.forEach(function(x, i) { var d = Math.abs(x.ha - das); if (d < md) { md = d; best = x; bi = i; } });
+      hint.innerHTML = 'Acuan terdekat: <b>' + best.luas + ' → ' + best.sdr + '%</b> <button class="ws-btn" style="padding:3px 9px;margin-left:6px" onclick="kompWsPick(\'sdr\',\'' + bi + '\');var s=document.getElementById(\'ws-sel-sdr\');if(s)s.value=\'' + bi + '\'">Pakai</button>';
+    } else hint.textContent = 'Isi luas DAS untuk melihat acuan SDR terdekat';
+  }
+
+  // verifikasi — mengikuti Tabel 56
+  var dMS = MS1 - MS2;
+  var t1 = MS1 * AL, t2 = MS2 * AL, td = t1 - t2;           // ton/tahun
+  var h1 = t1 / 365, h2 = t2 / 365, hd = td / 365;           // ton/hari
+  var Aton = hd * (pct / 100);                               // ton/hari
+  var A = Aton * 1000;                                       // kg/hari
+  var haveMS = (MS1 > 0 || MS2 > 0);
+  set('ws-v-ms1', haveMS ? kf(MS1, 2) : '–'); set('ws-v-ms2', haveMS ? kf(MS2, 2) : '–'); set('ws-v-msd', haveMS ? kf(dMS, 2) : '–');
+  set('ws-v-t1', haveMS && AL > 0 ? kf(t1, 2) : '–'); set('ws-v-t2', haveMS && AL > 0 ? kf(t2, 2) : '–'); set('ws-v-td', haveMS && AL > 0 ? kf(td, 2) : '–');
+  set('ws-v-h1', haveMS && AL > 0 ? kf(h1, 4) : '–'); set('ws-v-h2', haveMS && AL > 0 ? kf(h2, 4) : '–'); set('ws-v-hd', haveMS && AL > 0 ? kf(hd, 4) : '–');
+  var okA = haveMS && AL > 0;
+  set('ws-v-pen', okA ? kf(hd, 4) : '–');
+  set('ws-A-ton', okA ? kf(Aton, 4) : '–');
+  set('ws-A', okA ? kf(A, 4) : '–');
+  var ready = okA && B > 0;
+  set('ws-diff', ready ? kf(A - B, 4) : '–');
+  var aMin = (dMS > 0 && pct > 0 && B > 0) ? (B / 1000) * 365 / ((pct / 100) * dMS) : 0;
+  set('ws-amin', aMin > 0 ? kf(aMin, 2) : '–');
+  set('ws-s-a', okA ? kf(A, 2) : '–'); set('ws-s-b', B > 0 ? kf(B, 2) : '–');
+  var ok = ready && A >= B;
+  st.sedA = A; st.A_kg = A; st.A_ton = Aton;
+  var diffEl = document.getElementById('ws-diff'); if (diffEl) diffEl.style.color = ready ? (ok ? 'var(--green)' : 'var(--red)') : '';
+  var sEl = document.getElementById('ws-s-stat'), wEl = document.getElementById('ws-s-stat-wrap'), vEl = document.getElementById('ws-verdict');
+  if (ready) {
+    if (sEl) { sEl.textContent = ok ? '✅ DITERIMA' : '❌ DITOLAK'; sEl.style.color = ok ? 'var(--green)' : 'var(--red)'; }
+    if (wEl) wEl.style.borderColor = ok ? 'var(--green)' : 'var(--red)';
+    if (vEl) {
+      vEl.style.background = ok ? 'rgba(39,174,96,.10)' : 'rgba(231,76,60,.10)';
+      vEl.style.color = ok ? 'var(--green)' : 'var(--red)';
+      vEl.innerHTML = ok ? '✅ DITERIMA — A ≥ B<br><span style="font-size:11px;font-weight:400">Luas area konservasi mencukupi untuk mengkompensasi beban TSS.</span>'
+        : '❌ DITOLAK — A &lt; B<br><span style="font-size:11px;font-weight:400">Tambah luas area konservasi' + (aMin > 0 ? ' (minimum ' + kf(aMin, 2) + ' ha)' : '') + ' atau perbaiki tindakan konservasi (C/P).</span>';
+    }
+  } else {
+    if (sEl) { sEl.textContent = 'Belum lengkap'; sEl.style.color = 'var(--mute)'; }
+    if (wEl) wEl.style.borderColor = '';
+    if (vEl) { vEl.style.background = ''; vEl.style.color = 'var(--mute)'; vEl.textContent = 'Lengkapi tabel di atas untuk melihat kesimpulan.'; }
+  }
+}
+
+// Legacy compatibility (tidak dipakai lagi tapi jaga tidak error)
+function kompInpField(id, label, unit, defVal, hint) { return ''; }
+function kompHitungRehabLahan(idx) {}
+
+
+if (window.__kompPending) { try { kompRestore(window.__kompPending); } catch(e){} window.__kompPending = null; }
+// ── Hook autosave untuk Kompensasi ──
+(function(){
+  function wrap(n, ws){
+    var o = window[n]; if (typeof o !== 'function') return;
+    window[n] = function(){
+      var r = o.apply(this, arguments);
+      try { ws ? kompKstSave() : (typeof saveAuto==='function' && saveAuto()); } catch(e){}
+      return r;
+    };
+  }
+  ['kompICalc','kompWsCalc','kompWsCalcR','kompWsCalcK','kompWsPick'].forEach(function(n){ wrap(n, true); });
+  ['kompOptSetMode','kompOptAddUbm','kompOptAddAllUbm','kompOptAddRow','kompOptDelRow','kompOptSetLamp','kompOptOnName'].forEach(function(n){ wrap(n, false); });
+})();
 </script>
 
 </body>

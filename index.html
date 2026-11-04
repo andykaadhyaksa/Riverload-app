@@ -121,6 +121,53 @@ window.RL_LOGO_FULL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAArwAAAFeCAY
   --mute2:  var(--txt2);
 }
 
+/* DARK — kontras teks & warna aksen ditingkatkan agar mudah terbaca */
+[data-theme="dark"] {
+  --txt:    #f8fbff;
+  --txt2:   #d6e6f5;
+  --mute:   #b0c9df;
+  --amber:  #ffd37d;
+  --orange: #ffd37d;
+  --red:    #ff9ca8;
+  --green:  #72f0c4;
+  --blue:   #a9ccff;
+  --cyan:   #7fdcff;
+  --cyan2:  #66cdf5;
+  --accent: #7fe8f3;
+  --accent2:#7fe8f3;
+  --brd:    rgba(150,195,255,0.32);
+  --brd2:   rgba(150,195,255,0.18);
+}
+/* warna teks inline yang di-hardcode → versi terang di dark mode */
+[data-theme="dark"] [style*="color:#f5a623"],[data-theme="dark"] [style*="color:#f39c12"],[data-theme="dark"] [style*="color: #f5a623"]{color:#ffd37d !important}
+[data-theme="dark"] [style*="color:#4488ff"],[data-theme="dark"] [style*="color:#3498db"],[data-theme="dark"] [style*="color:#88bbff"]{color:#a9ccff !important}
+[data-theme="dark"] [style*="color:#ff6060"],[data-theme="dark"] [style*="color:#e53935"],[data-theme="dark"] [style*="color:#ef4444"]{color:#ff9ca8 !important}
+[data-theme="dark"] [style*="color:#1ab0a6"]{color:#72f0e4 !important}
+[data-theme="dark"] [style*="color:#22c55e"]{color:#72f0b0 !important}
+[data-theme="dark"] [style*="color:#a855f7"]{color:#d6b0ff !important}
+[data-theme="dark"] [style*="color:#e65100"],[data-theme="dark"] [style*="color:#b45309"]{color:#ffbd85 !important}
+/* label/pil berwarna: lebih tebal & latar lebih gelap agar kontras */
+[data-theme="dark"] .season-hd{font-weight:800;font-size:11.5px}
+[data-theme="dark"] .season-hd-dry{background:rgba(60,40,5,.75);border-color:rgba(255,211,125,.55)}
+[data-theme="dark"] .season-hd-wet{background:rgba(10,30,70,.75);border-color:rgba(169,204,255,.55)}
+[data-theme="dark"] .season-tab.active-dry{background:rgba(60,40,5,.75);font-weight:800}
+[data-theme="dark"] .season-tab.active-wet{background:rgba(10,30,70,.75);font-weight:800}
+[data-theme="dark"] [style*="color:var(--amber)"],[data-theme="dark"] [style*="color:var(--blue)"],[data-theme="dark"] [style*="color:var(--green)"],[data-theme="dark"] [style*="color:var(--accent)"],[data-theme="dark"] [style*="color:var(--red)"]{font-weight:700}
+#rl-save-indicator{font-weight:600}
+[data-theme="dark"] #rl-save-indicator{color:var(--green) !important}
+
+/* ── Tab langkah: sejajar judul halaman, bisa diklik langsung ── */
+.ph > .bpm-wiz-tabs, .ph > .ubm-wiz-tabs { flex:1 1 auto; margin:0 0 0 auto; max-width:none; justify-content:flex-end; align-self:center; flex-wrap:wrap; row-gap:6px; }
+.ph .bpm-wiz-tab, .ph .ubm-wiz-tab { flex-direction:row; gap:8px; cursor:pointer; padding:5px 10px 5px 6px; border-radius:999px; opacity:.75; transition:background .15s, opacity .15s; }
+.ph .bpm-wiz-tab:hover, .ph .ubm-wiz-tab:hover { opacity:1; background:rgba(26,176,166,.12); }
+.ph .bpm-wiz-tab.active, .ph .ubm-wiz-tab.active { opacity:1; background:rgba(26,176,166,.14); }
+.ph .bpm-wiz-tab:focus-visible, .ph .ubm-wiz-tab:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+.ph .bpm-wiz-line, .ph .ubm-wiz-line { width:18px; margin:0 2px; }
+.ph .bpm-wiz-num, .ph .ubm-wiz-num { width:24px; height:24px; font-size:11.5px; }
+.ph .bpm-wiz-tab.active .bpm-wiz-num, .ph .ubm-wiz-tab.active .ubm-wiz-num { box-shadow:0 0 0 3px rgba(26,176,166,.2); }
+.ph .bpm-wiz-tab:not(.active) .bpm-wiz-label, .ph .ubm-wiz-tab:not(.active) .ubm-wiz-label { color:var(--txt2); }
+@media (max-width: 1100px) { .ph > .bpm-wiz-tabs, .ph > .ubm-wiz-tabs { flex-basis:100%; justify-content:flex-start; } }
+
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{min-height:100%}
 
@@ -1097,6 +1144,33 @@ input.inp-sm::placeholder {
 
 /* Make season header text match new font */
 .season-hd { font-family: var(--head) !important; }
+
+/* ══ Polesan UI: header halaman & judul kartu selaras tema (Sora + Inter, aksen teal/biru) ══ */
+.page > .ph { align-items:center; padding-bottom:14px; margin-bottom:20px; border-bottom:1px solid var(--brd2); }
+.page > .ph .ph-title {
+  position:relative; padding-left:16px;
+  font-family:'Sora','Inter',sans-serif; font-size:22px; font-weight:700;
+  letter-spacing:.04em; line-height:1.15; color:var(--txt);
+}
+.page > .ph .ph-title::before {
+  content:''; position:absolute; left:0; top:1px; bottom:1px; width:4px; border-radius:4px;
+  background:linear-gradient(180deg,var(--accent),var(--cyan2));
+}
+.page > .ph .ph-sub {
+  padding-left:16px; margin-top:6px;
+  font-family:'Inter',sans-serif; font-size:12px; font-weight:400; letter-spacing:0;
+  color:var(--txt2); line-height:1.5; max-width:760px;
+}
+.card-title {
+  font-family:'Inter',sans-serif; font-size:11.5px; font-weight:700; letter-spacing:.08em;
+}
+.card-title::before {
+  content:''; width:7px; height:7px; border-radius:50%; flex-shrink:0;
+  background:var(--accent); box-shadow:0 0 0 3px rgba(26,176,166,.16);
+}
+.card { border-radius:18px; }
+.card-hd .card-title { font-size:11.5px; }
+.btn { font-family:'Inter',sans-serif; letter-spacing:.2px; }
 </style>
 
 </head>
@@ -1185,13 +1259,16 @@ input.inp-sm::placeholder {
       <button class="rl-tb-btn-icon" onclick="historySaveOnly()" title="Simpan ke Riwayat">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
       </button>
-      <button class="rl-tb-btn-icon" onclick="saveProject()" title="Ekspor File">
+      <button class="rl-tb-btn-icon" onclick="saveProject()" title="Simpan ke file (Ctrl+S) — setelah itu autosave ke file yang sama">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       </button>
       <button class="rl-tb-btn-icon" onclick="historyOpenPanel()" title="Riwayat Proyek">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
       </button>
-      <button class="rl-tb-btn-icon" onclick="document.getElementById('fi').click()" title="Buka File">
+      <button class="rl-tb-btn-icon" onclick="saveProjectAs()" title="Simpan Sebagai… (Ctrl+Shift+S) — pindah lokasi file">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M12 11v6M9 14h6"/><path d="M7 3v5h8"/></svg>
+      </button>
+      <button class="rl-tb-btn-icon" onclick="openProjectFile()" title="Buka File (Ctrl+O) — autosave lanjut ke file ini">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
       </button>
 
@@ -1698,23 +1775,22 @@ input.inp-sm::placeholder {
       <div class="ph-title">BEBAN PENCEMAR</div>
       <div class="ph-sub">Hitung berapa banyak limbah yang aman dibuang ke sungai, lalu bandingkan dengan kondisi aktual</div>
     </div>
+  <div class="bpm-wiz-tabs">
+    <div class="bpm-wiz-tab active" id="bpm-wt-1" data-step="1" role="button" tabindex="0" title="Langsung ke langkah 1" onclick="bpmTabGo(1)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();bpmTabGo(1)}"><span class="bpm-wiz-num">1</span><span class="bpm-wiz-label">Info Sungai</span></div>
+    <div class="bpm-wiz-line"></div>
+    <div class="bpm-wiz-tab" id="bpm-wt-2" data-step="2" role="button" tabindex="0" title="Langsung ke langkah 2" onclick="bpmTabGo(2)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();bpmTabGo(2)}"><span class="bpm-wiz-num">2</span><span class="bpm-wiz-label">Debit Air</span></div>
+    <div class="bpm-wiz-line"></div>
+    <div class="bpm-wiz-tab" id="bpm-wt-3" data-step="3" role="button" tabindex="0" title="Langsung ke langkah 3" onclick="bpmTabGo(3)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();bpmTabGo(3)}"><span class="bpm-wiz-num">3</span><span class="bpm-wiz-label">Jenis Limbah</span></div>
+    <div class="bpm-wiz-line"></div>
+    <div class="bpm-wiz-tab" id="bpm-wt-4" data-step="4" role="button" tabindex="0" title="Langsung ke langkah 4" onclick="bpmTabGo(4)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();bpmTabGo(4)}"><span class="bpm-wiz-num">4</span><span class="bpm-wiz-label">Input C Aktual</span></div>
+    <div class="bpm-wiz-line"></div>
+    <div class="bpm-wiz-tab" id="bpm-wt-5" data-step="5" role="button" tabindex="0" title="Langsung ke langkah 5" onclick="bpmTabGo(5)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();bpmTabGo(5)}"><span class="bpm-wiz-num">5</span><span class="bpm-wiz-label">Hasil Hitung</span></div>
+  </div>
     <div class="ph-acts">
       <button class="btn btn-outline btn-sm" onclick="resetAll();bpmWizGoto(1)">↺ Mulai Ulang</button>
     </div>
   </div>
 
-  <!-- Wizard tabs (indikator saja — navigasi lewat tombol Lanjut/Kembali) -->
-  <div class="bpm-wiz-tabs">
-    <div class="bpm-wiz-tab active" id="bpm-wt-1" data-step="1"><span class="bpm-wiz-num">1</span><span class="bpm-wiz-label">Info Sungai</span></div>
-    <div class="bpm-wiz-line"></div>
-    <div class="bpm-wiz-tab" id="bpm-wt-2" data-step="2"><span class="bpm-wiz-num">2</span><span class="bpm-wiz-label">Debit Air</span></div>
-    <div class="bpm-wiz-line"></div>
-    <div class="bpm-wiz-tab" id="bpm-wt-3" data-step="3"><span class="bpm-wiz-num">3</span><span class="bpm-wiz-label">Jenis Limbah</span></div>
-    <div class="bpm-wiz-line"></div>
-    <div class="bpm-wiz-tab" id="bpm-wt-4" data-step="4"><span class="bpm-wiz-num">4</span><span class="bpm-wiz-label">Input C Aktual</span></div>
-    <div class="bpm-wiz-line"></div>
-    <div class="bpm-wiz-tab" id="bpm-wt-5" data-step="5"><span class="bpm-wiz-num">5</span><span class="bpm-wiz-label">Hasil Hitung</span></div>
-  </div>
 
   <!-- Glosarium bahasa awam -->
   <div class="glossary-box">
@@ -2151,19 +2227,18 @@ input.inp-sm::placeholder {
       <div class="ph-title">USULAN BAKU MUTU</div>
       <div class="ph-sub">Neraca Massa PermenLHK No.5/2021 &nbsp;|&nbsp; CR Hilir = (Q<sub>s</sub>·C<sub>hulu</sub> + ΣQ<sub>i</sub>·C<sub>i</sub>) / (Q<sub>s</sub> + ΣQ<sub>i</sub>)</div>
     </div>
-  </div>
-
-
-  <!-- Wizard tabs (indikator saja — navigasi lewat tombol Lanjut/Kembali) -->
   <div class="ubm-wiz-tabs">
-    <div class="ubm-wiz-tab active" id="ubm-wt-1" data-step="1"><span class="ubm-wiz-num">1</span><span class="ubm-wiz-label">Info Sungai</span></div>
+    <div class="ubm-wiz-tab active" id="ubm-wt-1" data-step="1" role="button" tabindex="0" title="Langsung ke langkah 1" onclick="ubmTabGo(1)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();ubmTabGo(1)}"><span class="ubm-wiz-num">1</span><span class="ubm-wiz-label">Info Sungai</span></div>
     <div class="ubm-wiz-line"></div>
-    <div class="ubm-wiz-tab" id="ubm-wt-2" data-step="2"><span class="ubm-wiz-num">2</span><span class="ubm-wiz-label">Sumber Limbah</span></div>
+    <div class="ubm-wiz-tab" id="ubm-wt-2" data-step="2" role="button" tabindex="0" title="Langsung ke langkah 2" onclick="ubmTabGo(2)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();ubmTabGo(2)}"><span class="ubm-wiz-num">2</span><span class="ubm-wiz-label">Sumber Limbah</span></div>
     <div class="ubm-wiz-line"></div>
-    <div class="ubm-wiz-tab" id="ubm-wt-3" data-step="3"><span class="ubm-wiz-num">3</span><span class="ubm-wiz-label">Parameter</span></div>
+    <div class="ubm-wiz-tab" id="ubm-wt-3" data-step="3" role="button" tabindex="0" title="Langsung ke langkah 3" onclick="ubmTabGo(3)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();ubmTabGo(3)}"><span class="ubm-wiz-num">3</span><span class="ubm-wiz-label">Parameter</span></div>
     <div class="ubm-wiz-line"></div>
-    <div class="ubm-wiz-tab" id="ubm-wt-4" data-step="4"><span class="ubm-wiz-num">4</span><span class="ubm-wiz-label">Hasil Hitung</span></div>
+    <div class="ubm-wiz-tab" id="ubm-wt-4" data-step="4" role="button" tabindex="0" title="Langsung ke langkah 4" onclick="ubmTabGo(4)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();ubmTabGo(4)}"><span class="ubm-wiz-num">4</span><span class="ubm-wiz-label">Hasil Hitung</span></div>
   </div>
+  </div>
+
+
 
   <!-- Glosarium bahasa awam -->
   <div class="glossary-box">
@@ -2846,6 +2921,10 @@ document.addEventListener('DOMContentLoaded', function(){
   if(paramList2){ new MutationObserver(()=>ubmWizValidate()).observe(paramList2, {childList:true}); }
   ubmWizValidate();
 });
+
+// Klik langsung ke langkah mana pun (tanpa harus berurutan)
+function bpmTabGo(n){ if(n===5){ try{ calcAll(); }catch(e){} } bpmWizGoto(n); }
+function ubmTabGo(n){ if(n===4){ try{ ubmCalc(); }catch(e){} } ubmWizGoto(n); }
 
 function toggleTheme() {
   const html=document.documentElement;
@@ -5109,36 +5188,41 @@ function saveProject(){
   toast(`✓ Proyek disimpan — ${nSites} sungai, semua data tersimpan`,'ok');
 }
 
+function _rlApplyProjectText(text){
+  try{
+    const parsed = JSON.parse(text);
+    if(parsed && parsed.__riverloadMultiSite && Array.isArray(parsed.sites) && parsed.sites.length){
+      // Format baru — proyek multi-sungai, muat semuanya
+      riverSites = parsed.sites;
+      activeSiteId = parsed.activeSiteId || riverSites[0].id;
+      const active = riverSites.find(s=>s.id===activeSiteId) || riverSites[0];
+      restoreState(active.state);
+      if(typeof sitesPersist==='function') sitesPersist();
+      if(typeof sitesRenderSwitcher==='function') sitesRenderSwitcher();
+      toast(`✓ Proyek dimuat — ${riverSites.length} sungai berhasil dipulihkan`,'ok');
+    } else {
+      // Format lama (single-site) — bungkus jadi satu sungai, ganti seluruh proyek
+      const id = 'site_'+Date.now();
+      const nm = parsed?.bpm?.name || 'Sungai 1';
+      riverSites = [{ id:id, name:nm, state:parsed }];
+      activeSiteId = id;
+      restoreState(parsed);
+      if(typeof sitesPersist==='function') sitesPersist();
+      if(typeof sitesRenderSwitcher==='function') sitesRenderSwitcher();
+      toast('✓ Proyek lama dimuat (1 sungai) — semua data berhasil dipulihkan','ok');
+    }
+    return true;
+  } catch(err){
+    toast('⚠ File tidak valid atau rusak','err');
+    console.error(err);
+    return false;
+  }
+}
 function loadProject(input){
   const file=input.files[0]; if(!file) return;
   const reader=new FileReader();
   reader.onload=e=>{
-    try{
-      const parsed = JSON.parse(e.target.result);
-      if(parsed && parsed.__riverloadMultiSite && Array.isArray(parsed.sites) && parsed.sites.length){
-        // Format baru — proyek multi-sungai, muat semuanya
-        riverSites = parsed.sites;
-        activeSiteId = parsed.activeSiteId || riverSites[0].id;
-        const active = riverSites.find(s=>s.id===activeSiteId) || riverSites[0];
-        restoreState(active.state);
-        if(typeof sitesPersist==='function') sitesPersist();
-        if(typeof sitesRenderSwitcher==='function') sitesRenderSwitcher();
-        toast(`✓ Proyek dimuat — ${riverSites.length} sungai berhasil dipulihkan`,'ok');
-      } else {
-        // Format lama (single-site) — bungkus jadi satu sungai, ganti seluruh proyek
-        const id = 'site_'+Date.now();
-        const nm = parsed?.bpm?.name || 'Sungai 1';
-        riverSites = [{ id:id, name:nm, state:parsed }];
-        activeSiteId = id;
-        restoreState(parsed);
-        if(typeof sitesPersist==='function') sitesPersist();
-        if(typeof sitesRenderSwitcher==='function') sitesRenderSwitcher();
-        toast('✓ Proyek lama dimuat (1 sungai) — semua data berhasil dipulihkan','ok');
-      }
-    } catch(err){
-      toast('⚠ File tidak valid atau rusak','err');
-      console.error(err);
-    }
+    _rlApplyProjectText(e.target.result);
     input.value='';
   };
   reader.readAsText(file);
@@ -8312,6 +8396,269 @@ async function exportExcel(){
     addSheet(WB,'🗂 Database Parameter',aoa,[4,16,7,9,9,9,9,9],merges,rh);
   }
 
+  // ═══════════════════════════════════════════════════════
+  // SHEET KOMPENSASI LINGKUNGAN — satu sheet per parameter, memakai rumus Excel
+  //   Lampiran V (USLE) & Lampiran I (IPAL Domestik) dihitung penuh dengan formula;
+  //   lampiran lain hanya memuat ringkasan alokasi & jenis kompensasi.
+  // ═══════════════════════════════════════════════════════
+  try {
+    if (typeof kompOptParams !== 'undefined' && kompOptParams.length) {
+      try { if (kompKajianState && kompKajianState._optParam) kompKstSave(); } catch(e) {}
+      kompOptRefresh();
+      const usedNames = new Set(WB.SheetNames);
+      const num = (v)=>{ if(v==null||v==='') return null; const n=(typeof v==='number')?v:pNum(v); return isFinite(n)?n:null; };
+      const colL = ['A','B','C','D','E'];
+      const NCK = 5;
+      const sty = {
+        sec:  {font:font(true,10,C.white),fill:fill(C.grnMd),alignment:align('left','center',false),border:bdr(C.grnDk)},
+        hdr:  {font:font(true,10,C.white),fill:fill(C.teal2),alignment:align('center','center',true),border:bdrT()},
+        lbl:  {font:font(false,10,C.ink),fill:fill(C.white),alignment:align('left','center',true),border:bdr()},
+        lblB: {font:font(true,10,C.teal2),fill:fill(C.tealBg2),alignment:align('left','center',true),border:bdr(C.teal3)},
+        inp:  {font:font(true,10,C.blu2),fill:fill(C.bluBg2),alignment:align('right','center',false),border:bdr(C.blu3)},
+        calc: {font:font(false,10,C.ink),fill:fill(C.white),alignment:align('right','center',false),border:bdr()},
+        res:  {font:font(true,10,C.teal1),fill:fill(C.tealBg),alignment:align('right','center',false),border:bdrT()},
+        unit: {font:font(false,10,C.muted),fill:fill(C.slateL),alignment:align('center','center',false),border:bdr()},
+        note: {font:font(false,9,C.muted),fill:fill(C.white),alignment:align('left','center',true),border:bdr()},
+        stat: {font:font(true,12,C.grnDk),fill:fill(C.grnBg),alignment:align('center','center',false),border:bdrT(C.grnMd)},
+      };
+      const FM = { n2:'#,##0.00', n3:'#,##0.000', n4:'#,##0.0000', n6:'#,##0.000000', g:'General' };
+      const L = (v)=>mkCell(v, sty.lbl);
+      const U = (v)=>mkCell(v==null?'':v, sty.unit);
+      const N = (v)=>mkCell(v==null?'':v, sty.note);
+      const E = ()=>blank(sty.lbl);
+
+      kompOptParams.forEach(function(row, ri){
+        if (!row || !row.lamp) return;
+        const jn = KOMP_JENIS.filter(j=>j.lamp===row.lamp)[0];
+        const st = row.kst && row.kst.lamp === row.lamp ? row.kst : {};
+        const pname = row.name || ('Parameter '+(ri+1));
+        const rows = [], rh = [], merges = [];
+        const add = (arr,h)=>{ rows.push(arr); rh.push(h||RH.data); return rows.length; };   // → nomor baris Excel (1-based)
+        const addr = (col,r)=>col+r;
+        const banner = (t)=>{ const r=add([mkCell(t,S.banner),...Array(NCK-1).fill(null)],RH.banner+6); merges.push({s:{r:r-1,c:0},e:{r:r-1,c:NCK-1}}); return r; };
+        const meta   = (t)=>{ const r=add([mkCell(t,S.meta),...Array(NCK-1).fill(null)],RH.meta); merges.push({s:{r:r-1,c:0},e:{r:r-1,c:NCK-1}}); return r; };
+        const sect   = (t)=>{ const r=add([mkCell(t,sty.sec),...Array(NCK-1).fill(null)],RH.sec+2); merges.push({s:{r:r-1,c:0},e:{r:r-1,c:NCK-1}}); return r; };
+        const gap    = ()=>add(Array(NCK).fill(blank({...S.dat,fill:fill(C.slateL)})),6);
+        const hdr    = (a)=>add(a.map(t=>mkCell(t,sty.hdr)),RH.hdr);
+
+        let _sl = 2; const nextL = ()=>String.fromCharCode(65+_sl++);   // huruf bagian berurutan
+        const alokVal = num(row.alok);
+        banner('KOMPENSASI LINGKUNGAN  ·  '+pname.toUpperCase());
+        meta('Lampiran '+row.lamp+' — '+(jn?jn.nama:'')+'   ·   Sungai: '+rn+'   ·   Kelas '+clsRom+'   ·   Kepdirjen PPKL No. 114 Tahun 2024');
+        gap();
+
+        // ── Ringkasan parameter ──
+        sect('A. DATA PARAMETER');
+        hdr(['Uraian','Nilai','','Satuan','Keterangan']);
+        add([L('Parameter'),mkCell(pname,sty.lblB),E(),U(row.unit||''),N('')]);
+        add([L('Baku mutu sungai (BM)'),nCell(num(row.bm),sty.inp,FM.n4),E(),U(row.unit||''),N('Kelas '+clsRom+' — PP 22/2021')]);
+        const sumRow = add([L('Jenis kompensasi'),mkCell('Lampiran '+row.lamp+' — '+(jn?jn.nama:''),sty.lblB),E(),U(''),N('')]);
+        merges.push({s:{r:sumRow-1,c:1},e:{r:sumRow-1,c:2}});
+
+        // ── Alokasi beban (B) — dari Usulan Baku Mutu, per sumber, dengan rumus ──
+        gap();
+        sect('B. ALOKASI BEBAN PENCEMAR  (Σ Debit × C ÷ 1.000)');
+        let Bref = null, Bval = alokVal;
+        const up = (row._ubmId != null ? kompUbmFind(row._ubmId) : (row._match != null ? kompUbmFind(row._match) : null));
+        if (row.mode !== 'manual' && up) {
+          hdr(['Nama Sumber / Titik Penaatan','Debit','C / Usulan BM','Satuan','Alokasi (kg/hari)']);
+          const first = rows.length + 1;
+          let n = 0, tot = 0;
+          ubmSources.forEach(function(s){
+            const q = pNum(s.qDay);
+            const prop = ubmProposedSrcIds.has(s.id);
+            const uv = prop && up.usulanBMPerSrc ? up.usulanBMPerSrc[s.id] : '';
+            const useU = prop && uv != null && uv !== '' && pNum(uv) > 0;
+            const ci = useU ? pNum(uv) : pNum(up.cSrc ? up.cSrc[s.id] : 0);
+            if (!(ci > 0)) return;
+            n++;
+            const r = rows.length + 1;
+            const kg = q*ci/1000; tot += kg;
+            add([mkCell((s.name||('Sumber '+n))+(useU?'  (Usulan BM)':''),sty.lbl), nCell(q,sty.inp,FM.n2), nCell(ci,sty.inp,FM.n4), U('m³/hari ; '+(row.unit||'mg/L')),
+                 fCell(addr('B',r)+'*'+addr('C',r)+'/1000',sty.calc,kg,FM.n4)]);
+          });
+          if (n) {
+            const last = rows.length;
+            const r = add([mkCell('TOTAL ALOKASI BEBAN (B)',sty.lblB), fCell('SUM(B'+first+':B'+last+')',sty.res,null,FM.n2), E(), U('kg/hari'),
+                           fCell('SUM(E'+first+':E'+last+')',sty.res,tot,FM.n4)]);
+            // cached debit total
+            rows[r-1][1].v = ubmSources.reduce((a,s)=>{ const prop=ubmProposedSrcIds.has(s.id); const uv=prop&&up.usulanBMPerSrc?up.usulanBMPerSrc[s.id]:''; const useU=prop&&uv!=null&&uv!==''&&pNum(uv)>0; const ci=useU?pNum(uv):pNum(up.cSrc?up.cSrc[s.id]:0); return ci>0?a+pNum(s.qDay):a; },0);
+            Bref = addr('E',r); Bval = tot;
+          } else {
+            const r = add([mkCell('Belum ada sumber yang menghasilkan parameter ini',sty.lbl),E(),E(),E(),E()]);
+            merges.push({s:{r:r-1,c:0},e:{r:r-1,c:4}});
+          }
+        }
+        if (!Bref) {
+          hdr(['Uraian','Nilai','','Satuan','Keterangan']);
+          const r = add([mkCell('Alokasi beban pencemar (B)'+(row.mode==='manual'?' — input manual':''),sty.lblB), nCell(alokVal,sty.inp,FM.n4), E(), U('kg/hari'), N(row.mode==='manual'?'Diisi manual di menu Kompensasi Lingkungan':'')]);
+          Bref = addr('B',r); Bval = alokVal;
+        }
+
+        // ══════════ LAMPIRAN V — USLE ══════════
+        if (row.lamp === 'V') {
+          // R: dari data 12 bulan bila ada
+          let Rref = null, Rval = num(st.R);
+          const months = (st.R_mode !== 'manual' && Array.isArray(st.R_months)) ? st.R_months.filter(m=>m && (m.rain>0||m.days>0||m.maxp>0)) : [];
+          if (months.length) {
+            gap();
+            sect(nextL()+'. EROSIVITAS HUJAN (R) — Bols (1978):  Ri = 6,119 × CH^1,21 × HH^-0,47 × CHmax^0,53');
+            hdr(['Bulan','Curah hujan CH (mm)','Hari hujan HH (hari)','Hujan maks 24 jam CHmax (mm)','Erosivitas Ri']);
+            const first = rows.length + 1;
+            let tot = 0;
+            st.R_months.forEach(function(m){
+              const r = rows.length + 1;
+              const v = (m.rain>0&&m.days>0&&m.maxp>0) ? 6.119*Math.pow(m.rain,1.21)*Math.pow(m.days,-0.47)*Math.pow(m.maxp,0.53) : 0;
+              tot += v;
+              add([L(BULAN_NAMA[m.m-1]), nCell(m.rain||null,sty.inp,FM.n2), nCell(m.days||null,sty.inp,FM.n2), nCell(m.maxp||null,sty.inp,FM.n2),
+                   fCell('IF(AND(B'+r+'>0,C'+r+'>0,D'+r+'>0),6.119*B'+r+'^1.21*C'+r+'^-0.47*D'+r+'^0.53,0)',sty.calc,v,FM.n2)]);
+            });
+            const last = rows.length;
+            const r = add([mkCell('R TOTAL (EJ/ha/tahun)',sty.lblB),E(),E(),E(),fCell('SUM(E'+first+':E'+last+')',sty.res,tot,FM.n2)]);
+            merges.push({s:{r:r-1,c:0},e:{r:r-1,c:3}});
+            Rref = addr('E',r); Rval = tot;
+          }
+          // K: dari rumus bila ada
+          let Kref = null, Kval = num(st.K);
+          if (st.K_mode === 'formula' && num(st.K_M) > 0) {
+            gap();
+            sect(nextL()+'. ERODIBILITAS TANAH (K):  K = [2,723 × M^1,34 × 10^-4 × (12 − a) + 3,25 × (b − 2) + 2,5 × (c − 3)] ÷ 100');
+            hdr(['Variabel','Nilai','','Satuan','Keterangan']);
+            const rM = add([L('M — (% debu + pasir sangat halus) × (100 − % liat)'),nCell(num(st.K_M),sty.inp,FM.n2),E(),U(''),N('')]);
+            const rA = add([L('a — bahan organik (%)'),nCell(num(st.K_a),sty.inp,FM.n2),E(),U('%'),N('')]);
+            const rB = add([L('b — harkat struktur tanah'),nCell(num(st.K_b),sty.inp,FM.n2),E(),U(''),N('Tabel 48 (Arsyad, 2010)')]);
+            const rC = add([L('c — harkat permeabilitas tanah'),nCell(num(st.K_c),sty.inp,FM.n2),E(),U(''),N('Tabel 49 (Arsyad, 2010)')]);
+            const M=num(st.K_M),a=num(st.K_a)||0,b=num(st.K_b),c=num(st.K_c);
+            const kApp = (2.723*Math.pow(M,1.34)*1e-4*(12-a)+3.25*(b-2)+2.5*(c-3))/100;
+            const r = add([mkCell('K',sty.lblB),fCell('(2.723*B'+rM+'^1.34*10^-4*(12-B'+rA+')+3.25*(B'+rB+'-2)+2.5*(B'+rC+'-3))/100',sty.res,kApp,FM.n4),E(),U('ton·ha·jam/ha·MJ·mm'),N('Rumus sesuai lembar kerja aplikasi')]);
+            Kref = addr('B',r); Kval = kApp;
+          }
+          // Faktor USLE & Ea
+          gap();
+          sect(nextL()+'. FAKTOR USLE & LAJU EROSI  (Ea = R × K × LS × C × P)');
+          hdr(['Faktor','Sebelum rehabilitasi','Sesudah rehabilitasi','Satuan','Keterangan']);
+          const rR  = add([L('R — erosivitas hujan'), Rref?fCell(Rref,sty.calc,Rval,FM.n2):nCell(Rval,sty.inp,FM.n2), null, U('EJ/ha/th'), N(Rref?'Dari tabel 12 bulan (bagian C)':'Input langsung')]);
+          rows[rR-1][2] = fCell(addr('B',rR),sty.calc,Rval,FM.n2);
+          const rK  = add([L('K — erodibilitas tanah'), Kref?fCell(Kref,sty.calc,Kval,FM.n4):nCell(Kval,sty.inp,FM.n4), null, U('ton·ha·jam/ha·MJ·mm'), N(Kref?'Dari rumus K (bagian D)':'Input langsung')]);
+          rows[rK-1][2] = fCell(addr('B',rK),sty.calc,Kval,FM.n4);
+          const LSv = num(st.LS);
+          const rLS = add([L('LS — panjang & kemiringan lereng'), nCell(LSv,sty.inp,FM.n3), null, U(''), N(st.LS_kelas||'Tabel 50')]);
+          rows[rLS-1][2] = fCell(addr('B',rLS),sty.calc,LSv,FM.n3);
+          const C1=num(st.C1),C2=num(st.C2),P1=num(st.P1),P2=num(st.P2);
+          const rC_ = add([L('C — pengelolaan tanaman'), nCell(C1,sty.inp,FM.n3), nCell(C2,sty.inp,FM.n3), U(''), N('Sebelum: '+(st.C1_lahan||'–')+' | Sesudah: '+(st.C2_lahan||'–'))]);
+          const rP_ = add([L('P — tindakan konservasi'), nCell(P1,sty.inp,FM.n3), nCell(P2,sty.inp,FM.n3), U(''), N('Sebelum: '+(st.P1_peng||'–')+' | Sesudah: '+(st.P2_peng||'–'))]);
+          const Ea1 = (Rval||0)*(Kval||0)*(LSv||0)*(C1||0)*(P1||0);
+          const Ea2 = (Rval||0)*(Kval||0)*(LSv||0)*(C2||0)*(P2||0);
+          const rEa = add([mkCell('Ea — laju erosi',sty.lblB),
+            fCell('B'+rR+'*B'+rK+'*B'+rLS+'*B'+rC_+'*B'+rP_,sty.res,Ea1,FM.n3),
+            fCell('C'+rR+'*C'+rK+'*C'+rLS+'*C'+rC_+'*C'+rP_,sty.res,Ea2,FM.n3), U('ton/ha/th'), N('Ea = R × K × LS × C × P')]);
+          // SDR & MS
+          gap();
+          sect(nextL()+'. NISBAH PELEPASAN SEDIMEN (SDR) & SEDIMEN DI SUNGAI  (MS = Ea × SDR)');
+          hdr(['Uraian','Sebelum rehabilitasi','Sesudah rehabilitasi','Satuan','Keterangan']);
+          const SDRv = num(st.SDR);
+          const rDas = add([L('Luas DAS'), nCell(num(st.A_das),sty.inp,FM.n2), E(), U('ha'), N('Dasar penentuan SDR (Tabel 54)')]);
+          const rSDR = add([L('SDR'), nCell(SDRv,sty.inp,FM.n2), null, U('%'), N(st.SDR_kelas||'')]);
+          rows[rSDR-1][2] = fCell(addr('B',rSDR),sty.calc,SDRv,FM.n2);
+          const MS1=Ea1*(SDRv||0)/100, MS2=Ea2*(SDRv||0)/100;
+          const rMS = add([mkCell('MS — sedimen yang masuk sungai',sty.lblB),
+            fCell('B'+rEa+'*B'+rSDR+'/100',sty.res,MS1,FM.n3), fCell('C'+rEa+'*C'+rSDR+'/100',sty.res,MS2,FM.n3), U('ton/ha/th'), N('MS = Ea × SDR ÷ 100')]);
+          // Verifikasi
+          gap();
+          sect(nextL()+'. VERIFIKASI KOMPENSASI  (Tabel 56)');
+          hdr(['Uraian','Nilai','','Satuan','Keterangan']);
+          const AL = num(st.A_lahan), PCT = num(st.pct_endap)||60;
+          const rAL  = add([L('Luas lahan rehabilitasi (A)'), nCell(AL,sty.inp,FM.n2), E(), U('ha'), N('')]);
+          const rPCT = add([L('Persen sedimen mengendap'), nCell(PCT,sty.inp,FM.n2), E(), U('%'), N('Default 60%')]);
+          const dMS = MS1-MS2;
+          const rdMS = add([L('Selisih MS (sebelum − sesudah)'), fCell('B'+rMS+'-C'+rMS,sty.calc,dMS,FM.n3), E(), U('ton/ha/th'), N('')]);
+          const t1=MS1*(AL||0), t2=MS2*(AL||0), td=t1-t2;
+          const rt1 = add([L('Sedimen sebelum rehabilitasi'), fCell('B'+rMS+'*B'+rAL,sty.calc,t1,FM.n2), E(), U('ton/tahun'), N('MS sebelum × A')]);
+          const rt2 = add([L('Sedimen sesudah rehabilitasi'), fCell('C'+rMS+'*B'+rAL,sty.calc,t2,FM.n2), E(), U('ton/tahun'), N('MS sesudah × A')]);
+          const rtd = add([L('Penurunan sedimen'), fCell('B'+rt1+'-B'+rt2,sty.calc,td,FM.n2), E(), U('ton/tahun'), N('')]);
+          const hd = td/365;
+          const rhd = add([L('Penurunan sedimen per hari'), fCell('B'+rtd+'/365',sty.calc,hd,FM.n4), E(), U('ton/hari'), N('÷ 365 hari')]);
+          const Aton = hd*PCT/100;
+          const rAt = add([L('Sedimen yang mengendap'), fCell('B'+rhd+'*B'+rPCT+'/100',sty.calc,Aton,FM.n4), E(), U('ton/hari'), N('× persen mengendap')]);
+          const Akg = Aton*1000;
+          const rA_ = add([mkCell('A — pencegahan sedimentasi',sty.lblB), fCell('B'+rAt+'*1000',sty.res,Akg,FM.n4), E(), U('kg/hari'), N('')]);
+          const rB_ = add([mkCell('B — alokasi beban TSS',sty.lblB), fCell(Bref,sty.res,Bval,FM.n4), E(), U('kg/hari'), N('Dari bagian B')]);
+          const Bn = Bval||0;
+          const rD = add([mkCell('Selisih A − B',sty.lblB), fCell('B'+rA_+'-B'+rB_,sty.res,Akg-Bn,FM.n4), E(), U('kg/hari'), N('Diterima bila ≥ 0')]);
+          const okV = (Akg-Bn) >= 0;
+          const rS = add([mkCell('HASIL',sty.lblB), fCell('IF(B'+rB_+'<=0,"Belum lengkap",IF(B'+rA_+'>=B'+rB_+',"DITERIMA","DITOLAK"))',sty.stat,(Bn>0?(okV?'DITERIMA':'DITOLAK'):'Belum lengkap')), E(), U(''), N('DITERIMA bila A ≥ B')]);
+          rows[rS-1][1].t = 's';
+          merges.push({s:{r:rS-1,c:1},e:{r:rS-1,c:2}});
+          const aMin = (dMS>0 && PCT>0 && Bn>0) ? (Bn/1000)*365/((PCT/100)*dMS) : 0;
+          add([L('Luas lahan minimum agar A ≥ B'), fCell('IF(AND(B'+rdMS+'>0,B'+rPCT+'>0,B'+rB_+'>0),(B'+rB_+'/1000)*365/((B'+rPCT+'/100)*B'+rdMS+'),0)',sty.calc,aMin,FM.n2), E(), U('ha'), N('')]);
+
+        // ══════════ LAMPIRAN I — IPAL DOMESTIK ══════════
+        } else if (row.lamp === 'I') {
+          const ip = st.ip || {};
+          const Uf = kompIFac(ip);
+          const f = Uf.f, dec = Uf.dec;
+          gap();
+          sect(nextL()+'. SATUAN & FAKTOR KONVERSI');
+          hdr(['Uraian','Nilai','','Satuan','Keterangan']);
+          const rU = add([L('Satuan parameter'), mkCell(ip.unit||'mg/L',sty.lblB), E(), U(''), N(Uf.note||'')]);
+          merges.push({s:{r:rU-1,c:1},e:{r:rU-1,c:2}});
+          const rF = add([L('Faktor konversi (f)'), nCell(f,sty.inp,'0.000000'), E(), U(''), N('Beban = Q × C × f')]);
+          gap();
+          sect(nextL()+'. RANCANGAN BMAL DAN BEBAN PENCEMARAN INDUSTRI (b)');
+          hdr(['Uraian','Nilai','','Satuan','Keterangan']);
+          const qi = num(ip.qind), bm = num(ip.bmal), Bdir = num(ip.Bdir);
+          const rQ  = add([L('Limbah yang akan dibuang'), nCell(qi,sty.inp,FM.n2), E(), U('m³/hari'), N(ip.fromUbm?'Total sumber dari Usulan Baku Mutu':'')]);
+          const rBM = add([L('BMAL / konsentrasi air limbah'), nCell(bm,sty.inp,FM.n4), E(), U(Uf.cu), N(ip.fromUbm?'Rata-rata tertimbang dari Usulan Baku Mutu':'')]);
+          const rBd = add([L('Beban langsung (opsional, mengganti Q × BMAL)'), nCell(Bdir,sty.inp,FM.n4), E(), U(Uf.lu), N('Kosongkan bila memakai Q × BMAL')]);
+          const Bind = Bdir != null ? Bdir : ((qi>0&&bm>0)?qi*bm*f:null);
+          const rB  = add([mkCell('Beban pencemaran industri (b)',sty.lblB), fCell('IF(ISNUMBER(B'+rBd+'),B'+rBd+',IF(AND(B'+rQ+'>0,B'+rBM+'>0),B'+rQ+'*B'+rBM+'*B'+rF+',0))',sty.res,Bind||0,FM.n4), E(), U(Uf.lu), N('b = Q × BMAL × f')]);
+          gap();
+          sect(nextL()+'. RANCANGAN IPAL DOMESTIK KOMPENSASI');
+          hdr(['Uraian','Nilai','','Satuan','Keterangan']);
+          const Q = num(ip.q), cin = num(ip.cin), cout = num(ip.cout);
+          const rQi  = add([L('Debit IPAL Domestik Kompensasi'), nCell(Q,sty.inp,FM.n2), E(), U('m³/hari'), N('Sama untuk inlet dan outlet')]);
+          const rCi  = add([L('Konsentrasi inlet'), nCell(cin,sty.inp,FM.n4), E(), U(Uf.cu), N('Karakteristik air limbah domestik (literatur)')]);
+          const Bin = (Q>0&&cin>0)?Q*cin*f:0;
+          const rBi  = add([L('Beban pencemaran inlet'), fCell('B'+rQi+'*B'+rCi+'*B'+rF,sty.calc,Bin,FM.n4), E(), U(Uf.lu), N('Q × Cin × f')]);
+          const rCo  = add([L('Konsentrasi outlet'), nCell(cout,sty.inp,FM.n4), E(), U(Uf.cu), N('')]);
+          const Bout = (Q>0&&cout!=null)?Q*cout*f:0;
+          const rBo  = add([L('Beban pencemaran outlet'), fCell('B'+rQi+'*B'+rCo+'*B'+rF,sty.calc,Bout,FM.n4), E(), U(Uf.lu), N('Q × Cout × f')]);
+          gap();
+          sect(nextL()+'. HASIL KOMPENSASI');
+          hdr(['Uraian','Nilai','','Satuan','Keterangan']);
+          const PB = Bin-Bout, SBP = PB-(Bind||0);
+          const rPB  = add([mkCell('Penurunan beban IPAL (a) = inlet − outlet',sty.lblB), fCell('B'+rBi+'-B'+rBo,sty.res,PB,FM.n4), E(), U(Uf.lu), N('')]);
+          const rSB  = add([mkCell('Selisih (a) − (b)',sty.lblB), fCell('B'+rPB+'-B'+rB,sty.res,SBP,FM.n4), E(), U(Uf.lu), N('Diterima bila ≥ 0')]);
+          const have = (Bind!=null && Q>0 && cin>0 && cout!=null);
+          const rS = add([mkCell('HASIL',sty.lblB), fCell('IF(OR(B'+rB+'<=0,B'+rQi+'<=0),"Belum lengkap",IF(B'+rSB+'>=0,"DITERIMA","DITOLAK"))',sty.stat,(have?(SBP>=0?'DITERIMA':'DITOLAK'):'Belum lengkap')), E(), U(''), N('DITERIMA bila (a) ≥ (b)')]);
+          rows[rS-1][1].t = 's';
+          merges.push({s:{r:rS-1,c:1},e:{r:rS-1,c:2}});
+          const dC = (cin||0)-(cout||0);
+          const qmin = (Bind>0 && dC>0 && f>0) ? Bind/(dC*f) : 0;
+          add([L('Debit IPAL minimum agar selisih ≥ 0'), fCell('IF(AND(B'+rB+'>0,B'+rCi+'>B'+rCo+',B'+rF+'>0),B'+rB+'/((B'+rCi+'-B'+rCo+')*B'+rF+'),0)',sty.calc,qmin,FM.n2), E(), U('m³/hari'), N('')]);
+
+        // ══════════ Lampiran lain — ringkasan saja ══════════
+        } else {
+          gap();
+          sect(nextL()+'. KETERANGAN');
+          const r = add([mkCell('Kalkulator kajian untuk Lampiran '+row.lamp+' belum tersedia di aplikasi. Lakukan perhitungan manual mengacu Kepdirjen PPKL No. 114 Tahun 2024, dengan alokasi beban (B) pada bagian B sebagai target kompensasi.',sty.note),...Array(NCK-1).fill(null)],42);
+          merges.push({s:{r:r-1,c:0},e:{r:r-1,c:NCK-1}});
+        }
+
+        // nama sheet unik (maks. 31 karakter, tanpa karakter terlarang)
+        let nm = ('Komp '+(ri+1)+' '+pname).replace(/[\[\]:*?\/\\]/g,'').trim().slice(0,28) + ' L'+row.lamp;
+        nm = nm.slice(0,31);
+        let base = nm, k = 2;
+        while (usedNames.has(nm)) { nm = base.slice(0,28)+'-'+k; k++; }
+        usedNames.add(nm);
+        addSheet(WB, nm, rows, [46,20,20,20,48], merges, rh);
+      });
+      // paksa Excel menghitung ulang semua rumus saat dibuka
+      WB.Workbook = WB.Workbook || {};
+      WB.Workbook.CalcPr = { fullCalcOnLoad: true };
+    }
+  } catch(err) { console.error('Sheet Kompensasi gagal dibuat:', err); }
+
   // ── Generate & download ──────────────────────────────────────
   const wbout=XLSX.write(WB,{bookType:'xlsx',type:'array'});
   const blob =new Blob([wbout],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
@@ -9326,48 +9673,79 @@ function kompBreakdownHtml(row, i) {
   var open = row.showBrk !== false;
   var pn = esc(row.name || p.name || '');
   var un = esc(row.unit || p.unit || 'mg/L');
-  var head = '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:' + (open ? '8' : '0') + 'px">'
-    + '<button onclick="kompOptToggleBrk(' + i + ')" style="font-family:var(--mono);font-size:10.5px;font-weight:700;padding:5px 12px;border:1.5px solid rgba(243,156,18,.5);border-radius:6px;background:transparent;color:var(--amber);cursor:pointer">' + (open ? '▾' : '▸') + ' Breakdown Alokasi per Sumber</button>'
-    + '</div>';
-  if (!open) return '<tr><td></td><td colspan="6" style="padding:4px 10px 10px">' + head + '</td></tr>';
-  var TH = 'padding:6px 14px;white-space:nowrap;font-family:var(--mono);font-size:10px;font-weight:700;border:1px solid var(--brd2);background:rgba(243,156,18,.10);text-align:center';
-  var TD = 'padding:6px 14px;white-space:nowrap;font-family:var(--mono);font-size:11.5px;border:1px solid var(--brd2)';
-  var body = '', totQ = 0, totKg = 0, no = 0;
+  var rowsH = '', totQ = 0, totKg = 0, no = 0, items = [];
+  var TD = 'padding:8px 14px;font-family:var(--mono);font-size:11.5px;border-top:1px solid var(--brd2);';
   ubmSources.forEach(function(s) {
     var q = pNum(s.qDay);
     var prop = ubmProposedSrcIds.has(s.id);
     var uv = prop ? (p.usulanBMPerSrc && p.usulanBMPerSrc[s.id] != null ? p.usulanBMPerSrc[s.id] : '') : '';
     var useU = prop && uv !== '' && pNum(uv) > 0;
     var ci = useU ? pNum(uv) : pNum(p.cSrc ? p.cSrc[s.id] : 0);
-    var has = ci > 0;
-    if (!has) return;   // sumber yang tidak menghasilkan parameter ini tidak ditampilkan
+    if (!(ci > 0)) return;   // sumber yang tidak menghasilkan parameter ini tidak ditampilkan
     no++;
     var kg = ci * q / 1000;
-    totQ += q; totKg += kg;
-    body += '<tr>'
-      + '<td style="' + TD + ';text-align:center">' + no + '</td>'
-      + '<td style="' + TD + '">' + esc(s.name || ('Sumber ' + no)) + (useU ? ' <span style="font-size:8.5px;color:var(--accent);background:rgba(26,176,166,.12);padding:1px 5px;border-radius:3px">Usulan BM</span>' : '') + '</td>'
-      + '<td style="' + TD + ';text-align:right">' + kf(q, 2) + '</td>'
-      + '<td style="' + TD + ';text-align:right">' + fmtN(ci, 4) + '</td>'
-      + '<td style="' + TD + ';text-align:right">' + kf(kg, 2) + '</td>'
-      + '<td style="' + TD + ';text-align:right">' + kf(kg / 1000, 2) + '</td></tr>';
+    totQ += q; totKg += kg; items.push({name: s.name || ('Sumber ' + no), kg: kg});
+    rowsH += '<tr>'
+      + '<td style="' + TD + 'text-align:center;color:var(--mute)">' + no + '</td>'
+      + '<td style="' + TD + 'font-family:inherit;font-size:12px;font-weight:600">' + esc(s.name || ('Sumber ' + no))
+        + (useU ? ' <span style="font-family:var(--mono);font-size:8.5px;font-weight:700;color:var(--accent);background:rgba(26,176,166,.14);padding:1px 6px;border-radius:3px;margin-left:4px">Usulan BM</span>' : '') + '</td>'
+      + '<td style="' + TD + 'text-align:right">' + kf(q, 2) + '</td>'
+      + '<td style="' + TD + 'text-align:right">' + fmtN(ci, 4) + '</td>'
+      + '<td style="' + TD + 'text-align:right;font-weight:700;color:var(--amber)">' + kf(kg, 2) + '</td>'
+      + '<td style="' + TD + 'text-align:right">' + kf(kg / 1000, 2) + '</td></tr>';
   });
   var anyHas = totKg > 0;
-  if (!anyHas) body = '<tr><td colspan="6" style="' + TD + ';text-align:center;color:var(--mute)">Belum ada sumber air limbah yang menghasilkan parameter ini</td></tr>';
-  body += '<tr style="font-weight:800;background:rgba(243,156,18,.08)">'
-    + '<td colspan="2" style="' + TD + ';text-align:center">Total</td>'
-    + '<td style="' + TD + ';text-align:right">' + (anyHas ? kf(totQ, 2) : '–') + '</td>'
-    + '<td style="' + TD + ';text-align:center">-</td>'
-    + '<td style="' + TD + ';text-align:right">' + (anyHas ? kf(totKg, 2) : '–') + '</td>'
-    + '<td style="' + TD + ';text-align:right">' + (anyHas ? kf(totKg / 1000, 2) : '–') + '</td></tr>';
-  var note = '';
-  if (row.mode === 'manual' && !kempty(row.alokManual) && anyHas && Math.abs(pNum(row.alokManual) - totKg) > 0.005)
-    note = '<div style="font-size:10.5px;color:var(--amber);margin-top:6px">⚠ Mode Manual aktif: nilai alokasi (' + fmtN(pNum(row.alokManual), 2) + ' kg/hari) berbeda dari total breakdown sumber di atas.</div>';
-  var tbl = '<div style="overflow-x:auto"><table style="border-collapse:collapse;width:auto;min-width:480px;max-width:100%">'
-    + '<thead><tr><th style="' + TH + '">No</th><th style="' + TH + ';text-align:left">Nama Sumber / Titik Penaatan</th>'
-    + '<th style="' + TH + '">Debit<br>(m³/hari)</th><th style="' + TH + '">BM / C ' + pn + '<br>(' + un + ')</th>'
-    + '<th style="' + TH + '">Alokasi<br>(kg/hari)</th><th style="' + TH + '">Alokasi<br>(t/hari)</th></tr></thead><tbody>' + body + '</tbody></table></div>' + note;
-  return '<tr style="border-bottom:1px solid var(--brd2)"><td></td><td colspan="6" style="padding:4px 10px 14px">' + head + tbl + '</td></tr>';
+  var chev = '<span style="display:inline-block;transition:transform .15s;transform:rotate(' + (open ? '90' : '0') + 'deg);color:var(--amber);font-size:10px">▶</span>';
+  var hdr = '<div onclick="kompOptToggleBrk(' + i + ')" style="display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;user-select:none;background:rgba(243,156,18,.07)">'
+    + chev
+    + '<span style="font-family:var(--mono);font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--txt2)">Rincian Alokasi per Sumber</span>'
+    + '<span style="font-family:var(--mono);font-size:10px;color:var(--mute)">' + no + ' sumber</span>'
+    + '<span style="margin-left:auto;font-family:var(--mono);font-size:12px;font-weight:800;color:var(--amber)">' + (anyHas ? kf(totKg, 2) + ' kg/hari' : '–') + '</span></div>';
+  var body = '';
+  if (open) {
+    if (!anyHas) {
+      body = '<div style="padding:14px;font-size:11.5px;color:var(--mute)">Belum ada sumber air limbah yang menghasilkan parameter ini.</div>';
+    } else {
+      var TH = 'padding:7px 14px;font-family:var(--mono);font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--mute);line-height:1.35;';
+      var tf = 'font-weight:800;background:rgba(243,156,18,.07);';
+      body = '<table style="border-collapse:collapse;width:100%;table-layout:fixed">'
+        + '<colgroup><col style="width:44px"><col><col style="width:116px"><col style="width:132px"><col style="width:116px"><col style="width:100px"></colgroup>'
+        + '<thead><tr>'
+        + '<th style="' + TH + 'text-align:center">No</th>'
+        + '<th style="' + TH + 'text-align:left">Nama Sumber / Titik Penaatan</th>'
+        + '<th style="' + TH + 'text-align:right">Debit<br>(m³/hari)</th>'
+        + '<th style="' + TH + 'text-align:right">BM / C ' + pn + '<br>(' + un + ')</th>'
+        + '<th style="' + TH + 'text-align:right">Alokasi<br>(kg/hari)</th>'
+        + '<th style="' + TH + 'text-align:right">Alokasi<br>(t/hari)</th></tr></thead><tbody>' + rowsH
+        + '<tr style="' + tf + '">'
+        + '<td colspan="2" style="' + TD + 'text-align:left;font-family:inherit;font-size:12px">Total</td>'
+        + '<td style="' + TD + 'text-align:right">' + kf(totQ, 2) + '</td>'
+        + '<td style="' + TD + 'text-align:right;color:var(--mute)">-</td>'
+        + '<td style="' + TD + 'text-align:right;color:var(--amber)">' + kf(totKg, 2) + '</td>'
+        + '<td style="' + TD + 'text-align:right">' + kf(totKg / 1000, 2) + '</td></tr></tbody></table>';
+      if (row.mode === 'manual' && !kempty(row.alokManual) && Math.abs(pNum(row.alokManual) - totKg) > 0.005)
+        body += '<div style="font-size:10.5px;color:var(--amber);padding:8px 14px;border-top:1px solid var(--brd2)">⚠ Mode Manual aktif: nilai alokasi (' + fmtN(pNum(row.alokManual), 2) + ' kg/hari) berbeda dari total rincian sumber.</div>';
+    }
+  }
+  var card = '<div style="flex:1 1 560px;min-width:0;border:1px solid var(--brd2);border-radius:10px;overflow:hidden;background:var(--card)">' + hdr + body + '</div>';
+  var side = '';
+  if (open && anyHas) {
+    var sorted = items.slice().sort(function(a, b) { return b.kg - a.kg; });
+    var bars = sorted.map(function(it) {
+      var pct = it.kg / totKg * 100;
+      return '<div style="margin-bottom:11px">'
+        + '<div style="display:flex;justify-content:space-between;gap:8px;font-size:11.5px;margin-bottom:4px"><span style="font-weight:600">' + esc(it.name) + '</span>'
+        + '<span style="font-family:var(--mono);font-weight:700;color:var(--amber)">' + kf(pct, 1) + '%</span></div>'
+        + '<div style="height:7px;border-radius:4px;background:rgba(128,128,128,.14);overflow:hidden"><div style="height:100%;width:' + Math.max(pct, 1.5).toFixed(1) + '%;background:var(--amber);border-radius:4px"></div></div>'
+        + '</div>';
+    }).join('');
+    side = '<div style="flex:1 1 280px;min-width:240px;border:1px solid var(--brd2);border-radius:10px;background:var(--card);padding:12px 16px">'
+      + '<div style="font-family:var(--mono);font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--txt2);margin-bottom:12px">Kontribusi per Sumber</div>'
+      + bars
+      + '<div style="border-top:1px solid var(--brd2);padding-top:9px;margin-top:4px;font-size:10.5px;color:var(--mute);line-height:1.5">Terbesar: <b style="color:var(--txt)">' + esc(sorted[0].name) + '</b> (' + kf(sorted[0].kg / totKg * 100, 1) + '% dari ' + kf(totKg, 2) + ' kg/hari)</div>'
+      + '</div>';
+  }
+  return '<tr><td></td><td colspan="6" style="padding:4px 10px 16px"><div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start">' + card + side + '</div></td></tr>';
 }
 
 function kompOptSetMode(i, mode) {
@@ -10847,6 +11225,184 @@ if (window.__kompPending) { try { kompRestore(window.__kompPending); } catch(e){
     deferred=null; if(btn) btn.style.display='none';
     if(typeof toast==='function') toast('✓ RiverLoad terpasang sebagai aplikasi','ok');
   });
+})();
+</script>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// SIMPAN FILE + AUTOSAVE KE FILE (File System Access API)
+//  • Simpan pertama kali  → pilih lokasi/nama file di laptop
+//  • Setelah itu           → setiap perubahan otomatis ditulis ke file yang sama
+//  • Simpan Sebagai        → pilih lokasi baru, autosave pindah ke sana
+//  • Buka File             → autosave lanjut ke file yang dibuka
+//  Handle file diingat di IndexedDB; setelah browser dibuka ulang cukup 1 klik izin.
+//  Browser tanpa API ini (Firefox/Safari) memakai unduhan biasa.
+// ═══════════════════════════════════════════════════════════════
+(function(){
+  var FS_OK = typeof window.showSaveFilePicker === 'function' && typeof window.showOpenFilePicker === 'function';
+  var handle = null, perm = 'none', lastFileSave = null, writing = false, again = false, tmr = null;
+  var _prevSave = window.saveProject;   // versi unduhan + riwayat (fallback tanpa File System Access API)
+  var PICK_TYPES = [{ description:'Proyek RiverLoad', accept:{ 'application/json':['.riverload','.json'] } }];
+
+  function idb(){ return new Promise(function(res,rej){ var r = indexedDB.open('rl_fs_db',1); r.onupgradeneeded=function(){ r.result.createObjectStore('h'); }; r.onsuccess=function(){ res(r.result); }; r.onerror=function(){ rej(r.error); }; }); }
+  function idbGet(){ return idb().then(function(d){ return new Promise(function(res){ var q=d.transaction('h').objectStore('h').get('file'); q.onsuccess=function(){ res(q.result||null); }; q.onerror=function(){ res(null); }; }); }).catch(function(){ return null; }); }
+  function idbSet(h){ return idb().then(function(d){ return new Promise(function(res){ var t=d.transaction('h','readwrite'); if(h) t.objectStore('h').put(h,'file'); else t.objectStore('h').delete('file'); t.oncomplete=res; t.onerror=res; }); }).catch(function(){}); }
+
+  function projectJSON(){
+    if(typeof sitesSnapshotActive==='function') sitesSnapshotActive();
+    var multi = (typeof riverSites!=='undefined' && riverSites.length)
+      ? { __riverloadMultiSite:true, _v:1, sites:riverSites, activeSiteId:activeSiteId }
+      : { __riverloadMultiSite:true, _v:1, sites:[{id:'site_1',name:'Sungai 1',state:getState()}], activeSiteId:'site_1' };
+    return JSON.stringify(multi,null,2);
+  }
+  function suggestName(){
+    var nm = 'sungai';
+    try {
+      var site = riverSites && riverSites.find(function(x){ return x.id===activeSiteId; });
+      nm = site ? _siteLabel(site) : (document.getElementById('r-name')?.value.trim() || 'sungai');
+    } catch(e){}
+    var d = new Date();
+    return 'RiverLoad_' + nm.replace(/\s+/g,'_') + '_' + d.getFullYear() + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0') + '.riverload';
+  }
+  function hist(){
+    try { var n = document.getElementById('r-name')?.value.trim() || 'Proyek Tanpa Nama'; historySaveProject(n); } catch(e){}
+  }
+
+  function ui(){
+    var el = document.getElementById('rl-save-indicator'); if(!el) return;
+    el.onclick = null; el.style.cursor = '';
+    if(!handle){ return; }
+    var nm = handle.name;
+    if(perm === 'granted'){
+      var t = lastFileSave ? lastFileSave.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'}) : '';
+      el.textContent = '✓ Tersimpan ke ' + nm + (t ? ' · ' + t : '');
+      el.style.color = 'var(--green,#2e9e5b)';
+      el.title = 'Autosave aktif ke file: ' + nm + ' — gunakan Simpan Sebagai untuk pindah lokasi';
+    } else {
+      el.textContent = '🔒 ' + nm + ' — klik untuk aktifkan autosave';
+      el.style.color = 'var(--amber)';
+      el.style.cursor = 'pointer';
+      el.title = 'Browser perlu izin tulis ke file ini setelah dibuka ulang';
+      el.onclick = function(){ window.rlResumeFile(); };
+    }
+  }
+
+  async function ensurePerm(ask){
+    if(!handle) return false;
+    try {
+      var p = await handle.queryPermission({mode:'readwrite'});
+      if(p !== 'granted' && ask) p = await handle.requestPermission({mode:'readwrite'});
+      perm = p; return p === 'granted';
+    } catch(e){ return false; }
+  }
+
+  async function writeNow(){
+    if(!handle) return false;
+    if(writing){ again = true; return true; }
+    writing = true;
+    try {
+      if(!(await ensurePerm(false))){ ui(); return false; }
+      var w = await handle.createWritable();
+      await w.write(projectJSON());
+      await w.close();
+      lastFileSave = new Date();
+      if(typeof _rlDirty !== 'undefined') _rlDirty = false;
+      ui();
+      return true;
+    } catch(e){
+      console.error('Gagal menulis file:', e);
+      if(typeof toast==='function') toast('⚠ Gagal menyimpan ke file — pilih Simpan Sebagai untuk lokasi lain','err');
+      return false;
+    } finally {
+      writing = false;
+      if(again){ again = false; writeNow(); }
+    }
+  }
+
+  async function saveAs(){
+    if(!FS_OK){ if(_prevSave) _prevSave(); return; }
+    try {
+      var h = await window.showSaveFilePicker({ suggestedName: suggestName(), types: PICK_TYPES });
+      handle = h; perm = 'granted';
+      await idbSet(h);
+      var ok = await writeNow();
+      hist();
+      if(ok && typeof toast==='function') toast('✓ Disimpan ke "' + h.name + '" — perubahan berikutnya tersimpan otomatis ke file ini','ok');
+    } catch(e){ if(e && e.name !== 'AbortError'){ console.error(e); if(typeof toast==='function') toast('⚠ Tidak bisa menyimpan file','err'); } }
+  }
+
+  async function save(){
+    if(!FS_OK){ if(_prevSave) _prevSave(); return; }
+    if(!handle){ return saveAs(); }
+    if(!(await ensurePerm(true))){ ui(); return; }
+    var ok = await writeNow();
+    hist();
+    if(ok && typeof toast==='function') toast('✓ Tersimpan ke "' + handle.name + '"','ok');
+  }
+
+  async function openFile(){
+    if(!FS_OK){ document.getElementById('fi').click(); return; }
+    try {
+      var hs = await window.showOpenFilePicker({ types: PICK_TYPES, multiple:false });
+      var h = hs[0];
+      var f = await h.getFile();
+      var text = await f.text();
+      if(!_rlApplyProjectText(text)) return;
+      handle = h;
+      await idbSet(h);
+      await ensurePerm(true);
+      lastFileSave = null;
+      ui();
+      if(perm === 'granted' && typeof toast==='function') toast('✓ "' + h.name + '" dibuka — autosave lanjut ke file ini','ok');
+    } catch(e){ if(e && e.name !== 'AbortError'){ console.error(e); if(typeof toast==='function') toast('⚠ Tidak bisa membuka file','err'); } }
+  }
+
+  // autosave: ikut jadwal saveAuto yang sudah ada, lalu tulis ke file
+  var _origAuto = window.saveAuto;
+  window.saveAuto = function(){
+    if(typeof _origAuto === 'function') _origAuto.apply(this, arguments);
+    if(!handle) return;
+    clearTimeout(tmr);
+    tmr = setTimeout(function(){ writeNow(); }, 1700);
+  };
+  // indikator bawaan menimpa teks → tampilkan lagi status file
+  var _origInd = window._rlUpdateSaveIndicator;
+  window._rlUpdateSaveIndicator = function(status){
+    if(typeof _origInd === 'function') _origInd.apply(this, arguments);
+    if(handle && status === 'saved') setTimeout(ui, 0);
+    else if(handle && status === 'dirty' && perm === 'granted'){
+      var el = document.getElementById('rl-save-indicator'); if(el) el.textContent = '● Menyimpan ke ' + handle.name + '…';
+    }
+  };
+  // simpan segera saat tab disembunyikan
+  document.addEventListener('visibilitychange', function(){
+    if(document.visibilityState === 'hidden' && handle && perm === 'granted') writeNow();
+  });
+  // pintasan keyboard
+  document.addEventListener('keydown', function(e){
+    if(!(e.ctrlKey || e.metaKey)) return;
+    var k = (e.key||'').toLowerCase();
+    if(k === 's'){ e.preventDefault(); e.shiftKey ? saveAs() : save(); }
+    else if(k === 'o'){ e.preventDefault(); openFile(); }
+  });
+
+  window.saveProject = save;
+  window.saveProjectAs = saveAs;
+  window.openProjectFile = openFile;
+  window.rlResumeFile = async function(){
+    if(await ensurePerm(true)){ await writeNow(); if(typeof toast==='function') toast('✓ Autosave ke "' + handle.name + '" aktif kembali','ok'); }
+    ui();
+  };
+
+  // pulihkan handle file dari sesi sebelumnya
+  if(FS_OK){
+    idbGet().then(async function(h){
+      if(!h) return;
+      handle = h;
+      try { perm = await h.queryPermission({mode:'readwrite'}); } catch(e){ perm = 'prompt'; }
+      ui();
+    });
+  }
 })();
 </script>
 </body>

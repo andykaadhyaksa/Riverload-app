@@ -3546,14 +3546,14 @@ function _updateRowDisplay(p) {
   const isDash_u = !isPH_u && p.bmNum === null;
   const bpmCell = row.querySelector('[data-cell="bpm"]');
   if (bpmCell) {
-    if (isPH_u) bpmCell.innerHTML = '<span style="font-size:9px;color:var(--mute)">— (Rentang pH)</span>';
+    if (isPH_u) bpmCell.innerHTML = '<span style="color:var(--mute)">-</span>';
     else if (isDash_u) bpmCell.innerHTML = '<span style="font-size:9px;color:var(--green)">— (Tdk Dipersyaratkan)</span>';
     else bpmCell.textContent = bpm != null ? fN(bpm) : '—';
   }
   // Update BPA cell
   const bpaCell = row.querySelector('[data-cell="bpa"]');
   if (bpaCell) {
-    if (isPH_u) bpaCell.innerHTML = '<span style="font-size:9px;color:var(--mute)">Lihat Status</span>';
+    if (isPH_u) bpaCell.innerHTML = '<span style="color:var(--mute)">-</span>';
     else bpaCell.textContent = bpa != null ? fN(bpa) : '—';
     bpaCell.style.color = status === 'ng' ? 'var(--red)' : status === 'ok' ? 'var(--green)' : 'var(--txt2)';
   }
@@ -3669,14 +3669,14 @@ function renderParams() {
 
     // BPM display
     const bpmDisp = isPH
-      ? '<span style="font-size:9px;color:var(--mute)">— (Rentang pH)</span>'
+      ? '<span style="color:var(--mute)">-</span>'
       : isDash
       ? '<span style="font-size:9px;color:var(--green)">— (Tdk Dipersyaratkan)</span>'
       : (bpm != null ? fN(bpm) : '<span style="font-size:9px;color:var(--mute)">Isi Debit</span>');
 
     // BPA display
     const bpaDisp = isPH
-      ? '<span style="font-size:9px;color:var(--mute)">Lihat Status</span>'
+      ? '<span style="color:var(--mute)">-</span>'
       : (bpa != null ? fN(bpa) : '—');
 
     // Status badge
@@ -3780,8 +3780,8 @@ function updateResultKPI() {
       const isDash = !isPH && p.bmNum === null;
 
       const bmDisp  = valStr(p.bm);
-      const bpmDisp = isPH ? '—' : (bpm != null ? fN(bpm, 2) : '—');
-      const bpaDisp = isPH ? (cAkt !== '' ? cAkt : '—') : (bpa != null ? fN(bpa, 2) : '—');
+      const bpmDisp = isPH ? '-' : (bpm != null ? fN(bpm, 2) : '—');
+      const bpaDisp = isPH ? '-' : (bpa != null ? fN(bpa, 2) : '—');
       const cDisp   = cAkt !== '' ? cAkt : '—';
 
       const stBadge = status === 'ok'
@@ -3797,8 +3797,8 @@ function updateResultKPI() {
       const qCell = `<td style="padding:7px 10px;text-align:right;font-family:var(--mono);font-size:11px;color:var(--accent)">${i===0?fN(qVal,3):''}</td>`;
 
       // BPM & BPA display untuk rekap
-      const rBpmDisp = isPH ? '— (pH)' : isDash ? '— (Tdk Dipersyaratkan)' : (bpm!=null ? fN(bpm,4) : '—');
-      const rBpaDisp = isPH ? (cAkt !== '' ? cAkt : '—') : (bpa!=null ? fN(bpa,4) : '—');
+      const rBpmDisp = isPH ? '-' : isDash ? '— (Tdk Dipersyaratkan)' : (bpm!=null ? fN(bpm,4) : '—');
+      const rBpaDisp = isPH ? '-' : (bpa!=null ? fN(bpa,4) : '—');
       // Kolom: No | Parameter | Debit (m³/s) | Satuan | C Maks/BM (mg/L) | BPM (kg/jam) | C Aktual (mg/L) | BPA (kg/jam) | Status
       return `<tr style="background:${rowBg};border-bottom:1px solid var(--brd2)">
         <td style="padding:7px 10px;text-align:center;font-family:var(--mono);font-size:10px;color:var(--mute)">${i+1}</td>
@@ -3962,9 +3962,9 @@ function buildReport() {
         <td style="font-weight:600">${p.name}</td>
         <td class="td-c" style="font-family:var(--mono);font-size:10.5px;color:var(--mute)">${p.unit}</td>
         <td class="td-r" style="color:var(--accent)">${valStr(p.bm)}</td>
-        <td class="td-r">${bpm!=null?fN(bpm):'—'}</td>
+        <td class="td-r">${(typeof p.bm==='string'&&p.bm.includes('6')&&p.bm.includes('9')&&p.bmNum===null)?'-':bpm!=null?fN(bpm):'—'}</td>
         <td class="td-r">${c||'—'}</td>
-        <td class="td-r" style="color:${st==='ng'?'var(--red)':st==='ok'?'var(--green)':'var(--txt2)'}">${bpa!=null?fN(bpa):'—'}</td>
+        <td class="td-r" style="color:${st==='ng'?'var(--red)':st==='ok'?'var(--green)':'var(--txt2)'}">${(typeof p.bm==='string'&&p.bm.includes('6')&&p.bm.includes('9')&&p.bmNum===null)?'-':bpa!=null?fN(bpa):'—'}</td>
         <td class="td-c">${badge}</td>
       </tr>`;
     }).join('');
@@ -4142,9 +4142,9 @@ async function exportWord() {
           tc(p.name||'—',{w:cw9[1],bg:rowBg,sz:19})+
           tc(p.unit||'—',{w:cw9[2],ctr:true,bg:rowBg,sz:18})+
           tc(valStr(p.bm),{w:cw9[3],ctr:true,bg:rowBg,sz:19})+
-          tc(bpm!=null?fN(bpm):'—',{w:cw9[4],ctr:true,bg:rowBg,sz:19,c:'004d45',b:true})+
+          tc((typeof p.bm==='string'&&p.bm.includes('6')&&p.bm.includes('9')&&p.bmNum===null)?'-':bpm!=null?fN(bpm):'—',{w:cw9[4],ctr:true,bg:rowBg,sz:19,c:'004d45',b:true})+
           tc(c||'—',{w:cw9[5],ctr:true,bg:rowBg,sz:19})+
-          tc(bpa!=null?fN(bpa):'—',{w:cw9[6],ctr:true,bg:rowBg,sz:19,c:st==='ng'?'b71c1c':'1e293b',b:true})+
+          tc((typeof p.bm==='string'&&p.bm.includes('6')&&p.bm.includes('9')&&p.bmNum===null)?'-':bpa!=null?fN(bpa):'—',{w:cw9[6],ctr:true,bg:rowBg,sz:19,c:st==='ng'?'b71c1c':'1e293b',b:true})+
           tc(ket,{w:cw9[7],ctr:true,bg:rowBg,sz:20,b:true,c:ketCol})
         );
       }),
@@ -7683,11 +7683,11 @@ async function exportExcel(){
         aoa.push([
           mkCell(p.name, alt?S.datAlt:S.dat),
           mkCell(p.unit, alt?S.datAltC:S.datC),
-          nCell(fmtV(p.bpmDry,4), stD==='ng'?{...S.datAltR,fill:fill(C.ambBg)}:(alt?S.datAltR:S.datR)),
-          nCell(fmtV(p.bpaDry,4), stD==='ng'?S.bpaNg:(alt?S.datAltR:S.datR)),
+          (p.bpmDry==null?mkCell('-',alt?S.datAltC:S.datC):nCell(fmtV(p.bpmDry,4), stD==='ng'?{...S.datAltR,fill:fill(C.ambBg)}:(alt?S.datAltR:S.datR))),
+          (p.bpaDry==null?mkCell('-',alt?S.datAltC:S.datC):nCell(fmtV(p.bpaDry,4), stD==='ng'?S.bpaNg:(alt?S.datAltR:S.datR))),
           mkCell(lD, stD==='ng'?S.ng:stD==='ok'?S.ok:S.na),
-          nCell(fmtV(p.bpmWet,4), stW==='ng'?{...S.datAltR,fill:fill(C.bluBg)}:(alt?S.datAltR:S.datR)),
-          nCell(fmtV(p.bpaWet,4), stW==='ng'?S.bpaNg:(alt?S.datAltR:S.datR)),
+          (p.bpmWet==null?mkCell('-',alt?S.datAltC:S.datC):nCell(fmtV(p.bpmWet,4), stW==='ng'?{...S.datAltR,fill:fill(C.bluBg)}:(alt?S.datAltR:S.datR))),
+          (p.bpaWet==null?mkCell('-',alt?S.datAltC:S.datC):nCell(fmtV(p.bpaWet,4), stW==='ng'?S.bpaNg:(alt?S.datAltR:S.datR))),
           mkCell(lW, stW==='ng'?S.ng:stW==='ok'?S.ok:S.na),
         ]);
         rh.push(RH.data);
@@ -7811,6 +7811,7 @@ async function exportExcel(){
 
       // BM hanya dipakai sebagai formula jika benar-benar angka (mis. pH = "6-9" bukan angka, jadi tidak diformulakan)
       const bmNum = (typeof p.bm==='number')?p.bm:null;
+      const isPHx = typeof p.bm==='string' && p.bm.includes('6') && p.bm.includes('9');
 
       aoa.push([
         mkCell(i+1,baseC),
@@ -7822,11 +7823,11 @@ async function exportExcel(){
         // BPM — formula Excel hidup hanya jika BM numerik; jika tidak (mis. pH), tampilkan nilai cache statis
         bmNum!=null
           ? fCell(`${Q_REF}*${bmCellRef}*${K_REF}`,bpmSt,fmtV(bpm,4),FMT.beban)
-          : mkCell(bpm!=null?round4(bpm):'—',bpmSt),
+          : mkCell(isPHx?'-':(bpm!=null?round4(bpm):'—'),bpmSt),
         // BPA — selalu numerik (C_Aktual selalu angka), aman diformulakan
-        (pNum(c)!=null)
+        (pNum(c)!=null && !isPHx)
           ? fCell(`${Q_REF}*${cCellRef}*${K_REF}`,bpaSt,fmtV(bpa,4),FMT.beban)
-          : mkCell('—',bpaSt),
+          : mkCell(isPHx?'-':'—',bpaSt),
         // Status — formula hanya jika kedua sel BPM & BPA berisi angka
         (bmNum!=null && pNum(c)!=null)
           ? {f:`IF(${bpaCellRef}<${bpmCellRef},"✓ Memenuhi","✗ Melebihi")`,t:'s',s:stCell,v:(st==='ok'?'✓ Memenuhi':'✗ Melebihi')}

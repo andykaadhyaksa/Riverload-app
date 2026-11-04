@@ -3,6 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#123a63">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="RiverLoad">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+
 <title>RiverLoad — Analisis Beban Pencemaran Sungai</title>
 
 <!-- External Libraries (CDN) -->
@@ -10750,5 +10757,39 @@ if (window.__kompPending) { try { kompRestore(window.__kompPending); } catch(e){
 })();
 </script>
 
+<!-- PWA: registrasi service worker + tombol pasang -->
+<script>
+(function(){
+  if('serviceWorker' in navigator && (location.protocol==='https:'||location.hostname==='localhost'||location.hostname==='127.0.0.1')){
+    window.addEventListener('load',function(){
+      navigator.serviceWorker.register('sw.js').catch(function(e){console.warn('SW gagal:',e);});
+    });
+  }
+  var deferred=null, btn=null;
+  function mkBtn(){
+    if(btn) return btn;
+    var host=document.querySelector('.rl-tb-actions'); if(!host) return null;
+    btn=document.createElement('button');
+    btn.className='rl-tb-btn-ghost'; btn.id='pwa-install-btn';
+    btn.style.display='none'; btn.title='Pasang RiverLoad sebagai aplikasi di laptop';
+    btn.innerHTML='⬇ Pasang Aplikasi';
+    btn.onclick=function(){
+      if(!deferred) return;
+      deferred.prompt();
+      deferred.userChoice.finally(function(){deferred=null;btn.style.display='none';});
+    };
+    host.insertBefore(btn,host.firstChild);
+    return btn;
+  }
+  window.addEventListener('beforeinstallprompt',function(e){
+    e.preventDefault(); deferred=e;
+    var b=mkBtn(); if(b) b.style.display='flex';
+  });
+  window.addEventListener('appinstalled',function(){
+    deferred=null; if(btn) btn.style.display='none';
+    if(typeof toast==='function') toast('✓ RiverLoad terpasang sebagai aplikasi','ok');
+  });
+})();
+</script>
 </body>
 </html>

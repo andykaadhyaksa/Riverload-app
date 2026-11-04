@@ -9330,39 +9330,40 @@ function kompBreakdownHtml(row, i) {
     + '<button onclick="kompOptToggleBrk(' + i + ')" style="font-family:var(--mono);font-size:10.5px;font-weight:700;padding:5px 12px;border:1.5px solid rgba(243,156,18,.5);border-radius:6px;background:transparent;color:var(--amber);cursor:pointer">' + (open ? '▾' : '▸') + ' Breakdown Alokasi per Sumber</button>'
     + '</div>';
   if (!open) return '<tr><td></td><td colspan="6" style="padding:4px 10px 10px">' + head + '</td></tr>';
-  var TH = 'padding:7px 10px;font-family:var(--mono);font-size:10px;font-weight:700;border:1px solid var(--brd2);background:rgba(243,156,18,.10);text-align:center';
-  var TD = 'padding:7px 10px;font-family:var(--mono);font-size:11.5px;border:1px solid var(--brd2)';
+  var TH = 'padding:6px 14px;white-space:nowrap;font-family:var(--mono);font-size:10px;font-weight:700;border:1px solid var(--brd2);background:rgba(243,156,18,.10);text-align:center';
+  var TD = 'padding:6px 14px;white-space:nowrap;font-family:var(--mono);font-size:11.5px;border:1px solid var(--brd2)';
   var body = '', totQ = 0, totKg = 0, no = 0;
   ubmSources.forEach(function(s) {
-    no++;
     var q = pNum(s.qDay);
     var prop = ubmProposedSrcIds.has(s.id);
     var uv = prop ? (p.usulanBMPerSrc && p.usulanBMPerSrc[s.id] != null ? p.usulanBMPerSrc[s.id] : '') : '';
     var useU = prop && uv !== '' && pNum(uv) > 0;
     var ci = useU ? pNum(uv) : pNum(p.cSrc ? p.cSrc[s.id] : 0);
     var has = ci > 0;
-    var kg = has ? ci * q / 1000 : null;
-    if (has) { totQ += q; totKg += kg; }
+    if (!has) return;   // sumber yang tidak menghasilkan parameter ini tidak ditampilkan
+    no++;
+    var kg = ci * q / 1000;
+    totQ += q; totKg += kg;
     body += '<tr>'
       + '<td style="' + TD + ';text-align:center">' + no + '</td>'
       + '<td style="' + TD + '">' + esc(s.name || ('Sumber ' + no)) + (useU ? ' <span style="font-size:8.5px;color:var(--accent);background:rgba(26,176,166,.12);padding:1px 5px;border-radius:3px">Usulan BM</span>' : '') + '</td>'
-      + '<td style="' + TD + ';text-align:right">' + (q ? fmtN(q, 2) : '–') + '</td>'
-      + '<td style="' + TD + ';text-align:right">' + (has ? fmtN(ci, 4) : '–') + '</td>'
-      + '<td style="' + TD + ';text-align:right">' + (has ? fmtN(kg, 2) : '–') + '</td>'
-      + '<td style="' + TD + ';text-align:right">' + (has ? fmtN(kg / 1000, 2) : '–') + '</td></tr>';
+      + '<td style="' + TD + ';text-align:right">' + kf(q, 2) + '</td>'
+      + '<td style="' + TD + ';text-align:right">' + fmtN(ci, 4) + '</td>'
+      + '<td style="' + TD + ';text-align:right">' + kf(kg, 2) + '</td>'
+      + '<td style="' + TD + ';text-align:right">' + kf(kg / 1000, 2) + '</td></tr>';
   });
-  if (!ubmSources.length) body = '<tr><td colspan="6" style="' + TD + ';text-align:center;color:var(--mute)">Belum ada sumber air limbah</td></tr>';
   var anyHas = totKg > 0;
+  if (!anyHas) body = '<tr><td colspan="6" style="' + TD + ';text-align:center;color:var(--mute)">Belum ada sumber air limbah yang menghasilkan parameter ini</td></tr>';
   body += '<tr style="font-weight:800;background:rgba(243,156,18,.08)">'
     + '<td colspan="2" style="' + TD + ';text-align:center">Total</td>'
-    + '<td style="' + TD + ';text-align:right">' + (anyHas ? fmtN(totQ, 2) : '–') + '</td>'
+    + '<td style="' + TD + ';text-align:right">' + (anyHas ? kf(totQ, 2) : '–') + '</td>'
     + '<td style="' + TD + ';text-align:center">-</td>'
-    + '<td style="' + TD + ';text-align:right">' + (anyHas ? fmtN(totKg, 2) : '–') + '</td>'
-    + '<td style="' + TD + ';text-align:right">' + (anyHas ? fmtN(totKg / 1000, 2) : '–') + '</td></tr>';
+    + '<td style="' + TD + ';text-align:right">' + (anyHas ? kf(totKg, 2) : '–') + '</td>'
+    + '<td style="' + TD + ';text-align:right">' + (anyHas ? kf(totKg / 1000, 2) : '–') + '</td></tr>';
   var note = '';
   if (row.mode === 'manual' && !kempty(row.alokManual) && anyHas && Math.abs(pNum(row.alokManual) - totKg) > 0.005)
     note = '<div style="font-size:10.5px;color:var(--amber);margin-top:6px">⚠ Mode Manual aktif: nilai alokasi (' + fmtN(pNum(row.alokManual), 2) + ' kg/hari) berbeda dari total breakdown sumber di atas.</div>';
-  var tbl = '<div style="overflow-x:auto"><table style="border-collapse:collapse;width:100%;min-width:560px">'
+  var tbl = '<div style="overflow-x:auto"><table style="border-collapse:collapse;width:auto;min-width:480px;max-width:100%">'
     + '<thead><tr><th style="' + TH + '">No</th><th style="' + TH + ';text-align:left">Nama Sumber / Titik Penaatan</th>'
     + '<th style="' + TH + '">Debit<br>(m³/hari)</th><th style="' + TH + '">BM / C ' + pn + '<br>(' + un + ')</th>'
     + '<th style="' + TH + '">Alokasi<br>(kg/hari)</th><th style="' + TH + '">Alokasi<br>(t/hari)</th></tr></thead><tbody>' + body + '</tbody></table></div>' + note;

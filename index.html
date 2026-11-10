@@ -10,6 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="RiverLoad">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="48x48" href="icons/favicon-48.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
 
@@ -1188,6 +1189,14 @@ input.inp-sm::placeholder {
 @media (max-width:1500px) { .rl-brand-sub { display:none; } #rl-save-indicator { max-width:170px; } }
 @media (max-width:1280px) { #rl-save-indicator { max-width:120px; } .rl-tb-inner { gap:8px; } }
 @media (max-width:1100px) { #rl-save-indicator { display:none; } }
+
+/* ══ Logo: tanpa latar putih (PNG transparan) ══ */
+.rl-brand-dot { background:transparent !important; box-shadow:none !important; padding:0 !important; border-radius:0 !important; overflow:visible !important; }
+.rl-brand-dot img { filter:drop-shadow(0 1px 3px rgba(18,58,99,.22)); }
+.loader-logo-wrap { background:transparent !important; box-shadow:none !important; }
+[data-theme="dark"] .rl-brand-dot img,
+[data-theme="dark"] .loader-logo-img,
+[data-theme="dark"] .rl-logo-icon-img { filter:drop-shadow(0 0 1.5px rgba(255,255,255,.95)) drop-shadow(0 0 7px rgba(95,214,230,.35)); }
 </style>
 
 </head>
@@ -2809,6 +2818,67 @@ const WQDB = [
   {no:48, name:'Sampah',                          unit:'-',          k1:'nihil',k2:'nihil',k3:'nihil',k4:'nihil',        ket:null},
   {no:49, name:'Radioaktivitas Gross Alpha / Beta',unit:'Bq/L',      k1:'0.1/1',k2:'0.1/1',k3:'0.1/1',k4:'0.1/1',       ket:null},
 ];
+
+// ── Metode uji tiap parameter (acuan SNI; bila tidak ada SNI dipakai rujukan umum APHA SM / US EPA) ──
+const METODE_UJI = {
+  1:{m:'SNI 06-6989.23-2005 — Suhu, dengan termometer',s:'SNI'},
+  2:{m:'SNI 6989.27:2019 — Padatan terlarut total (TDS), gravimetri',s:'SNI'},
+  3:{m:'SNI 6989.3:2019 — Padatan tersuspensi total (TSS), gravimetri',s:'SNI'},
+  4:{m:'SNI 6989.80:2011 — Warna, spektrofotometri (Pt-Co)',s:'SNI'},
+  5:{m:'SNI 6989.11:2019 — pH, dengan pH meter',s:'SNI'},
+  6:{m:'SNI 6989.72:2009 — BOD (5 hari, 20 °C), titrasi/DO meter',s:'SNI'},
+  7:{m:'SNI 6989.2:2019 — COD, refluks tertutup, spektrofotometri',s:'SNI'},
+  8:{m:'SNI 06-6989.14-2004 — Oksigen terlarut, Winkler (iodometri) / DO meter',s:'SNI'},
+  9:{m:'SNI 6989.20:2019 — Sulfat, turbidimetri',s:'SNI'},
+  10:{m:'SNI 6989.19:2009 — Klorida, titrasi argentometri',s:'SNI'},
+  11:{m:'SNI 6989.79:2011 — Nitrat, spektrofotometri reduksi kadmium',s:'SNI'},
+  12:{m:'SNI 06-6989.9-2004 — Nitrit, spektrofotometri',s:'SNI'},
+  13:{m:'SNI 06-6989.30-2005 — Amonia, spektrofotometri fenat',s:'SNI'},
+  14:{m:'APHA SM 4500-N C — Total nitrogen, oksidasi persulfat (alt.: SM 4500-N org B, Kjeldahl)',s:'Rujukan umum'},
+  15:{m:'SNI 6989.31:2021 — Fosfor total, spektrofotometri asam askorbat',s:'SNI'},
+  16:{m:'SNI 06-6989.29-2005 — Fluorida, spektrofotometri SPADNS',s:'SNI'},
+  17:{m:'SNI 6989.75:2009 — Sulfida (H₂S), metilen biru',s:'SNI'},
+  18:{m:'SNI 6989.77:2011 — Sianida, spektrofotometri',s:'SNI'},
+  19:{m:'APHA SM 4500-Cl G — Klorin bebas, kolorimetri DPD',s:'Rujukan umum'},
+  20:{m:'APHA SM 3120 B / US EPA 200.7 — Barium, ICP-OES',s:'Rujukan umum'},
+  21:{m:'APHA SM 4500-B C (kurkumin) / SM 3120 B — Boron, ICP-OES',s:'Rujukan umum'},
+  22:{m:'SNI 6989.78:2011 — Merkuri, CV-AAS (uap dingin)',s:'SNI'},
+  23:{m:'SNI 6989.83:2011 — Arsen, AAS-hidrida (alt.: APHA SM 3114 B)',s:'SNI'},
+  24:{m:'APHA SM 3114 B / SM 3120 B — Selenium, AAS-hidrida / ICP-OES',s:'Rujukan umum'},
+  25:{m:'SNI 6989.4:2009 — Besi, AAS nyala',s:'SNI'},
+  26:{m:'SNI 6989.16:2009 — Kadmium, AAS nyala',s:'SNI'},
+  27:{m:'SNI 6989.68:2009 — Kobalt, AAS nyala',s:'SNI'},
+  28:{m:'SNI 6989.5:2009 — Mangan, AAS nyala',s:'SNI'},
+  29:{m:'SNI 6989.18:2009 — Nikel, AAS nyala',s:'SNI'},
+  30:{m:'SNI 6989.7:2009 — Seng, AAS nyala',s:'SNI'},
+  31:{m:'SNI 6989.6:2009 — Tembaga, AAS nyala',s:'SNI'},
+  32:{m:'SNI 6989.8:2009 — Timbal, AAS nyala',s:'SNI'},
+  33:{m:'SNI 6989.71:2009 — Kromium heksavalen (Cr⁶⁺), spektrofotometri difenilkarbazida',s:'SNI'},
+  34:{m:'SNI 6989.10:2011 — Minyak dan lemak, gravimetri (ekstraksi n-heksana)',s:'SNI'},
+  35:{m:'SNI 06-6989.51-2005 — Surfaktan anionik (MBAS), spektrofotometri',s:'SNI'},
+  36:{m:'SNI 06-6989.21-2004 — Fenol, spektrofotometri',s:'SNI'},
+  37:{m:'US EPA 8081B / APHA SM 6630 B — Pestisida organoklorin, GC-ECD',s:'Rujukan umum'},
+  38:{m:'US EPA 8081B / APHA SM 6630 B — Pestisida organoklorin, GC-ECD',s:'Rujukan umum'},
+  39:{m:'US EPA 8081B / APHA SM 6630 B — Pestisida organoklorin, GC-ECD',s:'Rujukan umum'},
+  40:{m:'US EPA 8081B / APHA SM 6630 B — Pestisida organoklorin, GC-ECD',s:'Rujukan umum'},
+  41:{m:'US EPA 8081B / APHA SM 6630 B — Pestisida organoklorin, GC-ECD',s:'Rujukan umum'},
+  42:{m:'US EPA 8081B / APHA SM 6630 B — Pestisida organoklorin, GC-ECD',s:'Rujukan umum'},
+  43:{m:'US EPA 8081B / APHA SM 6630 B — Pestisida organoklorin, GC-ECD',s:'Rujukan umum'},
+  44:{m:'US EPA 8081B / APHA SM 6630 B — Pestisida organoklorin, GC-ECD',s:'Rujukan umum'},
+  45:{m:'US EPA 8081B / APHA SM 6630 B — Pestisida organoklorin, GC-ECD',s:'Rujukan umum'},
+  46:{m:'APHA SM 9221 E — Fecal coliform, MPN tabung ganda (SNI 06-4158-1996)',s:'Rujukan umum'},
+  47:{m:'APHA SM 9221 B — Total coliform, MPN tabung ganda (SNI 06-4158-1996)',s:'Rujukan umum'},
+  48:{m:'Pengamatan visual di lapangan (tidak ada SNI)',s:'Rujukan umum'},
+  49:{m:'APHA SM 7110 B — Gross alpha/beta, kopresipitasi / pencacah proporsional',s:'Rujukan umum'}
+};
+function metodeUjiByNo(no){ return METODE_UJI[no] || null; }
+function metodeUjiByName(name){
+  if(!name) return null;
+  const n = String(name).toLowerCase().replace(/\s+/g,' ').trim();
+  const row = WQDB.find(r => r.name.toLowerCase() === n) ||
+              WQDB.find(r => { const a=r.name.toLowerCase(); return a.includes(n) || n.includes(a); });
+  return row ? (METODE_UJI[row.no] || null) : null;
+}
 
 function getKVal(row, cls) {
   return row['k'+cls];
@@ -8382,7 +8452,7 @@ async function exportExcel(){
   // SHEET 7 — DATABASE PARAMETER (PP 22/2021)
   // ═══════════════════════════════════════════════════════
   if(params.length){
-    const NC=8;
+    const NC=9;
     const kColors=[C.blu2,C.teal2,C.amb2,C.redMd];
     const kBgs   =[C.bluBg,C.tealBg,C.ambBg,C.redBg];
     const kHdr=(i)=>({font:font(true,10,kColors[i]),fill:fill(kBgs[i]),alignment:align('center','center',true),border:bdrT(kColors[i])});
@@ -8391,7 +8461,7 @@ async function exportExcel(){
       [mkCell('DATABASE PARAMETER  ·  PP NO. 22 TAHUN 2021 LAMPIRAN VI',S.banner),...Array(NC-1).fill(null)],
       [mkCell('Parameter digunakan dalam analisis   ·   Kelas Sungai: '+clsRom,S.meta),...Array(NC-1).fill(null)],
       Array(NC).fill(blank({...S.dat,fill:fill(C.slateL)})),
-      [mkCell('No',S.hdr),mkCell('Parameter',S.hdr),mkCell('Satuan',S.hdr),mkCell('BM Kelas '+clsRom,S.hdr),mkCell('Kelas I',kHdr(0)),mkCell('Kelas II',kHdr(1)),mkCell('Kelas III',kHdr(2)),mkCell('Kelas IV',kHdr(3))],
+      [mkCell('No',S.hdr),mkCell('Parameter',S.hdr),mkCell('Satuan',S.hdr),mkCell('BM Kelas '+clsRom,S.hdr),mkCell('Kelas I',kHdr(0)),mkCell('Kelas II',kHdr(1)),mkCell('Kelas III',kHdr(2)),mkCell('Kelas IV',kHdr(3)),mkCell('Metode Uji (SNI / Rujukan Umum)',S.hdr)],
     ];
     const rh=[RH.banner,RH.meta,RH.gap,RH.hdr];
     params.forEach((p,i)=>{
@@ -8406,11 +8476,18 @@ async function exportExcel(){
         mkCell(k2,{...baseC,font:font(false,10,C.teal2),fill:fill(alt?C.tealBg2:C.tealBg2),border:bdr(C.teal3)}),
         mkCell(k3,{...baseC,font:font(false,10,C.amb2),fill:fill(alt?C.ambBg2:C.ambBg2),border:bdr(C.amb3)}),
         mkCell(k4,{...baseC,font:font(false,10,C.redMd),fill:fill(alt?C.redBg:C.redBg),border:bdr(C.redMd)}),
+        mkCell((metodeUjiByNo(p.no)||{}).m || '—',{...base,alignment:align('left','center',true)}),
       ]);
-      rh.push(RH.data);
+      rh.push(30);
     });
     const merges=[{s:{r:0,c:0},e:{r:0,c:NC-1}},{s:{r:1,c:0},e:{r:1,c:NC-1}},{s:{r:2,c:0},e:{r:2,c:NC-1}}];
-    addSheet(WB,'🗂 Database Parameter',aoa,[4,16,7,9,9,9,9,9],merges,rh);
+    aoa.push(Array(NC).fill(blank({...S.dat,fill:fill(C.slateL)})));
+    rh.push(6);
+    const noteR = aoa.length;
+    aoa.push([mkCell('Catatan: metode uji di atas adalah acuan umum (SNI bila tersedia; bila tidak ada SNI dipakai rujukan APHA Standard Methods / US EPA). Sesuaikan dengan ruang lingkup akreditasi laboratorium (KAN/ISO 17025) dan versi SNI terbaru.',{...S.meta,alignment:align('left','center',true)}),...Array(NC-1).fill(null)]);
+    rh.push(30);
+    merges.push({s:{r:noteR,c:0},e:{r:noteR,c:NC-1}});
+    addSheet(WB,'🗂 Database Parameter',aoa,[4,26,9,9,9,9,9,9,52],merges,rh);
   }
 
   // ═══════════════════════════════════════════════════════
@@ -8469,6 +8546,8 @@ async function exportExcel(){
         hdr(['Uraian','Nilai','','Satuan','Keterangan']);
         add([L('Parameter'),mkCell(pname,sty.lblB),E(),U(row.unit||''),N('')]);
         add([L('Baku mutu sungai (BM)'),nCell(num(row.bm),sty.inp,FM.n4),E(),U(row.unit||''),N('Kelas '+clsRom+' — PP 22/2021')]);
+        const mu = metodeUjiByName(pname) || metodeUjiByName(row.name);
+        if (mu) { const rMu = add([L('Metode uji (SNI / rujukan umum)'),mkCell(mu.m,sty.note),E(),U(''),N(mu.s==='SNI'?'SNI':'Rujukan umum (non-SNI)')],30); merges.push({s:{r:rMu-1,c:1},e:{r:rMu-1,c:3}}); }
         const sumRow = add([L('Jenis kompensasi'),mkCell('Lampiran '+row.lamp+' — '+(jn?jn.nama:''),sty.lblB),E(),U(''),N('')]);
         merges.push({s:{r:sumRow-1,c:1},e:{r:sumRow-1,c:2}});
 
